@@ -38,6 +38,12 @@ Format: `type: imperative summary`. No scope, no trailing period, at most 72 cha
 
 Hooks live in `.husky/`. The file-level commands are in `.lintstagedrc.json`.
 
+## Dependencies
+
+Use `npm ci` to install. Use `npm install <package>` only to add or update a dependency, and commit the lockfile with it.
+
+npm runs a dependency's install script only when the package is listed in `allowScripts` in `package.json`. Unlisted scripts are skipped with a warning. After adding a dependency, run `npm install-scripts ls` and approve what the app needs or deny the rest, in the root and in `docs/`. The Electron binary is not an install script: the project's own `postinstall` downloads it with `install-electron`.
+
 ## Pull requests
 
 - Title in the commit format. Squash merge turns it into the commit on `main`, and a workflow checks the title.

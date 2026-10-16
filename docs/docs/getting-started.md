@@ -15,12 +15,14 @@ description: Install, configure and run Loopy locally.
 ## Install and run
 
 ```bash
-npm install
+npm ci
 cp .env.example .env
 npm run dev
 ```
 
-`npm install` also installs the git hooks through husky. `npm run dev` starts electron-vite: the renderer gets hot module replacement, the main process restarts on change, and the app window opens on its own.
+`npm ci` installs exactly what the lockfile says. Two project scripts then run: `postinstall` downloads the Electron binary with `install-electron`, and `prepare` installs the git hooks through husky. `npm run dev` starts electron-vite: the renderer gets hot module replacement, the main process restarts on change, and the app window opens on its own.
+
+If `npm run dev` fails with `Error: Electron uninstall`, the binary is missing. Run `npx install-electron`.
 
 ## Environment variables
 
@@ -44,7 +46,7 @@ npm run package
 ## Documentation site
 
 ```bash
-cd docs && npm install
+cd docs && npm ci
 cd .. && npm run docs
 ```
 

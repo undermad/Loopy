@@ -14,7 +14,7 @@ The product description will grow as features land. For now the repository holds
 ## Run it locally
 
 ```bash
-npm install
+npm ci
 ```
 
 ```bash
@@ -25,7 +25,9 @@ cp .env.example .env
 npm run dev
 ```
 
-`npm install` also installs the git hooks. `npm run dev` opens the app window with hot reload for the renderer and automatic restarts for the main process.
+`npm ci` installs exactly what the lockfile says, then the `postinstall` script downloads the Electron binary and `prepare` installs the git hooks. Use `npm install <package>` only when you change dependencies, and commit the lockfile. `npm run dev` opens the app window with hot reload for the renderer and automatic restarts for the main process.
+
+Dependencies may only run install scripts when listed in `allowScripts` in `package.json`. After adding a dependency, run `npm install-scripts ls` and approve or deny what it reports.
 
 ## Environment variables
 
@@ -69,7 +71,6 @@ The documentation site lives in `docs/` and is built with Docusaurus. Run `cd do
 
 ## Before the first release
 
-- Replace `@OWNER_PLACEHOLDER` in `.github/CODEOWNERS`.
 - Set the copyright holder in `LICENSE`.
 - Set `url` and `organizationName` in `docs/docusaurus.config.ts` for GitHub Pages.
 - Enable branch protection on `main` with the required checks above and squash merge only.
