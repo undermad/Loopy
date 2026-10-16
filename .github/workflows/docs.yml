@@ -31,9 +31,11 @@ jobs:
           cache-dependency-path: docs/package-lock.json
       - run: npm ci
       - run: npm run build
+      - name: mirror the /Loopy base path for the link checker
+        run: mkdir -p "$RUNNER_TEMP/site" && ln -s "$PWD/build" "$RUNNER_TEMP/site/Loopy"
       - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
-          args: --no-progress --root-dir "${{ github.workspace }}/docs/build" --exclude-all-private 'docs/build/**/*.html'
+          args: --no-progress --fallback-extensions html --root-dir "${{ runner.temp }}/site" --exclude 'undermad.github.io' --exclude-all-private 'docs/build/**/*.html'
           fail: true
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         if: github.event_name == 'push'
