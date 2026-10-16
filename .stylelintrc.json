@@ -1,0 +1,43 @@
+{
+  "extends": ["stylelint-config-standard-scss"],
+  "plugins": ["stylelint-order"],
+  "rules": {
+    "selector-class-pattern": "^[a-z][a-zA-Z0-9]*$",
+    "order/order": ["dollar-variables", "custom-properties", "at-rules", "declarations", "rules"],
+    "order/properties-order": [
+      [
+        "box-sizing",
+        "display",
+        "flex-direction",
+        "align-items",
+        "justify-content",
+        "gap",
+        "position",
+        "inset",
+        "width",
+        "min-width",
+        "max-width",
+        "height",
+        "min-height",
+        "max-height",
+        "padding",
+        "margin",
+        "border",
+        "border-radius",
+        "background",
+        "color",
+        "font",
+        "font-family",
+        "font-size",
+        "font-weight",
+        "line-height",
+        "box-shadow",
+        "outline",
+        "cursor"
+      ],
+      {
+        "unspecified": "bottom"
+      }
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+import { join } from 'node:path';
+import { BrowserWindow, shell, type BrowserWindowConstructorOptions } from 'electron';
+
+export function createWindowOptions(preloadPath: string): BrowserWindowConstructorOptions {
+  return {
+    width: 1280,
+    height: 800,
+    minWidth: 960,
+    minHeight: 600,
+    show: false,
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: preloadPath,
+      contextIsolation: true,
+      sandbox: true,
+      nodeIntegration: false,
+      webSecurity: true,
+    },
+  };
+}
+
+export function createMainWindow(): BrowserWindow {
+  const window = new BrowserWindow(createWindowOptions(join(__dirname, '../preload/index.cjs')));
+
+  window.on('ready-to-show', () => {
+    window.show();
+  });
+
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    void shell.openExternal(url);
+    return { action: 'deny' };
+  });
+
+  const rendererUrl = process.env.ELECTRON_RENDERER_URL;
+  if (rendererUrl) {
+    void window.loadURL(rendererUrl);
+  } else {
+    void window.loadFile(join(__dirname, '../renderer/index.html'));
+  }
+
+  return window;
+}

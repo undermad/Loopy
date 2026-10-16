@@ -1,0 +1,8 @@
+{
+  "*.{ts,tsx,js,mjs,cjs}": ["eslint --fix --no-warn-ignored", "prettier --write"],
+  "*.scss": ["stylelint --fix", "prettier --write"],
+  "*.{json,yml,yaml,html}": ["prettier --write"],
+  "*.{md,mdx}": ["markdownlint-cli2 --fix", "prettier --write"],
+  "*.{ts,tsx,js,mjs,cjs,json,md,mdx,scss,yml,yaml,txt}": ["cspell --no-must-find-files"],
+  "*": ["secretlint", "node scripts/check-file-size.mjs", "node scripts/check-env-files.mjs"]
+}

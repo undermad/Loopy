@@ -1,0 +1,25 @@
+{
+  "version": "0.2",
+  "language": "en-GB",
+  "dictionaries": ["typescript", "node", "npm", "html", "css", "bash", "softwareTerms", "loopy"],
+  "dictionaryDefinitions": [
+    {
+      "name": "loopy",
+      "path": "./cspell-words.txt",
+      "addWords": true
+    }
+  ],
+  "ignorePaths": [
+    "node_modules",
+    "docs/node_modules",
+    "docs/build",
+    "out",
+    "dist",
+    "coverage",
+    "playwright-report",
+    "test-results",
+    "package-lock.json",
+    "*.snap",
+    ".husky"
+  ]
+}
