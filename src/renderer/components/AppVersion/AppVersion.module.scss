@@ -1,0 +1,32 @@
+@use '../../styles/mixins' as *;
+
+.version {
+  @include row(var(--space-1));
+
+  width: fit-content;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-fg-muted);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: default;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.tooltip {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: var(--font-size-sm);
+  box-shadow: var(--shadow-md);
+}
+
+.arrow {
+  fill: var(--color-fg);
+}

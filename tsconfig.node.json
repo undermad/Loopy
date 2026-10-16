@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "lib": ["ES2023"],
+    "types": ["node", "electron-vite/node"]
+  },
+  "include": [
+    "src/main/**/*",
+    "src/preload/**/*",
+    "src/shared/**/*",
+    "tests/unit/main/**/*",
+    "tests/unit/shared/**/*",
+    "tests/unit/preload/**/*",
+    "tests/integration/**/*",
+    "tests/e2e/**/*",
+    "scripts/**/*",
+    "*.config.ts",
+    "electron.vite.config.ts"
+  ]
+}

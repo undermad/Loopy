@@ -1,0 +1,34 @@
+@use './tokens';
+@layer reset, tokens, base, components, overrides;
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+  }
+
+  button {
+    color: inherit;
+    font: inherit;
+  }
+}
+
+@layer base {
+  html {
+    font-family: var(--font-family);
+    font-size: var(--font-size-md);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}

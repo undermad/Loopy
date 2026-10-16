@@ -1,0 +1,11 @@
+node_modules
+out
+dist
+coverage
+playwright-report
+test-results
+docs/build
+docs/.docusaurus
+docs/node_modules
+package-lock.json
+CHANGELOG.md

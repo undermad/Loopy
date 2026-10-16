@@ -1,0 +1,16 @@
+config:
+  default: true
+  MD013: false
+  MD024: { siblings_only: true }
+  MD033: false
+  MD041: false
+ignores:
+  - node_modules
+  - docs/node_modules
+  - docs/build
+  - CHANGELOG.md
+  - test-results
+  - playwright-report
+  - coverage
+  - out
+  - dist
