@@ -5,9 +5,9 @@ import { themes as prismThemes } from 'prism-react-renderer';
 const config: Config = {
   title: 'Loopy',
   tagline: 'Desktop tool for game design and project management',
-  url: 'https://OWNER_PLACEHOLDER.github.io',
+  url: 'https://undermad.github.io',
   baseUrl: '/Loopy/',
-  organizationName: 'OWNER_PLACEHOLDER',
+  organizationName: 'undermad',
   projectName: 'Loopy',
   trailingSlash: false,
   onBrokenLinks: 'throw',
@@ -31,7 +31,7 @@ const config: Config = {
     colorMode: { defaultMode: 'light', respectPrefersColorScheme: true },
     navbar: {
       title: 'Loopy',
-      items: [{ href: 'https://github.com/OWNER_PLACEHOLDER/Loopy', label: 'GitHub', position: 'right' }],
+      items: [{ href: 'https://github.com/undermad/Loopy', label: 'GitHub', position: 'right' }],
     },
     footer: { style: 'dark', copyright: `Loopy documentation. Built with Docusaurus.` },
     prism: {

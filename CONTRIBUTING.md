@@ -3,11 +3,13 @@
 ## Setup
 
 1. Install Node 24 and npm 11. `.nvmrc` holds the Node version.
-2. Run `npm install`. This also installs the git hooks.
+2. Run `npm ci`. This downloads the Electron binary and installs the git hooks.
 3. Copy `.env.example` to `.env`.
 4. Run `npm run dev`.
 
-The documentation site has its own dependencies: `cd docs && npm install`, then `npm run docs` from the root.
+The documentation site has its own dependencies: `cd docs && npm ci`, then `npm run docs` from the root.
+
+Use `npm install <package>` only to add or update a dependency, then commit the lockfile. Dependencies run install scripts only when listed in `allowScripts` in `package.json`; after adding one, run `npm install-scripts ls` and approve or deny what it reports.
 
 ## Branches
 
