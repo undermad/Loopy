@@ -46,7 +46,7 @@ npm runs a dependency's install script only when the package is listed in `allow
 
 ## Pull requests
 
-- Title in the commit format. Squash merge turns it into the commit on `main`, and a workflow checks the title.
+- Title in the commit format. Squash merge turns it into the commit on `main`.
 - One concern per pull request.
 - Fill in the template: What, Why, How to test, Checklist.
 - Required checks: `ci`, `coverage`, `security`.
@@ -60,6 +60,5 @@ npm runs a dependency's install script only when the package is listed in `allow
 | `security`   | pull requests, pushes to `main`, weekly | gitleaks over full history, `npm audit`, CodeQL                                                                       |
 | `post-merge` | push to `main`                          | full test run and packaging on Windows, macOS and Linux                                                               |
 | `docs`       | changes under `docs/`                   | build the site, check links, deploy to GitHub Pages from `main`                                                       |
-| `pr-title`   | pull request opened or edited           | title matches the commit format                                                                                       |
 
 Dependabot opens grouped minor and patch updates weekly for npm (root and `docs/`) and for GitHub Actions. Majors arrive as separate pull requests.

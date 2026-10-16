@@ -10,7 +10,7 @@ Commit history should be readable and usable for a changelog, with as little cer
 
 ## Decision
 
-`type: summary` with no scope, enforced by commitlint. Pull request titles use the same format and are checked by a workflow. Squash merge only.
+`type: summary` with no scope, enforced by commitlint. Pull request titles use the same format. Squash merge only.
 
 ## Consequences
 
