@@ -216,7 +216,7 @@ export function assetMimeOf(name: string, mime?: string): string {
 }
 
 export function assetUrl(id: string): string {
-  return `${ASSET_PROTOCOL}://asset/${id}`;
+  return `${ASSET_PROTOCOL}://asset/${encodeURIComponent(id)}`;
 }
 
 export function resolveDropFolder(

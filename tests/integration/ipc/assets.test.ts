@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_FOLDER_IDS, type AssetPickResult, type AssetsSnapshot } from '@shared/assets';
+import { DEFAULT_FOLDER_IDS, assetUrl, type AssetPickResult, type AssetsSnapshot } from '@shared/assets';
 import { IpcChannel } from '@shared/ipc';
 import { assetIdFromUrl, handleAssetRequest } from '../../../src/main/asset-protocol';
 import { registerAssetsHandlers } from '../../../src/main/ipc/assets';
@@ -92,6 +92,9 @@ describe('assets IPC handlers', () => {
     expect(handleAssetRequest(() => null, new Request('loopy-asset://asset/x')).status).toBe(404);
     expect(assetIdFromUrl('loopy-asset://asset/abc')).toBe('abc');
     expect(assetIdFromUrl('loopy-asset://other/abc')).toBeNull();
+    expect(assetIdFromUrl(assetUrl('a b<c>'))).toBe('a b<c>');
+    expect(assetUrl('a b<c>')).toBe('loopy-asset://asset/a%20b%3Cc%3E');
+    expect(assetIdFromUrl('loopy-asset://asset/%E0%A4%A')).toBeNull();
   });
 
   it('honours the drop target setting and explicit targets', async () => {

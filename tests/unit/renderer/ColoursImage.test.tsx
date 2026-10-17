@@ -4,11 +4,19 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ColoursEditor } from '@renderer/components/editors/Colours/ColoursEditor';
 import { AreaContext } from '@renderer/components/Shell/AreaContext';
-import { syntheticPixels } from '@renderer/lib/colour';
+import { fetchImage, syntheticPixels } from '@renderer/lib/colour';
 import { createPalette } from '@renderer/lib/palettes';
 import { ToastProvider, TooltipProvider } from '@renderer/ui';
 import type * as ColourLib from '@renderer/lib/colour';
 import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
+
+const bitmaps = vi.hoisted(() => [] as { width: number; height: number; close: () => void }[]);
+
+function previewBitmap() {
+  const bitmap = { width: 24, height: 24, close: vi.fn() };
+  bitmaps.push(bitmap);
+  return bitmap as unknown as ImageBitmap;
+}
 
 vi.mock('@renderer/lib/colour', async (original) => {
   const actual = await original<typeof ColourLib>();
@@ -16,8 +24,8 @@ vi.mock('@renderer/lib/colour', async (original) => {
     actual.syntheticPixels(['#ff0000', '#00ff00', '#0000ff', '#ffffff', '#101010', '#808080'], 24, 24);
   return {
     ...actual,
-    loadPixels: vi.fn(() => Promise.resolve(pixels())),
-    fetchPixels: vi.fn(() => Promise.resolve(pixels())),
+    loadImage: vi.fn(() => Promise.resolve({ pixels: pixels(), preview: previewBitmap() })),
+    fetchImage: vi.fn(() => Promise.resolve({ pixels: pixels(), preview: previewBitmap() })),
   };
 });
 
@@ -59,8 +67,7 @@ beforeEach(async () => {
   await act(async () => {
     await Promise.resolve();
   });
-  globalThis.URL.createObjectURL = vi.fn(() => 'blob:preview');
-  globalThis.URL.revokeObjectURL = vi.fn();
+  bitmaps.length = 0;
 });
 
 describe('Colours image tab', () => {
@@ -72,7 +79,9 @@ describe('Colours image tab', () => {
     const file = new File([new Uint8Array([1, 2, 3])], 'hero.png', { type: 'image/png' });
     fireEvent.drop(zone, { dataTransfer: { files: [file], types: ['Files'] } });
 
-    expect(await screen.findByRole('img', { name: 'Image preview' })).toBeInTheDocument();
+    const preview = await screen.findByRole('img', { name: 'Image preview' });
+    expect(preview.tagName).toBe('CANVAS');
+    expect(document.querySelector('img[src]')).toBeNull();
     expect(api.importAssets).toHaveBeenCalledTimes(1);
     expect(screen.getAllByRole('button', { name: /sample point/ })).toHaveLength(5);
     const list = () => within(screen.getByRole('list', { name: 'Palette' }));
@@ -125,6 +134,8 @@ describe('Colours image tab', () => {
     expect(await screen.findByRole('img', { name: 'Image preview' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Clear image' }));
     expect(screen.getByText('Drop an image here')).toBeInTheDocument();
+    expect(bitmaps.at(-1)?.close).toHaveBeenCalled();
+    expect(vi.mocked(fetchImage)).toHaveBeenCalledWith(expect.stringMatching(/^loopy-asset:\/\/asset\//));
 
     const zone = screen.getByTestId('image-drop');
     fireEvent.drop(zone, {

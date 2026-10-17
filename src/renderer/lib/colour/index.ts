@@ -58,6 +58,6 @@ export type {
   ClusterStructure,
   HueFamily,
 } from './cluster';
-export { fetchPixels, loadPixels } from './image';
+export { fetchImage, loadImage } from './image';
 export { PALETTE_PRESETS, searchPresets } from './presets';
 export type { PalettePreset } from './presets';

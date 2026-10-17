@@ -7,9 +7,9 @@ import {
   MOODS,
   extractGradient,
   extractPalette,
-  fetchPixels,
+  fetchImage,
   gradientCss,
-  loadPixels,
+  loadImage,
   markersFor,
   readableTextColour,
   sampleAt,
@@ -30,7 +30,7 @@ export interface ImageTabProps {
 }
 
 interface LoadedImage {
-  url: string;
+  preview: ImageBitmap;
   pixels: Pixels;
   name: string;
 }
@@ -68,7 +68,7 @@ export function ImageTab({ palette, onSaved }: ImageTabProps) {
 
   useEffect(
     () => () => {
-      if (image?.url.startsWith('blob:')) URL.revokeObjectURL(image.url);
+      image?.preview.close();
     },
     [image],
   );
@@ -93,15 +93,15 @@ export function ImageTab({ palette, onSaved }: ImageTabProps) {
       return;
     }
     void load(async () => {
-      const pixels = await loadPixels(file);
+      const decoded = await loadImage(file);
       const outcome = await importFiles([file], 'auto');
       if (outcome.ids.length > 0) toast.show({ title: t('image.assetAdded'), variant: 'success' });
-      return { url: URL.createObjectURL(file), pixels, name: file.name };
+      return { ...decoded, name: file.name };
     });
   }
 
   function loadAsset(id: string, name: string) {
-    void load(async () => ({ url: assetUrl(id), pixels: await fetchPixels(assetUrl(id)), name }));
+    void load(async () => ({ ...(await fetchImage(assetUrl(id))), name }));
   }
 
   async function browse() {
@@ -229,7 +229,7 @@ export function ImageTab({ palette, onSaved }: ImageTabProps) {
           <Spinner label={t('image.extracting')} />
         ) : image ? (
           <div ref={preview} className={styles['preview']}>
-            <img src={image.url} alt={t('image.preview')} draggable={false} />
+            <PreviewCanvas bitmap={image.preview} label={t('image.preview')} />
             {mode === 'theme'
               ? markers.map((marker, index) => (
                   <button
@@ -380,4 +380,18 @@ export function ImageTab({ palette, onSaved }: ImageTabProps) {
       ) : null}
     </div>
   );
+}
+
+function PreviewCanvas({ bitmap, label }: { bitmap: ImageBitmap; label: string }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const element = canvas.current;
+    const context = element?.getContext('2d');
+    if (!element || !context) return;
+    context.clearRect(0, 0, element.width, element.height);
+    context.drawImage(bitmap, 0, 0);
+  }, [bitmap]);
+
+  return <canvas ref={canvas} width={bitmap.width} height={bitmap.height} role="img" aria-label={label} />;
 }

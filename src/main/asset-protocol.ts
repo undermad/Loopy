@@ -9,7 +9,12 @@ export const assetSchemePrivileges = {
 
 export function assetIdFromUrl(url: string): string | null {
   const match = new RegExp(`^${ASSET_PROTOCOL}://asset/([^/?#]+)$`).exec(url);
-  return match?.[1] ?? null;
+  if (!match?.[1]) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
 }
 
 export function handleAssetRequest(project: () => ProjectDatabase | null, request: Request): Response {

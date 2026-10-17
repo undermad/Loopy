@@ -56,7 +56,7 @@ The kind of a file comes from its extension first and its MIME type second, see 
 | `assets:export`                                                     | Save dialog, then writes the bytes to disk                              |
 | `assets:settings`                                                   | Patches `dropTarget` and `kindFolders`                                  |
 
-The renderer reads bytes through the `loopy-asset://asset/<id>` protocol registered in `src/main/asset-protocol.ts`, so `<img>`, `<audio>` and `<video>` tags work without an IPC round trip. `assetUrl(id)` builds the URL.
+The renderer reads bytes through the `loopy-asset://asset/<id>` protocol registered in `src/main/asset-protocol.ts`, so `<img>`, `<audio>` and `<video>` tags work without an IPC round trip. `assetUrl(id)` builds the URL and percent-encodes the id; `assetIdFromUrl` decodes it and rejects anything malformed.
 
 ## Renderer
 
