@@ -1,0 +1,93 @@
+@use '../../../styles/mixins' as *;
+
+.tree {
+  @include stack(0);
+
+  padding: var(--space-1);
+}
+
+.group {
+  @include stack(0);
+}
+
+.row {
+  @include row(var(--space-1));
+
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--color-fg);
+  font-size: var(--font-size-sm);
+  cursor: default;
+  padding-right: var(--space-2);
+  user-select: none;
+
+  &:hover {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+
+    outline-offset: -2px;
+  }
+}
+
+.selected {
+  background: var(--color-selection);
+
+  &:hover {
+    background: var(--color-selection);
+  }
+}
+
+.over {
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.chevron {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  color: var(--color-fg-muted);
+  flex-shrink: 0;
+  transition: transform 120ms ease;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.open {
+  transform: rotate(90deg);
+}
+
+.leaf {
+  visibility: hidden;
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--color-fg-muted);
+  flex-shrink: 0;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  padding: 0 var(--space-1);
+  border-radius: 999px;
+  background: var(--color-hover);
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+}

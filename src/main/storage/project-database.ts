@@ -51,7 +51,7 @@ async function assertSqliteHeader(path: string): Promise<void> {
   }
 }
 
-async function removeDatabaseFiles(path: string): Promise<void> {
+export async function removeDatabaseFiles(path: string): Promise<void> {
   await Promise.all([path, `${path}-wal`, `${path}-shm`].map((file) => rm(file, { force: true })));
 }
 
@@ -103,6 +103,7 @@ export async function createProject(
   path: string,
   name: string,
   now: Date = new Date(),
+  id: string = randomUUID(),
 ): Promise<ProjectDatabase> {
   const projectName = projectNameSchema.parse(name);
   if (await exists(path)) throw new ProjectFileError('ALREADY_EXISTS', path);
@@ -115,7 +116,7 @@ export async function createProject(
     const timestamp = now.toISOString();
     db.prepare(
       'INSERT INTO project (singleton, id, name, created_at, updated_at) VALUES (1, ?, ?, ?, ?)',
-    ).run(randomUUID(), projectName, timestamp, timestamp);
+    ).run(id, projectName, timestamp, timestamp);
   } catch (error) {
     db.close();
     await removeDatabaseFiles(path);

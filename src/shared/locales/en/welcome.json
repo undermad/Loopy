@@ -1,0 +1,23 @@
+{
+  "title": "Welcome to Loopy",
+  "newProject": "New project",
+  "openFile": "Open file…",
+  "openFileHint": "The file is copied into your projects folder.",
+  "projects": "Your projects",
+  "recent": "Recent",
+  "noProjects": "No projects yet",
+  "noProjectsHint": "Create a project to start planning.",
+  "noRecent": "Nothing opened recently",
+  "lastOpened": "Opened {{when}}",
+  "missing": "File not found",
+  "removeRecent": "Remove from recent",
+  "reveal": "Show in folder",
+  "createTitle": "New project",
+  "projectName": "Project name",
+  "projectNameHint": "You can rename it later.",
+  "created": "Project \"{{name}}\" created.",
+  "imported": "Project \"{{name}}\" imported.",
+  "exported": "Project exported.",
+  "deleteConfirm": "Delete the project \"{{name}}\"? The file is removed from your projects folder.",
+  "openFailed": "The project could not be opened."
+}

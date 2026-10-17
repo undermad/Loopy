@@ -1,0 +1,123 @@
+{
+  "menu": {
+    "file": "File",
+    "edit": "Edit",
+    "window": "Window",
+    "help": "Help",
+    "newProject": "New project…",
+    "openProject": "Open…",
+    "openRecent": "Open recent",
+    "noRecent": "No recent projects",
+    "closeProject": "Close project",
+    "importProject": "Import project…",
+    "exportProject": "Export project…",
+    "preferences": "Preferences…",
+    "quit": "Quit",
+    "undo": "Undo",
+    "redo": "Redo",
+    "cut": "Cut",
+    "copy": "Copy",
+    "paste": "Paste",
+    "delete": "Delete",
+    "selectAll": "Select all",
+    "toggleFullscreen": "Toggle fullscreen",
+    "saveLayout": "Save layout…",
+    "loadLayout": "Load layout",
+    "resetLayout": "Reset to default layout",
+    "importLayout": "Import layout…",
+    "exportLayout": "Export layout…",
+    "toggleStatusBar": "Status bar",
+    "documentation": "Documentation",
+    "shortcuts": "Keyboard shortcuts",
+    "reportIssue": "Report an issue",
+    "about": "About Loopy",
+    "editCommands": "Edit"
+  },
+  "workspace": {
+    "tabs": "Workspaces",
+    "add": "Add workspace",
+    "duplicateCurrent": "Duplicate current",
+    "fromPreset": "From preset",
+    "rename": "Rename workspace",
+    "name": "Name",
+    "duplicate": "Duplicate workspace",
+    "delete": "Delete workspace",
+    "deleteConfirm": "Delete the workspace \"{{name}}\"?",
+    "moveLeft": "Move left",
+    "moveRight": "Move right",
+    "next": "Next workspace",
+    "previous": "Previous workspace",
+    "templates": {
+      "planning": "Planning",
+      "design": "Design",
+      "palette": "Palette",
+      "assets": "Assets",
+      "empty": "Empty"
+    }
+  },
+  "area": {
+    "editor": "Editor type",
+    "menu": "Area",
+    "splitHorizontal": "Split horizontally",
+    "splitVertical": "Split vertically",
+    "join": "Join with",
+    "joinDirection": {
+      "left": "Area to the left",
+      "right": "Area to the right",
+      "top": "Area above",
+      "bottom": "Area below"
+    },
+    "close": "Close area",
+    "maximise": "Maximise area",
+    "restore": "Restore area",
+    "corner": "Drag to split or join",
+    "swapWith": "Swap with",
+    "split": "Split",
+    "preview": {
+      "splitRow": "Split vertically",
+      "splitColumn": "Split horizontally",
+      "join": "Join",
+      "swap": "Swap"
+    }
+  },
+  "layout": {
+    "saveTitle": "Save layout",
+    "name": "Layout name",
+    "saved": "Layout \"{{name}}\" saved.",
+    "loadConfirm": "Replace the current workspaces with the layout \"{{name}}\"?",
+    "deletePreset": "Delete layout",
+    "imported": "Layout \"{{name}}\" imported.",
+    "exported": "Layout exported.",
+    "invalid": "That file is not a Loopy layout.",
+    "presets": {
+      "default": "Default",
+      "planning": "Planning",
+      "design": "Design",
+      "palette": "Palette",
+      "assets": "Assets"
+    },
+    "current": "Current layout",
+    "builtIn": "Built in",
+    "custom": "Saved",
+    "none": "No saved layouts"
+  },
+  "status": {
+    "ready": "Ready",
+    "project": "Project: {{name}}",
+    "noProject": "No project open",
+    "hint": "Ctrl+Space maximises the area under the pointer. Drag an area corner to split or join.",
+    "filesImported": "{{count}} files added to assets.",
+    "filesFailed": "The files could not be added to assets."
+  },
+  "about": {
+    "title": "About Loopy",
+    "version": "Version {{version}}",
+    "electron": "Electron {{version}}",
+    "description": "Game design and project management, on your desktop."
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "action": "Action",
+    "keys": "Keys"
+  }
+}

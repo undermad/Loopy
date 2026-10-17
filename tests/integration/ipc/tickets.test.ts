@@ -1,0 +1,184 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IpcChannel } from '@shared/ipc';
+import type { TicketsSnapshot } from '@shared/tickets';
+import { registerTicketsHandlers } from '../../../src/main/ipc/tickets';
+import { createProject, type ProjectDatabase } from '../../../src/main/storage';
+
+type Handler = (event: unknown, ...args: unknown[]) => unknown;
+
+let directory: string;
+let project: ProjectDatabase;
+
+beforeEach(async () => {
+  directory = await mkdtemp(join(tmpdir(), 'loopy-tickets-'));
+  project = await createProject(join(directory, 'demo.loopy'), 'Demo');
+});
+
+afterEach(async () => {
+  project.close();
+  await rm(directory, { recursive: true, force: true });
+});
+
+function setup(open = true) {
+  const handlers = new Map<string, Handler>();
+  const ipc = { handle: vi.fn((channel: string, handler: Handler) => handlers.set(channel, handler)) };
+  registerTicketsHandlers(ipc, { project: () => (open ? project : null) });
+  return <T = TicketsSnapshot>(channel: string, ...args: unknown[]) =>
+    Promise.resolve().then(() => handlers.get(channel)?.({}, ...args)) as Promise<T>;
+}
+
+describe('tickets IPC handlers', () => {
+  it('starts with the three default states and no tickets', async () => {
+    const call = setup();
+    const snapshot = await call(IpcChannel.ticketsSnapshot);
+    expect(snapshot.states.map((state) => [state.id, state.category])).toEqual([
+      ['todo', 'todo'],
+      ['doing', 'doing'],
+      ['done', 'done'],
+    ]);
+    expect(snapshot.tickets).toEqual([]);
+  });
+
+  it('creates, numbers, moves, resolves, updates and deletes tickets', async () => {
+    const call = setup();
+    let snapshot = await call(IpcChannel.ticketsCreate, { title: 'First', stateId: 'todo' });
+    snapshot = await call(IpcChannel.ticketsCreate, {
+      title: 'Second',
+      stateId: 'todo',
+      type: 'bug',
+      priority: 'high',
+    });
+    snapshot = await call(IpcChannel.ticketsCreate, { title: 'Backlog item' });
+    expect(snapshot.tickets.map((ticket) => ticket.number).sort()).toEqual([1, 2, 3]);
+    const byNumber = [...snapshot.tickets].sort((a, b) => a.number - b.number);
+    const [first, second, backlog] = byNumber;
+    expect(first && second && backlog).toBeTruthy();
+    expect(backlog?.stateId).toBeNull();
+    expect(first && second && first.position < second.position).toBe(true);
+
+    snapshot = await call(IpcChannel.ticketsMove, { id: second?.id, stateId: 'done', position: 'a' });
+    const moved = snapshot.tickets.find((ticket) => ticket.id === second?.id);
+    expect(moved?.stateId).toBe('done');
+    expect(moved?.resolvedAt).not.toBeNull();
+
+    snapshot = await call(IpcChannel.ticketsUpdate, second?.id, { stateId: 'doing', title: 'Renamed' });
+    const updated = snapshot.tickets.find((ticket) => ticket.id === second?.id);
+    expect(updated).toMatchObject({ stateId: 'doing', title: 'Renamed', resolvedAt: null });
+
+    snapshot = await call(IpcChannel.ticketsDelete, first?.id);
+    expect(snapshot.tickets).toHaveLength(2);
+    await expect(call(IpcChannel.ticketsCreate, { title: '' })).rejects.toThrow();
+    await expect(
+      call(IpcChannel.ticketsMove, { id: 'nope', stateId: null, position: 'a' }),
+    ).rejects.toThrow();
+  });
+
+  it('manages states, reorders them and moves tickets out of a deleted state', async () => {
+    const call = setup();
+    let snapshot = await call(IpcChannel.statesCreate, { name: 'Review' });
+    const review = snapshot.states.at(-1);
+    expect(review).toMatchObject({ name: 'Review', category: 'doing' });
+
+    snapshot = await call(IpcChannel.statesMove, review?.id, '0');
+    expect(snapshot.states[0]?.id).toBe(review?.id);
+
+    snapshot = await call(IpcChannel.ticketsCreate, { title: 'In review', stateId: review?.id });
+    snapshot = await call(IpcChannel.statesUpdate, review?.id, { category: 'done', color: '#123456' });
+    expect(snapshot.tickets[0]?.resolvedAt).not.toBeNull();
+    expect(snapshot.states.find((state) => state.id === review?.id)).toMatchObject({
+      category: 'done',
+      color: '#123456',
+    });
+
+    snapshot = await call(IpcChannel.statesDelete, review?.id, 'todo');
+    expect(snapshot.states).toHaveLength(3);
+    expect(snapshot.tickets[0]).toMatchObject({ stateId: 'todo', resolvedAt: null });
+  });
+
+  it('manages labels and ticket labels', async () => {
+    const call = setup();
+    let snapshot = await call(IpcChannel.labelsCreate, { name: 'Art', color: '#ff0000' });
+    snapshot = await call(IpcChannel.labelsCreate, { name: 'Code', color: '#00ff00' });
+    snapshot = await call(IpcChannel.ticketsCreate, { title: 'Labelled' });
+    const ticket = snapshot.tickets[0];
+    const ids = snapshot.labels.map((label) => label.id);
+    snapshot = await call(IpcChannel.ticketsSetLabels, ticket?.id, ids);
+    expect(snapshot.ticketLabels).toHaveLength(2);
+
+    snapshot = await call(IpcChannel.labelsUpdate, ids[0], { name: 'Artwork' });
+    expect(snapshot.labels.map((label) => label.name)).toEqual(['Artwork', 'Code']);
+
+    snapshot = await call(IpcChannel.labelsDelete, ids[0]);
+    expect(snapshot.ticketLabels).toHaveLength(1);
+    await expect(call(IpcChannel.labelsCreate, { name: 'Code', color: '#00ff00' })).rejects.toThrow();
+  });
+
+  it('refuses every channel when no project is open', async () => {
+    const call = setup(false);
+    await expect(call(IpcChannel.ticketsSnapshot)).rejects.toThrow(/No project/);
+  });
+});
+
+describe('tickets repository branches', () => {
+  it('handles partial patches, done transitions and resolved timestamps', async () => {
+    const call = setup();
+    let snapshot = await call(IpcChannel.ticketsCreate, { title: 'Done already', stateId: 'done' });
+    const ticket = snapshot.tickets[0];
+    expect(ticket?.resolvedAt).not.toBeNull();
+
+    snapshot = await call(IpcChannel.ticketsMove, { id: ticket?.id, stateId: 'done', position: 'b' });
+    expect(snapshot.tickets[0]?.resolvedAt).toBe(ticket?.resolvedAt);
+
+    snapshot = await call(IpcChannel.statesUpdate, 'done', { name: 'Shipped' });
+    expect(snapshot.states.find((state) => state.id === 'done')?.name).toBe('Shipped');
+    snapshot = await call(IpcChannel.statesUpdate, 'done', { category: 'doing' });
+    expect(snapshot.tickets[0]?.resolvedAt).toBeNull();
+
+    snapshot = await call(IpcChannel.ticketsUpdate, ticket?.id, { description: 'Only description' });
+    expect(snapshot.tickets[0]?.description).toBe('Only description');
+    await expect(call(IpcChannel.ticketsUpdate, 'missing', { title: 'x' })).rejects.toThrow(/Unknown ticket/);
+
+    snapshot = await call(IpcChannel.labelsCreate, { name: 'A', color: '#000000' });
+    const label = snapshot.labels[0];
+    snapshot = await call(IpcChannel.labelsUpdate, label?.id, { color: '#ffffff' });
+    expect(snapshot.labels[0]?.color).toBe('#ffffff');
+
+    snapshot = await call(IpcChannel.statesCreate, { name: 'Later', category: 'done', color: '#123456' });
+    const later = snapshot.states.at(-1);
+    snapshot = await call(IpcChannel.statesDelete, 'todo', later?.id);
+    expect(snapshot.states.some((state) => state.id === 'todo')).toBe(false);
+    await expect(call(IpcChannel.statesMove, 'missing', 'z')).rejects.toThrow(/Unknown state/);
+    await expect(call(IpcChannel.ticketsCreate, { title: 'x', stateId: 'missing' })).rejects.toThrow(
+      /Unknown state/,
+    );
+  });
+});
+
+describe('migration 4', () => {
+  it('maps idea tickets to tasks and keeps labels attached', async () => {
+    const { DatabaseSync } = await import('node:sqlite');
+    const { migrateDatabase } = await import('../../../src/main/storage/sql-migrations');
+    const { projectMigrations } = await import('../../../src/main/storage/project-migrations');
+    const path = join(directory, 'legacy.loopy');
+    const db = new DatabaseSync(path);
+    db.exec('PRAGMA foreign_keys = ON');
+    migrateDatabase(db, projectMigrations.slice(0, 3));
+    db.prepare(
+      `INSERT INTO tickets (id, number, title, description, type, priority, state_id, position, created_at, updated_at, resolved_at)
+       VALUES ('t1', 1, 'Old idea', '', 'idea', 'low', 'todo', 'a', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL)`,
+    ).run();
+    db.prepare("INSERT INTO labels (id, name, color) VALUES ('l1', 'Art', '#ff0000')").run();
+    db.prepare("INSERT INTO ticket_labels (ticket_id, label_id) VALUES ('t1', 'l1')").run();
+
+    migrateDatabase(db, projectMigrations);
+    const ticket = db.prepare('SELECT type FROM tickets WHERE id = ?').get('t1') as { type: string };
+    const links = db.prepare('SELECT COUNT(*) AS count FROM ticket_labels').get() as { count: number };
+    expect(ticket.type).toBe('task');
+    expect(links.count).toBe(1);
+    expect(() => db.prepare("UPDATE tickets SET type = 'idea' WHERE id = 't1'").run()).toThrow();
+    db.close();
+  });
+});

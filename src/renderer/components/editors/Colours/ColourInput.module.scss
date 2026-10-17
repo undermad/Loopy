@@ -1,0 +1,90 @@
+@use '../../../styles/mixins' as *;
+
+.input {
+  @include row(var(--space-1));
+}
+
+.hex {
+  width: 110px;
+  font-family: var(--font-family-mono);
+  text-transform: lowercase;
+}
+
+.swatchButton {
+  display: inline-flex;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.popover {
+  width: 232px;
+}
+
+.picker {
+  width: 100%;
+  height: 150px;
+}
+
+.swatches {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.paletteSwatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--color-fg) 20%, transparent);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.groups {
+  @include stack(var(--space-2));
+
+  max-height: 220px;
+  margin-top: var(--space-2);
+  overflow: auto;
+}
+
+.group {
+  @include stack(var(--space-1));
+}
+
+.groupName {
+  @include row(var(--space-1));
+
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+
+  svg {
+    width: 12px;
+    height: 12px;
+    color: var(--color-fg-muted);
+  }
+}
+
+.palette {
+  @include stack(2px);
+}
+
+.paletteName {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+}

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { workspacesSchema } from './layout';
 import { projectNameSchema } from './project';
 
 export const DEVICE_STATE_SCHEMA_VERSION = 1;
@@ -21,6 +22,9 @@ export const deviceStateSchema = z.object({
   windowBounds: windowBoundsSchema.optional(),
   lastProjectId: z.uuid().optional(),
   recentProjects: z.array(recentProjectSchema).max(10).default([]),
+  workspaces: workspacesSchema.optional(),
+  statusBar: z.boolean().default(true),
 });
 
+export type RecentProject = z.infer<typeof recentProjectSchema>;
 export type DeviceState = z.infer<typeof deviceStateSchema>;

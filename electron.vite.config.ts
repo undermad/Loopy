@@ -12,7 +12,13 @@ export default defineConfig({
     resolve: { alias: { '@shared': shared } },
     build: {
       externalizeDeps: false,
-      rollupOptions: { output: { format: 'cjs', entryFileNames: '[name].cjs' } },
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'src/preload/index.ts'),
+          picker: resolve(__dirname, 'src/preload/picker.ts'),
+        },
+        output: { format: 'cjs', entryFileNames: '[name].cjs' },
+      },
     },
   },
   renderer: {

@@ -1,12 +1,27 @@
-import { AppVersion } from './components/AppVersion/AppVersion';
-import styles from './App.module.scss';
+import type { ReactNode } from 'react';
+import type { EditCommand } from '@shared/ipc';
+import { useTranslation } from '@renderer/lib/i18n';
+import { ThemeProvider } from '@renderer/lib/theme';
+import { ToastProvider, TooltipProvider } from '@renderer/ui';
+import { AppShell } from './components/Shell/AppShell';
+
+function Providers({ children }: { children: ReactNode }) {
+  const { t } = useTranslation('common');
+  return (
+    <ThemeProvider>
+      <TooltipProvider>
+        <ToastProvider closeLabel={t('actions.dismiss')} regionLabel={t('labels.notifications')}>
+          {children}
+        </ToastProvider>
+      </TooltipProvider>
+    </ThemeProvider>
+  );
+}
 
 export function App() {
   return (
-    <main className={styles['app']}>
-      <h1 className={styles['title']}>Loopy</h1>
-      <p className={styles['subtitle']}>Game design and project management, on your desktop.</p>
-      <AppVersion />
-    </main>
+    <Providers>
+      <AppShell editCommand={(command: EditCommand) => void window.loopy.editCommand(command)} />
+    </Providers>
   );
 }

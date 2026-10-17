@@ -31,9 +31,32 @@ The renderer runs with context isolation and the sandbox on, without Node integr
 | `src/main/env.ts`         | Environment loading and validation                                      |
 | `src/main/window.ts`      | Window options and creation                                             |
 | `src/preload/index.ts`    | The `window.loopy` API                                                  |
+| `src/renderer/lib`        | One internal library per concern, each behind a single `index.ts`       |
 | `src/renderer/components` | React components, each in its own folder with its SCSS module           |
 | `src/renderer/styles`     | Tokens, mixins and the global stylesheet                                |
 | `src/shared`              | Types and zod schemas used by more than one process                     |
+
+## Internal libraries
+
+Every renderer concern is a library under `src/renderer/lib/<name>` with one public entry point, `index.ts`. A library owns its logic, state and hooks and contains no components. Components compose libraries and hold no logic of their own. Dependencies point one way: `src/shared`, then `lib`, then `components`, then `App`.
+
+The boundary is a convention checked in review, not a lint rule. A deep import such as `@renderer/lib/theme/apply`, or any import of `components` from inside a library, is a review finding. `knip` fails CI on an export nothing uses, which keeps each index small. The rules and a checklist for adding a library are in `.claude/skills/internal-libraries/SKILL.md`, the reasoning in [ADR 0016](./decisions/0016-internal-libraries.md).
+
+| Library      | Owns                                                                               | Status  |
+| ------------ | ---------------------------------------------------------------------------------- | ------- |
+| `theme`      | Active theme, applying colour tokens, following the system mode                    | shipped |
+| `i18n`       | i18next setup, language switching, `Intl` formatting                               | shipped |
+| `settings`   | Settings store synced with main                                                    | shipped |
+| `layout`     | Area tree model, split, join, resize, swap, maximise                               | shipped |
+| `workspaces` | Workspace list, active workspace, layout presets                                   | shipped |
+| `editors`    | Editor registry: component, icon, title key, default state                         | shipped |
+| `shortcuts`  | Key map and the `useShortcuts` hook                                                | shipped |
+| `project`    | Current project, project list, recent projects                                     | shipped |
+| `tickets`    | Tickets snapshot, selection, ticket, state and label actions                       | shipped |
+| `board`      | Board list, open board snapshots, change commits                                   | shipped |
+| `colour`     | Colour maths: conversions, contrast, harmonies, palette clusters, image extraction | shipped |
+| `palettes`   | Palette and cluster lists and live resolution of colour references                 | shipped |
+| `assets`     | Asset folders, files, import, drop settings                                        | shipped |
 
 ## IPC rules
 
@@ -43,17 +66,19 @@ The renderer runs with context isolation and the sandbox on, without Node integr
 4. The renderer calls `window.loopy.<method>()` and treats the result as trusted.
 5. Every channel has a test in `tests/integration/ipc`.
 
-The scaffold ships one channel, `app:getVersion`, which shows the pattern end to end.
+`app:getVersion` shows the pattern end to end. Settings use `settings:get`, `settings:set` and a `settings:changed` push from main; the preload wraps pushes in subscribe functions that return an unsubscribe, so the renderer never sees `ipcRenderer`. Theme and locale channels are listed on the theming page.
 
 ## Storage
 
 Everything lives under Electron's user data directory. `storagePaths` in `src/main/storage/paths.ts` is the only place that knows the layout.
 
-| File                  | Holds                                                    | Format                     |
-| --------------------- | -------------------------------------------------------- | -------------------------- |
-| `settings.json`       | App preferences: theme, UI font, font size               | JSON with `schemaVersion`  |
-| `state.json`          | Device state: window bounds, last project, recent list   | JSON with `schemaVersion`  |
-| `projects/<id>.loopy` | One project: metadata, settings and later boards, assets | SQLite with `user_version` |
+| File                  | Holds                                                              | Format                     |
+| --------------------- | ------------------------------------------------------------------ | -------------------------- |
+| `settings.json`       | App preferences: theme, UI font, font size                         | JSON with `schemaVersion`  |
+| `state.json`          | Device state: recent projects, workspaces, status bar              | JSON with `schemaVersion`  |
+| `projects/<id>.loopy` | One project: metadata, settings, tickets, boards, palettes, assets | SQLite with `user_version` |
+| `themes/<id>.json`    | One custom theme per file, see the theming page                    | JSON with `schemaVersion`  |
+| `layouts/<id>.json`   | One saved layout preset per file, see the shell page               | JSON with `schemaVersion`  |
 
 The user never sees these paths. The project picker lists the `projects` directory, and sharing goes through export and import.
 
@@ -80,4 +105,4 @@ The export is the same format as the working file, so there is nothing to transl
 
 Databases open in WAL mode. While a project is open, SQLite keeps `-wal` and `-shm` files next to it and removes them on close. Schema changes are SQL strings in `src/main/storage/project-migrations.ts`, applied in order inside one transaction by `migrateDatabase`. A file with a `user_version` above the current one is refused rather than guessed at. The renderer never receives a database handle; features will expose what they need through IPC.
 
-Version 1 holds the `project` row and a key-value `settings` table. Boards, items and assets arrive with the features that need them, each as a new migration.
+Version 1 holds the `project` row and a key-value `settings` table. Version 2 adds the tickets tables, see the tickets page. Version 3 adds boards, nodes, edges and an assets table, see the board page. Version 4 narrows ticket types. Version 5 adds board units, version 6 the grid colour and version 7 sprints, comments, templates and the ticket estimate, due date and sprint columns, see the tickets page. Version 8 adds palettes, asset folders, the asset metadata columns and the board colour references, see the colours and assets pages. Version 9 adds palette clusters, see the colours page.

@@ -1,0 +1,66 @@
+@use '../styles/control' as *;
+@use '../styles/menu' as *;
+
+.trigger {
+  @include field-base;
+  @include control-base;
+
+  justify-content: space-between;
+  width: auto;
+  min-width: 120px;
+  cursor: pointer;
+
+  &[data-placeholder] {
+    color: var(--color-fg-muted);
+  }
+}
+
+.sm {
+  @include control-size-sm;
+}
+
+.md {
+  @include control-size-md;
+}
+
+.value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--color-fg-muted);
+  flex-shrink: 0;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.content {
+  @include menu-content;
+
+  min-width: var(--radix-select-trigger-width);
+  max-height: var(--radix-select-content-available-height);
+}
+
+.viewport {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.item {
+  @include menu-item;
+}
+
+.indicator {
+  @include menu-indicator;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}

@@ -1,0 +1,28 @@
+@use '../../styles/mixins' as *;
+
+.field {
+  @include stack(var(--space-1));
+
+  min-width: 0;
+}
+
+.label {
+  color: var(--color-fg);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.required {
+  color: var(--color-danger);
+  margin-left: var(--space-1);
+}
+
+.hint {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--font-size-xs);
+}

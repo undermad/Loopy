@@ -1,0 +1,62 @@
+@use '../styles/control' as *;
+
+.swatch {
+  display: inline-block;
+  border: 1px solid color-mix(in srgb, var(--color-fg) 20%, transparent);
+  border-radius: var(--radius-sm);
+  background: var(--swatch-color);
+  flex-shrink: 0;
+
+  &.sm {
+    width: 14px;
+    height: 14px;
+  }
+
+  &.md {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.trigger {
+  @include control-base;
+
+  justify-content: center;
+  padding: 0;
+  background: var(--color-surface);
+  cursor: pointer;
+  border-color: var(--color-border);
+
+  &.sm {
+    width: var(--control-height-sm);
+    height: var(--control-height-sm);
+  }
+
+  &.md {
+    width: var(--control-height-md);
+    height: var(--control-height-md);
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--color-hover);
+  }
+}
+
+.content {
+  width: 232px;
+}
+
+.picker {
+  width: 100%;
+  height: 160px;
+}
+
+.input {
+  @include field-base;
+
+  height: var(--control-height-sm);
+  padding: 0 var(--space-2);
+  font-family: monospace;
+  font-size: var(--font-size-xs);
+  text-transform: lowercase;
+}

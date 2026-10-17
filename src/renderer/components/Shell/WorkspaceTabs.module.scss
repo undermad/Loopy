@@ -1,0 +1,38 @@
+@use '../../styles/mixins' as *;
+
+.tabs {
+  @include row(2px);
+
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  height: var(--control-height-sm);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: transparent;
+  color: var(--color-fg-muted);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--color-hover);
+    color: var(--color-fg);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+
+    outline-offset: -2px;
+  }
+}
+
+.active {
+  background: var(--color-bg);
+  color: var(--color-fg);
+}

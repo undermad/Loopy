@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   LOOPY_LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  LOOPY_USER_DATA: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

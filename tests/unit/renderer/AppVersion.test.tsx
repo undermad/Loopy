@@ -2,26 +2,30 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppVersion } from '@renderer/components/AppVersion/AppVersion';
+import { TooltipProvider } from '@renderer/ui';
+import { bootTestApp, type FakeApi } from './helpers/api';
 
-const getAppVersion = vi.fn();
+let api: FakeApi;
 
-beforeEach(() => {
-  getAppVersion.mockReset();
-  window.loopy = { getAppVersion };
+beforeEach(async () => {
+  api = await bootTestApp();
 });
 
 describe('AppVersion', () => {
   it('shows a loading state until the version arrives', () => {
-    getAppVersion.mockReturnValue(new Promise(() => undefined));
+    vi.mocked(api.getAppVersion).mockReturnValue(new Promise(() => undefined));
     render(<AppVersion />);
 
-    expect(screen.getByText('Loading version…')).toBeInTheDocument();
+    expect(screen.getByText('Loading…')).toBeInTheDocument();
   });
 
   it('shows the app version and reveals the Electron version in a tooltip', async () => {
-    getAppVersion.mockResolvedValue({ app: '0.1.0', electron: '44.8.0' });
     const user = userEvent.setup();
-    render(<AppVersion />);
+    render(
+      <TooltipProvider>
+        <AppVersion />
+      </TooltipProvider>,
+    );
 
     const badge = await screen.findByRole('button', { name: 'Loopy v0.1.0' });
     expect(badge).toHaveTextContent('v0.1.0');

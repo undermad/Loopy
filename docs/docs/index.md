@@ -18,5 +18,6 @@ Loopy is a desktop tool for game design and project management. It runs fully of
 | [Styling](styling)                  | you are writing SCSS or adding a component              |
 | [Tooling](tooling)                  | you wonder why a tool is in the repository              |
 | [Decisions](./decisions/index.md)   | you want to know why something was chosen               |
+| [Roadmap](roadmap)                  | you want to know which features are being considered    |
 
 Every page is updated in the same commit as the change it describes.

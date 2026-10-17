@@ -1,0 +1,69 @@
+@use '../../../styles/mixins' as *;
+
+.scroll {
+  height: 100%;
+}
+
+.editor {
+  @include stack(var(--space-3));
+
+  padding: var(--space-3);
+}
+
+.header {
+  @include row(var(--space-2));
+}
+
+.spacer {
+  flex: 1;
+}
+
+.typeIcon {
+  width: 16px;
+  height: 16px;
+  color: var(--color-fg-muted);
+}
+
+.key {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.details {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.meta {
+  @include row(var(--space-3));
+
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  flex-wrap: wrap;
+
+  svg {
+    width: 12px;
+    height: 12px;
+    vertical-align: -2px;
+  }
+}
+
+.block {
+  @include stack(var(--space-1));
+}
+
+.blockTitle {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

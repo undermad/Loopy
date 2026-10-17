@@ -9,6 +9,8 @@ description: Tokens, layers, SCSS Modules and how to add a themed component.
 
 Design tokens are CSS custom properties in `src/renderer/styles/tokens.scss`. Light values sit on `:root`, dark values on `[data-theme='dark']`. Colours, spacing, radii, typography and shadows all come from tokens. Custom properties, not SCSS variables, so themes can switch at runtime.
 
+Semantic colours cover background, two surfaces, text, border, accent, focus, danger, warning, success and selection. Hover and pressed shades derive with `color-mix()` and are never stored. At runtime the theme library writes the active theme over these properties, see the theming page.
+
 Toggle dark mode in DevTools with `document.documentElement.dataset.theme = 'dark'`.
 
 ## Cascade layers
@@ -37,7 +39,7 @@ Shared mixins live in `src/renderer/styles/mixins.scss` and are pulled in with `
 
 ## Primitives, icons and fonts
 
-Interactive widgets come from Radix Primitives, unstyled, and are styled with SCSS Modules. `AppVersion` shows the pattern with a tooltip. Icons come from `lucide-react` and inherit `currentColor`. Inter is bundled through `@fontsource/inter` because the app is offline.
+Interactive widgets come from the component library under `src/renderer/ui`, built on Radix Primitives and styled with SCSS Modules. See the components page. Icons come from `lucide-react` and inherit `currentColor`. Inter is bundled through `@fontsource/inter` because the app is offline.
 
 ## Modern CSS
 

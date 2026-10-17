@@ -1,0 +1,26 @@
+@use '../../../styles/mixins' as *;
+
+.scroll {
+  min-height: 0;
+  flex: 1;
+}
+
+.backlog {
+  @include stack(var(--space-3));
+
+  padding: var(--space-3);
+}
+
+.toolbar {
+  @include row(var(--space-3));
+}
+
+.hint {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+}
+
+.create {
+  margin-left: auto;
+}
