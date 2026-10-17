@@ -1,4 +1,5 @@
 atlaskit
+boxshadow
 cimode
 colorful
 commitlint
@@ -22,8 +23,10 @@ lucide
 lycheeverse
 markdownlint
 minimap
+nodrag
 nsis
 nvmrc
+pannable
 prefault
 radix
 secretlint
@@ -37,3 +40,4 @@ vars
 vitest
 winstaller
 xyflow
+zoomable

@@ -99,4 +99,4 @@ The export is the same format as the working file, so there is nothing to transl
 
 Databases open in WAL mode. While a project is open, SQLite keeps `-wal` and `-shm` files next to it and removes them on close. Schema changes are SQL strings in `src/main/storage/project-migrations.ts`, applied in order inside one transaction by `migrateDatabase`. A file with a `user_version` above the current one is refused rather than guessed at. The renderer never receives a database handle; features will expose what they need through IPC.
 
-Version 1 holds the `project` row and a key-value `settings` table. Version 2 adds the tickets tables, see the tickets page. Boards and assets arrive with the features that need them, each as a new migration.
+Version 1 holds the `project` row and a key-value `settings` table. Version 2 adds the tickets tables, see the tickets page. Version 3 adds boards, nodes, edges and an assets table, see the board page.

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import i18next from 'i18next';
 import type { LoopyApi } from '@shared/ipc';
 import { builtInLayoutPresets } from '@shared/layout-presets';
+import { bootBoards } from '@renderer/lib/board';
 import { applyLanguage, initI18n } from '@renderer/lib/i18n';
 import { bootProject, currentProject } from '@renderer/lib/project';
 import { bootSettings, useSettings } from '@renderer/lib/settings';
@@ -20,6 +21,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
   ]);
   await initI18n(settings.language, locale);
   await bootTickets(api, currentProject() !== null);
+  await bootBoards(api, currentProject() !== null);
   await bootWorkspaces(api, () => {
     const names = {
       default: i18next.t('shell:layout.presets.default'),

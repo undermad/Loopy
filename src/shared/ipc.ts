@@ -10,6 +10,16 @@ import { layoutPresetSchema, workspacesSchema, type LayoutPreset } from './layou
 import { projectInfoSchema, projectNameSchema, type ProjectInfo } from './project';
 import { themeSchema, type Theme } from './theme';
 import {
+  boardListSchema,
+  boardSchema,
+  boardSnapshotSchema,
+  type Board,
+  type BoardChanges,
+  type BoardInput,
+  type BoardPatch,
+  type BoardSnapshot,
+} from './board';
+import {
   labelInputSchema,
   labelPatchSchema,
   stateInputSchema,
@@ -74,6 +84,12 @@ export const IpcChannel = {
   labelsCreate: 'labels:create',
   labelsUpdate: 'labels:update',
   labelsDelete: 'labels:delete',
+  boardsList: 'boards:list',
+  boardsCreate: 'boards:create',
+  boardsUpdate: 'boards:update',
+  boardsDelete: 'boards:delete',
+  boardsRead: 'boards:read',
+  boardsApplyChanges: 'boards:applyChanges',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -200,6 +216,12 @@ export interface LoopyApi {
   createLabel: (input: LabelInput) => Promise<TicketsSnapshot>;
   updateLabel: (id: string, patch: LabelPatch) => Promise<TicketsSnapshot>;
   deleteLabel: (id: string) => Promise<TicketsSnapshot>;
+  listBoards: () => Promise<Board[]>;
+  createBoard: (input: BoardInput) => Promise<Board>;
+  updateBoard: (id: string, patch: BoardPatch) => Promise<Board>;
+  deleteBoard: (id: string) => Promise<Board[]>;
+  readBoard: (id: string) => Promise<BoardSnapshot>;
+  applyBoardChanges: (id: string, changes: BoardChanges) => Promise<BoardSnapshot>;
 }
 
 export const entityIdSchema = z.string().min(1);
@@ -207,6 +229,9 @@ export const labelIdsSchema = z.array(entityIdSchema);
 export const positionSchema = z.string().min(1);
 
 export {
+  boardListSchema,
+  boardSchema,
+  boardSnapshotSchema,
   labelInputSchema,
   labelPatchSchema,
   stateInputSchema,

@@ -47,6 +47,43 @@ export const projectMigrations: SqlMigrations = [
     ('todo', 'To do', 'a', 'todo', '#64748b'),
     ('doing', 'In progress', 'i', 'doing', '#2563eb'),
     ('done', 'Done', 'r', 'done', '#16a34a');`,
+  `CREATE TABLE boards (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL CHECK (length(name) > 0),
+    background_color TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE board_nodes (
+    id TEXT PRIMARY KEY,
+    board_id TEXT NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
+    type TEXT NOT NULL,
+    x REAL NOT NULL,
+    y REAL NOT NULL,
+    width REAL NOT NULL,
+    height REAL NOT NULL,
+    z INTEGER NOT NULL DEFAULT 0,
+    data TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX board_nodes_by_board ON board_nodes(board_id);
+  CREATE TABLE board_edges (
+    id TEXT PRIMARY KEY,
+    board_id TEXT NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
+    source_id TEXT NOT NULL REFERENCES board_nodes(id) ON DELETE CASCADE,
+    target_id TEXT NOT NULL REFERENCES board_nodes(id) ON DELETE CASCADE,
+    data TEXT NOT NULL DEFAULT '{}'
+  );
+  CREATE INDEX board_edges_by_board ON board_edges(board_id);
+  CREATE TABLE assets (
+    id TEXT PRIMARY KEY,
+    mime TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    sha256 TEXT NOT NULL,
+    bytes BLOB NOT NULL,
+    created_at TEXT NOT NULL
+  );`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

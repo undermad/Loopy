@@ -2,6 +2,7 @@ import { config as loadDotenv } from 'dotenv';
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron';
 import { parseEnv } from './env';
 import { registerAppHandlers } from './ipc/app';
+import { registerBoardsHandlers } from './ipc/boards';
 import { registerLayoutsHandlers } from './ipc/layouts';
 import { registerProjectHandlers } from './ipc/project';
 import { registerSettingsHandlers } from './ipc/settings';
@@ -59,6 +60,7 @@ async function start(): Promise<void> {
     },
   });
   registerTicketsHandlers(ipcMain, { project: () => projects.current() });
+  registerBoardsHandlers(ipcMain, { project: () => projects.current() });
   app.on('before-quit', () => {
     void projects.close();
   });

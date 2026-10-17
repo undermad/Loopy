@@ -91,5 +91,29 @@
     "delete": "Delete ticket",
     "deleteConfirm": "Delete {{key}} \"{{title}}\"?",
     "key": "Key"
+  },
+  "board": {
+    "boards": "Boards",
+    "select": "Board",
+    "newBoard": "New board",
+    "boardName": "Board name",
+    "rename": "Rename board",
+    "delete": "Delete board",
+    "deleteConfirm": "Delete the board \"{{name}}\" and everything on it?",
+    "defaultName": "Board {{number}}",
+    "background": "Background colour",
+    "view": "View",
+    "grid": "Dot grid",
+    "minimap": "Minimap",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fit": "Fit to content",
+    "reset": "Zoom to 100%",
+    "addNote": "Add note",
+    "notePlaceholder": "Write something…",
+    "hint": "Double-click the canvas to add a note. Drag with the middle mouse button or hold Space to pan.",
+    "empty": "No boards yet",
+    "emptyHint": "Create a board to start sketching ideas.",
+    "loading": "Loading board…"
   }
 }

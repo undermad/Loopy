@@ -1,0 +1,38 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.chevron {
+  width: 12px !important;
+  height: 12px !important;
+  color: var(--color-fg-muted);
+}
+
+.flow {
+  --xy-edge-stroke: var(--color-fg-muted);
+  --xy-edge-stroke-selected: var(--color-accent);
+  --xy-handle-background-color: var(--color-accent);
+  --xy-selection-background-color: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  --xy-selection-border: 1px solid var(--color-accent);
+  --xy-node-boxshadow-selected: 0 0 0 2px var(--color-accent);
+  --xy-minimap-background-color: var(--color-surface-raised);
+  --xy-background-pattern-dots-color: color-mix(in srgb, var(--color-fg) 22%, transparent);
+
+  min-height: 0;
+  flex: 1;
+}
+
+.minimap {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}

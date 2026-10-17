@@ -1,8 +1,8 @@
 import { KanbanSquare, LayoutTemplate, Palette, PenTool, SlidersHorizontal, Ticket } from 'lucide-react';
 import { registerEditor } from '@renderer/lib/editors';
+import { BoardEditor } from './Board/BoardEditor';
 import { ColoursEditor } from './ColoursEditor';
 import { EmptyEditor } from './EmptyEditor';
-import { createPlaceholderEditor } from './PlaceholderEditor';
 import { PropertiesEditor } from './PropertiesEditor';
 import { TicketEditor } from './Tickets/TicketEditor';
 import { TicketsEditor } from './Tickets/TicketsEditor';
@@ -33,8 +33,9 @@ export function registerEditors(): void {
     id: 'board',
     titleKey: 'types.board',
     icon: PenTool,
-    component: createPlaceholderEditor('types.board', PenTool),
+    component: BoardEditor,
     category: 'design',
+    defaultState: () => ({ grid: true, minimap: false }),
   });
   registerEditor({
     id: 'tickets',

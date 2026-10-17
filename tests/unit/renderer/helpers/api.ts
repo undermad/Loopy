@@ -19,8 +19,10 @@ import type { ProjectInfo } from '@shared/project';
 import { builtInThemes, type Theme } from '@shared/theme';
 import { bootstrap } from '@renderer/bootstrap';
 import { resetProjectStore } from '@renderer/lib/project';
+import { resetBoardStore } from '@renderer/lib/board';
 import { resetTicketsStore } from '@renderer/lib/tickets';
 import { resetWorkspacesStore } from '@renderer/lib/workspaces';
+import { createBoardsFake } from './boards-fake';
 import { createTicketsFake } from './tickets-fake';
 import { resetSettingsStore } from '@renderer/lib/settings';
 import { resetThemeStore } from '@renderer/lib/theme';
@@ -50,6 +52,7 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
   const projectListeners = new Set<(state: ProjectState) => void>();
   const projectState = (): ProjectState => ({ current: api.current, recent: api.recent });
   const ticketsFake = createTicketsFake();
+  const boardsFake = createBoardsFake();
   const api: FakeApi = {
     settings: appSettingsSchema.parse({ schemaVersion: APP_SETTINGS_SCHEMA_VERSION, ...overrides }),
     themes: [...builtInThemes],
@@ -60,6 +63,7 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     layouts: [],
     tickets: ticketsFake.data,
     ...ticketsFake.api,
+    ...boardsFake.api,
     getAppVersion: vi.fn(() => Promise.resolve({ app: '0.1.0', electron: '44.8.0' })),
     getSettings: vi.fn(() => Promise.resolve(api.settings)),
     setSettings: vi.fn((patch: AppSettingsPatch) => {
@@ -169,6 +173,7 @@ export async function bootTestApp(overrides: Partial<AppSettings> = {}, scheme: 
   resetProjectStore();
   resetWorkspacesStore();
   resetTicketsStore();
+  resetBoardStore();
   const api = createFakeApi(overrides, scheme);
   window.loopy = api;
   await bootstrap(api);

@@ -4,6 +4,9 @@ import {
   IpcChannel,
   appSettingsSchema,
   appVersionSchema,
+  boardListSchema,
+  boardSchema,
+  boardSnapshotSchema,
   booleanSchema,
   colorSchemeSchema,
   exportResultSchema,
@@ -90,6 +93,12 @@ const api: LoopyApi = {
   createLabel: (input) => invoke(IpcChannel.labelsCreate, ticketsSnapshotSchema, input),
   updateLabel: (id, patch) => invoke(IpcChannel.labelsUpdate, ticketsSnapshotSchema, id, patch),
   deleteLabel: (id) => invoke(IpcChannel.labelsDelete, ticketsSnapshotSchema, id),
+  listBoards: () => invoke(IpcChannel.boardsList, boardListSchema),
+  createBoard: (input) => invoke(IpcChannel.boardsCreate, boardSchema, input),
+  updateBoard: (id, patch) => invoke(IpcChannel.boardsUpdate, boardSchema, id, patch),
+  deleteBoard: (id) => invoke(IpcChannel.boardsDelete, boardListSchema, id),
+  readBoard: (id) => invoke(IpcChannel.boardsRead, boardSnapshotSchema, id),
+  applyBoardChanges: (id, changes) => invoke(IpcChannel.boardsApplyChanges, boardSnapshotSchema, id, changes),
 };
 
 contextBridge.exposeInMainWorld('loopy', api);
