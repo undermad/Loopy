@@ -31,9 +31,26 @@ The renderer runs with context isolation and the sandbox on, without Node integr
 | `src/main/env.ts`         | Environment loading and validation                                      |
 | `src/main/window.ts`      | Window options and creation                                             |
 | `src/preload/index.ts`    | The `window.loopy` API                                                  |
+| `src/renderer/lib`        | One internal library per concern, each behind a single `index.ts`       |
 | `src/renderer/components` | React components, each in its own folder with its SCSS module           |
 | `src/renderer/styles`     | Tokens, mixins and the global stylesheet                                |
 | `src/shared`              | Types and zod schemas used by more than one process                     |
+
+## Internal libraries
+
+Every renderer concern is a library under `src/renderer/lib/<name>` with one public entry point, `index.ts`. A library owns its logic, state and hooks and contains no components. Components compose libraries and hold no logic of their own. Dependencies point one way: `src/shared`, then `lib`, then `components`, then `App`.
+
+The boundary is a convention checked in review, not a lint rule. A deep import such as `@renderer/lib/theme/apply`, or any import of `components` from inside a library, is a review finding. `knip` fails CI on an export nothing uses, which keeps each index small. The rules and a checklist for adding a library are in `.claude/skills/internal-libraries/SKILL.md`, the reasoning in [ADR 0016](./decisions/0016-internal-libraries.md).
+
+| Library      | Owns                                                            | Status  |
+| ------------ | --------------------------------------------------------------- | ------- |
+| `theme`      | Active theme, applying colour tokens, following the system mode | planned |
+| `i18n`       | i18next setup, language switching, `Intl` formatting            | planned |
+| `settings`   | Settings store synced with main                                 | planned |
+| `layout`     | Area tree model, split, join, resize, swap, maximise            | planned |
+| `workspaces` | Workspace list, active workspace, layout presets                | planned |
+| `editors`    | Editor registry: component, icon, title key, default state      | planned |
+| `shortcuts`  | Key map and the `useShortcuts` hook                             | planned |
 
 ## IPC rules
 

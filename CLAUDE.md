@@ -20,6 +20,7 @@ Electron desktop app for game design and project management. Local-only for now.
 - `src/main`: Electron main process. Window creation, IPC handlers, services, versioned storage, env loading.
 - `src/preload`: the only bridge between renderer and main. Thin, typed, validates replies.
 - `src/renderer`: React app. Components live in `components/<Name>/<Name>.tsx` with `<Name>.module.scss` beside them.
+- `src/renderer/lib/<name>`: one internal library per concern (theme, i18n, layout, workspaces, shortcuts, editors). Logic, state and hooks live here, components never do. `index.ts` is the only import path; review checks it and `knip` keeps it small. Follow `.claude/skills/internal-libraries/SKILL.md`.
 - `src/shared`: types and zod schemas used by more than one process. IPC channel names live here.
 - `tests/unit`, `tests/integration`, `tests/e2e`: see the testing page in `docs/`.
 
