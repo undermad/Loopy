@@ -6,8 +6,13 @@ import {
   appVersionSchema,
   colorSchemeSchema,
   exportResultSchema,
+  importProjectResultSchema,
   importThemeResultSchema,
   localeSchema,
+  openProjectResultSchema,
+  projectInfoSchema,
+  projectListSchema,
+  projectStateSchema,
   themeListSchema,
   themeSchema,
   type LoopyApi,
@@ -28,6 +33,10 @@ async function invoke<T>(channel: string, schema: z.ZodType<T>, ...args: unknown
   return schema.parse(await ipcRenderer.invoke(channel, ...args));
 }
 
+async function call(channel: string, ...args: unknown[]): Promise<void> {
+  await ipcRenderer.invoke(channel, ...args);
+}
+
 const api: LoopyApi = {
   getAppVersion: () => invoke(IpcChannel.getAppVersion, appVersionSchema),
   getSettings: () => invoke(IpcChannel.settingsGet, appSettingsSchema),
@@ -39,11 +48,20 @@ const api: LoopyApi = {
   getLocale: () => invoke(IpcChannel.shellGetLocale, localeSchema),
   listThemes: () => invoke(IpcChannel.themesList, themeListSchema),
   saveTheme: (theme) => invoke(IpcChannel.themesSave, themeSchema, theme),
-  deleteTheme: async (id) => {
-    await ipcRenderer.invoke(IpcChannel.themesDelete, id);
-  },
+  deleteTheme: (id) => call(IpcChannel.themesDelete, id),
   exportTheme: (id) => invoke(IpcChannel.themesExport, exportResultSchema, id),
   importTheme: () => invoke(IpcChannel.themesImport, importThemeResultSchema),
+  listProjects: () => invoke(IpcChannel.projectList, projectListSchema),
+  createProject: (name) => invoke(IpcChannel.projectCreate, projectInfoSchema, name),
+  openProject: (id) => invoke(IpcChannel.projectOpen, openProjectResultSchema, id),
+  closeProject: () => call(IpcChannel.projectClose),
+  getProjectState: () => invoke(IpcChannel.projectState, projectStateSchema),
+  importProject: () => invoke(IpcChannel.projectImport, importProjectResultSchema),
+  exportProject: () => invoke(IpcChannel.projectExport, exportResultSchema),
+  deleteProject: (id) => call(IpcChannel.projectDelete, id),
+  revealProject: (id) => call(IpcChannel.projectReveal, id),
+  removeRecentProject: (id) => invoke(IpcChannel.projectRemoveRecent, projectStateSchema, id),
+  onProjectChanged: (listener) => subscribe(IpcChannel.projectChanged, projectStateSchema, listener),
 };
 
 contextBridge.exposeInMainWorld('loopy', api);

@@ -22,7 +22,7 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole('button', { name: 'Preferences' }));
+    await user.click(screen.getByRole('button', { name: 'Open preferences' }));
     await user.click(await screen.findByRole('radio', { name: 'Dark' }));
 
     expect(api.setSettings).toHaveBeenCalledWith({ theme: { mode: 'dark', light: 'light', dark: 'dark' } });

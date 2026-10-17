@@ -1,12 +1,13 @@
 import { config as loadDotenv } from 'dotenv';
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron';
 import { parseEnv } from './env';
 import { registerAppHandlers } from './ipc/app';
+import { registerProjectHandlers } from './ipc/project';
 import { registerSettingsHandlers } from './ipc/settings';
 import { registerShellHandlers } from './ipc/shell';
 import { registerThemesHandlers } from './ipc/themes';
 import { createLogger } from './services/logger';
-import { createAppSettingsStore, createThemesStore, storagePaths } from './storage';
+import { createAppSettingsStore, createDeviceStateStore, createThemesStore, storagePaths } from './storage';
 import { createMainWindow } from './window';
 
 loadDotenv({ quiet: true });
@@ -32,6 +33,21 @@ async function start(): Promise<void> {
     store: createThemesStore(paths.themes),
     dialogs: dialog,
     appVersion: app.getVersion(),
+  });
+  const projects = await registerProjectHandlers(ipcMain, {
+    paths,
+    deviceState: createDeviceStateStore(paths.deviceState),
+    dialogs: dialog,
+    broadcast,
+    revealInFolder: (path) => {
+      shell.showItemInFolder(path);
+    },
+    onLoadError: (error) => {
+      logger.error(`Device state could not be read, using defaults: ${String(error)}`);
+    },
+  });
+  app.on('before-quit', () => {
+    void projects.close();
   });
   createMainWindow();
   logger.info(`Loopy ${app.getVersion()} started`);

@@ -1,0 +1,107 @@
+@use '../../styles/mixins' as *;
+
+.welcome {
+  display: grid;
+  gap: var(--space-8);
+  width: 100%;
+  max-width: 1040px;
+  padding: var(--space-8) var(--space-6);
+  margin: 0 auto;
+  grid-template-columns: minmax(260px, 1fr) minmax(320px, 2fr);
+}
+
+.hero {
+  @include stack(var(--space-4));
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+}
+
+.tagline {
+  color: var(--color-fg-muted);
+}
+
+.actions {
+  @include stack(var(--space-2));
+
+  align-items: flex-start;
+}
+
+.hint {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+}
+
+.lists {
+  @include stack(var(--space-6));
+
+  min-width: 0;
+}
+
+.section {
+  @include stack(var(--space-2));
+}
+
+.heading {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.list {
+  @include stack(1px);
+
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.rowItem {
+  display: block;
+}
+
+.row {
+  @include row(var(--space-3));
+
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-fg);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.rowDisabled {
+  color: var(--color-fg-muted);
+  cursor: default;
+}
+
+.rowName {
+  min-width: 0;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowMeta {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  flex-shrink: 0;
+}

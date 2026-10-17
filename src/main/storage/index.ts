@@ -11,6 +11,7 @@ export {
   isProjectFile,
   openProject,
   readProjectInfo,
+  removeDatabaseFiles,
   ProjectFileError,
   LOOPY_APPLICATION_ID,
   type ProjectDatabase,

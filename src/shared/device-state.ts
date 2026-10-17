@@ -24,3 +24,6 @@ export const deviceStateSchema = z.object({
 });
 
 export type DeviceState = z.infer<typeof deviceStateSchema>;
+
+export type WindowBounds = z.infer<typeof windowBoundsSchema>;
+export type RecentProject = z.infer<typeof recentProjectSchema>;

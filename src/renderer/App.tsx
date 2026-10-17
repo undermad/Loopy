@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, X } from 'lucide-react';
 import { useTranslation } from '@renderer/lib/i18n';
+import { closeProject, useCurrentProject } from '@renderer/lib/project';
 import { ThemeProvider } from '@renderer/lib/theme';
-import { Button, ToastProvider, TooltipProvider } from '@renderer/ui';
+import { Button, IconButton, ToastProvider, TooltipProvider } from '@renderer/ui';
 import { useLanguageSync } from './bootstrap';
 import { AppVersion } from './components/AppVersion/AppVersion';
 import { PreferencesDialog } from './components/Preferences/PreferencesDialog';
+import { WelcomeScreen } from './components/Welcome/WelcomeScreen';
 import styles from './App.module.scss';
 
 function Providers({ children }: { children: ReactNode }) {
@@ -21,36 +23,55 @@ function Providers({ children }: { children: ReactNode }) {
   );
 }
 
-function Home() {
-  const { t } = useTranslation('common');
+function Frame() {
+  const { t } = useTranslation('shell');
   const { t: ts } = useTranslation('settings');
+  const project = useCurrentProject();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   useLanguageSync();
 
   return (
-    <main className={styles['app']}>
-      <h1 className={styles['title']}>{t('app.name')}</h1>
-      <p className={styles['subtitle']}>{t('app.tagline')}</p>
-      <div className={styles['actions']}>
-        <AppVersion />
-        <Button
-          icon={<Settings aria-hidden="true" />}
+    <div className={styles['frame']}>
+      <header className={styles['bar']}>
+        <span className={styles['status']}>
+          {project ? t('status.project', { name: project.name }) : t('status.noProject')}
+        </span>
+        <span className={styles['spacer']} />
+        {project ? (
+          <IconButton label={t('menu.closeProject')} size="sm" onClick={() => void closeProject()}>
+            <X aria-hidden="true" />
+          </IconButton>
+        ) : null}
+        <IconButton
+          label={ts('open')}
+          size="sm"
           onClick={() => {
             setPreferencesOpen(true);
           }}
         >
-          {ts('title')}
-        </Button>
-      </div>
+          <Settings aria-hidden="true" />
+        </IconButton>
+        <AppVersion />
+      </header>
+      <main className={styles['main']}>
+        {project ? (
+          <div className={styles['placeholder']}>
+            <h1 className={styles['title']}>{project.name}</h1>
+            <Button onClick={() => void closeProject()}>{t('menu.closeProject')}</Button>
+          </div>
+        ) : (
+          <WelcomeScreen />
+        )}
+      </main>
       <PreferencesDialog open={preferencesOpen} onOpenChange={setPreferencesOpen} />
-    </main>
+    </div>
   );
 }
 
 export function App() {
   return (
     <Providers>
-      <Home />
+      <Frame />
     </Providers>
   );
 }
