@@ -167,7 +167,11 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
   return api;
 }
 
-export async function bootTestApp(overrides: Partial<AppSettings> = {}, scheme: ColorScheme = 'light') {
+export async function bootTestApp(
+  overrides: Partial<AppSettings> = {},
+  scheme: ColorScheme = 'light',
+  prepare?: (api: FakeApi) => void,
+) {
   resetSettingsStore();
   resetThemeStore();
   resetProjectStore();
@@ -175,6 +179,7 @@ export async function bootTestApp(overrides: Partial<AppSettings> = {}, scheme: 
   resetTicketsStore();
   resetBoardStore();
   const api = createFakeApi(overrides, scheme);
+  prepare?.(api);
   window.loopy = api;
   await bootstrap(api);
   return api;

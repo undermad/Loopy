@@ -66,3 +66,22 @@ describe('Themes tab', () => {
     expect(await screen.findByText('That file is not a Loopy theme.')).toBeInTheDocument();
   });
 });
+
+describe('Themes tab import success', () => {
+  it('selects an imported theme and reports it', async () => {
+    const user = userEvent.setup();
+    const dark = api.themes[1];
+    if (!dark) throw new Error('Missing dark theme');
+    const imported = { ...dark, id: 'midnight', name: 'Midnight' };
+    vi.mocked(api.importTheme).mockImplementationOnce(() => {
+      api.themes = [...api.themes, imported];
+      return Promise.resolve({ status: 'imported', theme: imported });
+    });
+    render(<Harness />);
+
+    await user.click(screen.getByRole('tab', { name: 'Themes' }));
+    await user.click(screen.getByRole('button', { name: 'Import theme…' }));
+    expect(await screen.findByText('Imported theme "Midnight".')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('Midnight')).toBeInTheDocument();
+  });
+});

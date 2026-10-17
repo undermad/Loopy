@@ -88,3 +88,69 @@ describe('TicketsEditor', () => {
     expect(await screen.findByText('No ticket selected')).toBeInTheDocument();
   });
 });
+
+describe('LabelPicker and cards', () => {
+  it('creates a label from the picker, toggles it and shows it on the card', async () => {
+    const user = userEvent.setup();
+    await ticketActions.create({ title: 'Tagged', stateId: 'todo' });
+    render(<Harness />);
+
+    await user.click(await screen.findByRole('button', { name: 'SPA-1 Tagged' }));
+    await user.click(await screen.findByRole('button', { name: 'Add label' }));
+    await user.type(await screen.findByRole('textbox', { name: 'Label name' }), 'Art');
+    const [, submit] = screen.getAllByRole('button', { name: 'Add label' });
+    if (!submit) throw new Error('Missing submit button');
+    await user.click(submit);
+    expect(api.createLabel).toHaveBeenCalledWith({ name: 'Art', color: expect.any(String) as string });
+    expect(api.setTicketLabels).toHaveBeenCalledWith('ticket-1', ['label-1']);
+
+    const toggle = await screen.findByRole('switch', { name: 'Art' });
+    await user.click(toggle);
+    expect(api.setTicketLabels).toHaveBeenLastCalledWith('ticket-1', []);
+    await user.keyboard('{Escape}');
+
+    const card = screen.getByRole('button', { name: 'SPA-1 Tagged' });
+    card.focus();
+    await user.keyboard('{Enter}');
+    expect(card).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('deletes the selected ticket from the ticket editor and changes priority and state', async () => {
+    const user = userEvent.setup();
+    await ticketActions.create({ title: 'Doomed', stateId: 'todo' });
+    render(<Harness />);
+
+    await user.click(await screen.findByRole('button', { name: 'SPA-1 Doomed' }));
+    await user.click(await screen.findByRole('combobox', { name: 'Priority' }));
+    await user.click(await screen.findByRole('option', { name: 'Urgent' }));
+    expect(api.updateTicket).toHaveBeenCalledWith('ticket-1', { priority: 'urgent' });
+
+    await user.click(screen.getByRole('combobox', { name: 'State' }));
+    await user.click(await screen.findByRole('option', { name: 'Backlog' }));
+    expect(api.updateTicket).toHaveBeenCalledWith('ticket-1', { stateId: null });
+
+    await user.click(screen.getByRole('button', { name: 'Delete ticket' }));
+    await user.click(await screen.findByRole('button', { name: 'Delete' }));
+    expect(api.deleteTicket).toHaveBeenCalledWith('ticket-1');
+    expect(await screen.findByText('No ticket selected')).toBeInTheDocument();
+  });
+});
+
+describe('ticket description', () => {
+  it('saves the description on blur and ignores an unchanged title', async () => {
+    const user = userEvent.setup();
+    await ticketActions.create({ title: 'Notes', stateId: 'todo' });
+    render(<Harness />);
+
+    await user.click(await screen.findByRole('button', { name: 'SPA-1 Notes' }));
+    const description = await screen.findByLabelText('Description');
+    await user.type(description, 'Some detail');
+    description.blur();
+    expect(api.updateTicket).toHaveBeenCalledWith('ticket-1', { description: 'Some detail' });
+
+    const title = screen.getByLabelText('Title');
+    title.focus();
+    title.blur();
+    expect(api.updateTicket).toHaveBeenCalledTimes(1);
+  });
+});

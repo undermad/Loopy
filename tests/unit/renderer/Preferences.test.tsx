@@ -26,3 +26,15 @@ describe('PreferencesDialog', () => {
     expect(api.setSettings).toHaveBeenLastCalledWith({ language: 'en' });
   });
 });
+
+describe('font size validation', () => {
+  it('ignores values outside the allowed range', async () => {
+    const user = userEvent.setup();
+    render(<PreferencesDialog open onOpenChange={vi.fn()} />);
+    const fontSize = screen.getByLabelText('Font size');
+    await user.clear(fontSize);
+    await user.type(fontSize, '99');
+    expect(api.setSettings).not.toHaveBeenCalledWith({ fontSize: 99 });
+    expect(api.setSettings).not.toHaveBeenCalledWith({ fontSize: 9 });
+  });
+});

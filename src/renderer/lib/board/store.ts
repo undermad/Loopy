@@ -22,9 +22,13 @@ function requireApi(): BoardApi {
   return api;
 }
 
+let loadToken = 0;
+
 export async function loadBoards(): Promise<Board[]> {
+  loadToken += 1;
+  const token = loadToken;
   const boards = await requireApi().listBoards();
-  boardStore.setState({ boards });
+  if (token === loadToken) boardStore.setState({ boards });
   return boards;
 }
 
@@ -38,6 +42,7 @@ export async function bootBoards(api: BoardApi, hasProject: boolean): Promise<vo
 }
 
 function storeSnapshot(snapshot: BoardSnapshot): void {
+  loadToken += 1;
   const { snapshots, boards } = boardStore.getState();
   boardStore.setState({
     snapshots: { ...snapshots, [snapshot.board.id]: snapshot },
@@ -68,6 +73,7 @@ export async function updateBoard(id: string, patch: BoardPatch): Promise<Board>
 
 export async function deleteBoard(id: string): Promise<Board[]> {
   const boards = await requireApi().deleteBoard(id);
+  loadToken += 1;
   const { snapshots } = boardStore.getState();
   const { [id]: _removed, ...rest } = snapshots;
   boardStore.setState({ boards, snapshots: rest });

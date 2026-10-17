@@ -48,7 +48,19 @@ describe('ContextMenu', () => {
           <div>Card</div>
         </ContextMenu.Trigger>
         <ContextMenu.Content>
+          <ContextMenu.Label>Card</ContextMenu.Label>
           <ContextMenu.Item>Rename</ContextMenu.Item>
+          <ContextMenu.Separator />
+          <ContextMenu.CheckboxItem checked>Pinned</ContextMenu.CheckboxItem>
+          <ContextMenu.RadioGroup value="a">
+            <ContextMenu.RadioItem value="a">A</ContextMenu.RadioItem>
+          </ContextMenu.RadioGroup>
+          <ContextMenu.Sub>
+            <ContextMenu.SubTrigger>More</ContextMenu.SubTrigger>
+            <ContextMenu.SubContent>
+              <ContextMenu.Item>Nested</ContextMenu.Item>
+            </ContextMenu.SubContent>
+          </ContextMenu.Sub>
         </ContextMenu.Content>
       </ContextMenu.Root>,
     );
@@ -56,6 +68,8 @@ describe('ContextMenu', () => {
     fireEvent.contextMenu(screen.getByText('Card'));
 
     expect(await screen.findByRole('menuitem', { name: 'Rename' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Pinned' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: 'A' })).toBeInTheDocument();
   });
 });
 

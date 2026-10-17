@@ -121,3 +121,38 @@ describe('tickets IPC handlers', () => {
     await expect(call(IpcChannel.ticketsSnapshot)).rejects.toThrow(/No project/);
   });
 });
+
+describe('tickets repository branches', () => {
+  it('handles partial patches, done transitions and resolved timestamps', async () => {
+    const call = setup();
+    let snapshot = await call(IpcChannel.ticketsCreate, { title: 'Done already', stateId: 'done' });
+    const ticket = snapshot.tickets[0];
+    expect(ticket?.resolvedAt).not.toBeNull();
+
+    snapshot = await call(IpcChannel.ticketsMove, { id: ticket?.id, stateId: 'done', position: 'b' });
+    expect(snapshot.tickets[0]?.resolvedAt).toBe(ticket?.resolvedAt);
+
+    snapshot = await call(IpcChannel.statesUpdate, 'done', { name: 'Shipped' });
+    expect(snapshot.states.find((state) => state.id === 'done')?.name).toBe('Shipped');
+    snapshot = await call(IpcChannel.statesUpdate, 'done', { category: 'doing' });
+    expect(snapshot.tickets[0]?.resolvedAt).toBeNull();
+
+    snapshot = await call(IpcChannel.ticketsUpdate, ticket?.id, { description: 'Only description' });
+    expect(snapshot.tickets[0]?.description).toBe('Only description');
+    await expect(call(IpcChannel.ticketsUpdate, 'missing', { title: 'x' })).rejects.toThrow(/Unknown ticket/);
+
+    snapshot = await call(IpcChannel.labelsCreate, { name: 'A', color: '#000000' });
+    const label = snapshot.labels[0];
+    snapshot = await call(IpcChannel.labelsUpdate, label?.id, { color: '#ffffff' });
+    expect(snapshot.labels[0]?.color).toBe('#ffffff');
+
+    snapshot = await call(IpcChannel.statesCreate, { name: 'Later', category: 'done', color: '#123456' });
+    const later = snapshot.states.at(-1);
+    snapshot = await call(IpcChannel.statesDelete, 'todo', later?.id);
+    expect(snapshot.states.some((state) => state.id === 'todo')).toBe(false);
+    await expect(call(IpcChannel.statesMove, 'missing', 'z')).rejects.toThrow(/Unknown state/);
+    await expect(call(IpcChannel.ticketsCreate, { title: 'x', stateId: 'missing' })).rejects.toThrow(
+      /Unknown state/,
+    );
+  });
+});

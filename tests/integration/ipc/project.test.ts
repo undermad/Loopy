@@ -131,3 +131,42 @@ describe('project IPC handlers', () => {
     });
   });
 });
+
+describe('project handler branches', () => {
+  it('skips unreadable files, keeps the current project on a repeated open and replaces a re-imported project', async () => {
+    const { paths, ipc, service } = await setup();
+    const created = await ipc.call<ProjectInfo>(IpcChannel.projectCreate, 'Demo');
+    const { writeFile, mkdir } = await import('node:fs/promises');
+    await mkdir(paths.projects, { recursive: true });
+    await writeFile(join(paths.projects, `${crypto.randomUUID()}.loopy`), 'not a database', 'utf8');
+    const list = await ipc.call<ProjectSummary[]>(IpcChannel.projectList);
+    expect(list.map((item) => item.id)).toEqual([created.id]);
+
+    await expect(ipc.call(IpcChannel.projectOpen, created.id)).resolves.toEqual({
+      status: 'opened',
+      project: created,
+    });
+    await ipc.call(IpcChannel.projectClose);
+    await expect(ipc.call(IpcChannel.projectExport)).resolves.toEqual({ status: 'cancelled' });
+    await service.close();
+  });
+
+  it('re-imports a project that already exists by replacing the file', async () => {
+    const external = join(directory, 'external', 'twice.loopy');
+    const source = await createProject(external, 'Twice');
+    source.close();
+    const { paths, ipc, service } = await setup({
+      showOpenDialog: () => Promise.resolve({ canceled: false, filePaths: [external] }),
+    });
+
+    try {
+      const first = await ipc.call<{ status: string; project: ProjectInfo }>(IpcChannel.projectImport);
+      const second = await ipc.call<{ status: string; project: ProjectInfo }>(IpcChannel.projectImport);
+      expect(first.project.id).toBe(second.project.id);
+      const files = (await readdir(paths.projects)).filter((name) => name.endsWith('.loopy'));
+      expect(files).toEqual([`${first.project.id}.loopy`]);
+    } finally {
+      await service.close();
+    }
+  });
+});
