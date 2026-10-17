@@ -7,15 +7,15 @@ description: The test levels, how to run them and how to add a test at each leve
 
 ## Levels
 
-| Level           | Tool                                | Folder                                                       | Proves                                                                      |
-| --------------- | ----------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| Unit            | Vitest                              | `tests/unit/main`, `tests/unit/shared`, `tests/unit/preload` | pure logic, env parsing, the migration runner, the window hardening options |
-| Component       | Vitest, Testing Library, jsdom      | `tests/unit/renderer`                                        | components behave as the user sees them; a snapshot for stable layout       |
-| IPC contract    | Vitest with a mocked `ipcMain`      | `tests/integration/ipc`                                      | each handler validates and returns the shared schema                        |
-| Persistence     | Vitest on real temp files           | `tests/integration/storage`                                  | save and load round-trip, corrupt files, unsupported versions, migrations   |
-| E2E             | Playwright with the Electron driver | `tests/e2e`                                                  | the built app launches, the window works, the renderer has no Node access   |
-| Accessibility   | axe-core injected by Playwright     | `tests/e2e/a11y.spec.ts`                                     | no serious or critical violations in the main window                        |
-| Packaging smoke | CI only                             | `.github/workflows/post-merge.yml`                           | the app packages on all three operating systems                             |
+| Level           | Tool                                | Folder                                                       | Proves                                                                                                            |
+| --------------- | ----------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Unit            | Vitest                              | `tests/unit/main`, `tests/unit/shared`, `tests/unit/preload` | pure logic, env parsing, the migration runner, the window hardening options                                       |
+| Component       | Vitest, Testing Library, jsdom      | `tests/unit/renderer`                                        | components behave as the user sees them; a snapshot for stable layout                                             |
+| IPC contract    | Vitest with a mocked `ipcMain`      | `tests/integration/ipc`                                      | each handler validates and returns the shared schema                                                              |
+| Persistence     | Vitest on real temp files           | `tests/integration/storage`                                  | JSON stores and project databases: round-trips, corrupt or foreign files, unsupported versions, export and import |
+| E2E             | Playwright with the Electron driver | `tests/e2e`                                                  | the built app launches, the window works, the renderer has no Node access                                         |
+| Accessibility   | axe-core injected by Playwright     | `tests/e2e/a11y.spec.ts`                                     | no serious or critical violations in the main window                                                              |
+| Packaging smoke | CI only                             | `.github/workflows/post-merge.yml`                           | the app packages on all three operating systems                                                                   |
 
 ## Commands
 
@@ -36,7 +36,8 @@ Vitest projects are defined in `vitest.config.ts`. Playwright is configured in `
 - Pure function or service: a file next to the matching path under `tests/unit`, importing the module directly.
 - Component: render with Testing Library, query by role, assert what the user sees. Mock `window.loopy` in `beforeEach`.
 - New IPC channel: a test in `tests/integration/ipc` that captures the handler from a mocked `ipcMain.handle` and calls it.
-- Project file change: a migration in `src/main/storage/project-file-migrations.ts` and a test in `tests/integration/storage` that loads a file written at the previous version.
+- Project schema change: a SQL migration appended to `src/main/storage/project-migrations.ts` and a test in `tests/integration/storage` that opens a database written at the previous version.
+- Settings or device state change: a migration in the matching store under `src/main/storage` when a key is renamed or removed, and a test in `tests/integration/storage` that loads a file written at the previous version. A new key with a default needs only a schema test.
 - User journey: a spec in `tests/e2e` using the `window` fixture. Keep the suite under ten tests; each launches Electron.
 
 ## Snapshots

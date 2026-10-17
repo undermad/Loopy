@@ -30,5 +30,5 @@ Electron desktop app for game design and project management. Local-only for now.
 - Commits: `type: imperative summary`, no scope, 72 characters max. Types: feat, fix, perf, refactor, test, docs, build, ci, chore, revert.
 - Styling: design tokens are CSS custom properties in `src/renderer/styles/tokens.scss`. Components use SCSS Modules. Cascade layer order is declared in `global.scss`. No autoprefixer; Electron ships one Chromium.
 - Renderer never touches Node. New IPC channels get a name in `src/shared/ipc.ts`, a zod schema, a handler in `src/main/ipc`, a method in `src/preload`, and a test in `tests/integration/ipc`.
-- Project files on disk carry `schemaVersion`. A format change adds a migration in `src/main/storage/project-file-migrations.ts` and a test in `tests/integration/storage`.
+- Projects are SQLite files (`.loopy`) with `user_version`; settings and device state are JSON files with `schemaVersion`, all under the user data directory. A project schema change appends a SQL migration to `src/main/storage/project-migrations.ts`; a settings or state change adds a migration in its store under `src/main/storage`. Each gets a test in `tests/integration/storage`.
 - TypeScript stays on 6.x until typescript-eslint supports 7. Dependabot will open the PR.

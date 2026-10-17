@@ -27,7 +27,7 @@ The renderer runs with context isolation and the sandbox on, without Node integr
 | ------------------------- | ----------------------------------------------------------------------- |
 | `src/main/ipc`            | One file per IPC area. Handlers validate input and return typed results |
 | `src/main/services`       | Logic with no Electron dependency, such as the logger                   |
-| `src/main/storage`        | Project files on disk: save, load, migrations                           |
+| `src/main/storage`        | Project databases, settings and device state on disk, with migrations   |
 | `src/main/env.ts`         | Environment loading and validation                                      |
 | `src/main/window.ts`      | Window options and creation                                             |
 | `src/preload/index.ts`    | The `window.loopy` API                                                  |
@@ -45,6 +45,39 @@ The renderer runs with context isolation and the sandbox on, without Node integr
 
 The scaffold ships one channel, `app:getVersion`, which shows the pattern end to end.
 
-## Project files
+## Storage
 
-Projects are JSON files with a `schemaVersion` field. `src/main/storage` loads a file, runs migrations up to the current version, validates the result and only then returns it. Writes go to a temporary file first and are renamed into place so a crash cannot leave a half-written project. See [Testing](testing) for how migrations are covered.
+Everything lives under Electron's user data directory. `storagePaths` in `src/main/storage/paths.ts` is the only place that knows the layout.
+
+| File                  | Holds                                                    | Format                     |
+| --------------------- | -------------------------------------------------------- | -------------------------- |
+| `settings.json`       | App preferences: theme, UI font, font size               | JSON with `schemaVersion`  |
+| `state.json`          | Device state: window bounds, last project, recent list   | JSON with `schemaVersion`  |
+| `projects/<id>.loopy` | One project: metadata, settings and later boards, assets | SQLite with `user_version` |
+
+The user never sees these paths. The project picker lists the `projects` directory, and sharing goes through export and import.
+
+### Settings and device state
+
+`createJsonStore` in `src/main/storage/json-store.ts` loads a JSON file, runs migrations from `src/main/storage/migrations.ts` up to the current version and validates with the zod schema from `src/shared`. A missing file yields the schema defaults, so a fresh install needs no setup step. A new key with a default needs no migration; renaming or removing one does. Writes go to a temporary file and are renamed into place.
+
+Preferences and device state are separate files because the first is edited deliberately and worth backing up, while the second is rewritten constantly and can be lost without cost.
+
+### Project databases
+
+A project is one SQLite database opened through `node:sqlite`, which ships with the Node inside Electron, so there is no native module to rebuild. `src/main/storage/project-database.ts` owns the lifecycle:
+
+| Function          | Does                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| `createProject`   | Creates the file, stamps the `application_id`, runs all migrations, inserts the project row |
+| `openProject`     | Checks the SQLite header and `application_id`, migrates, validates the project row          |
+| `isProjectFile`   | Header and `application_id` check without migrating, for dialogs and drag and drop          |
+| `exportProject`   | `VACUUM INTO` a compacted copy at a path the user picked                                    |
+| `importProject`   | Copies a `.loopy` file into the projects directory and opens it, which migrates it          |
+| `readProjectInfo` | The id, name and timestamps from the singleton `project` row                                |
+
+The export is the same format as the working file, so there is nothing to translate and a backup is a copy. Imports are copied rather than opened in place, so a file on removable or synced storage is never written live.
+
+Databases open in WAL mode. While a project is open, SQLite keeps `-wal` and `-shm` files next to it and removes them on close. Schema changes are SQL strings in `src/main/storage/project-migrations.ts`, applied in order inside one transaction by `migrateDatabase`. A file with a `user_version` above the current one is refused rather than guessed at. The renderer never receives a database handle; features will expose what they need through IPC.
+
+Version 1 holds the `project` row and a key-value `settings` table. Boards, items and assets arrive with the features that need them, each as a new migration.
