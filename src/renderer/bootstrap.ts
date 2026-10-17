@@ -3,9 +3,10 @@ import i18next from 'i18next';
 import type { LoopyApi } from '@shared/ipc';
 import { builtInLayoutPresets } from '@shared/layout-presets';
 import { applyLanguage, initI18n } from '@renderer/lib/i18n';
-import { bootProject } from '@renderer/lib/project';
+import { bootProject, currentProject } from '@renderer/lib/project';
 import { bootSettings, useSettings } from '@renderer/lib/settings';
 import { bootTheme } from '@renderer/lib/theme';
+import { bootTickets } from '@renderer/lib/tickets';
 import { bootWorkspaces } from '@renderer/lib/workspaces';
 import { registerEditors } from './components/editors/registerEditors';
 
@@ -18,6 +19,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
     bootProject(api),
   ]);
   await initI18n(settings.language, locale);
+  await bootTickets(api, currentProject() !== null);
   await bootWorkspaces(api, () => {
     const names = {
       default: i18next.t('shell:layout.presets.default'),

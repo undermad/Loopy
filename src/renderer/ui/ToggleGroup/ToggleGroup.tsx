@@ -18,7 +18,7 @@ export interface ToggleGroupProps {
   'aria-label': string;
   size?: Size;
   iconsOnly?: boolean;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function ToggleGroup({

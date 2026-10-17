@@ -20,6 +20,7 @@ import {
   shellStateSchema,
   themeListSchema,
   themeSchema,
+  ticketsSnapshotSchema,
   type LoopyApi,
   type Unsubscribe,
 } from '@shared/ipc';
@@ -76,6 +77,19 @@ const api: LoopyApi = {
   deleteLayout: (id) => call(IpcChannel.layoutsDelete, id),
   exportLayout: (layout) => invoke(IpcChannel.layoutsExport, exportResultSchema, layout),
   importLayout: () => invoke(IpcChannel.layoutsImport, importLayoutResultSchema),
+  getTickets: () => invoke(IpcChannel.ticketsSnapshot, ticketsSnapshotSchema),
+  createTicket: (input) => invoke(IpcChannel.ticketsCreate, ticketsSnapshotSchema, input),
+  updateTicket: (id, patch) => invoke(IpcChannel.ticketsUpdate, ticketsSnapshotSchema, id, patch),
+  moveTicket: (move) => invoke(IpcChannel.ticketsMove, ticketsSnapshotSchema, move),
+  deleteTicket: (id) => invoke(IpcChannel.ticketsDelete, ticketsSnapshotSchema, id),
+  setTicketLabels: (id, labelIds) => invoke(IpcChannel.ticketsSetLabels, ticketsSnapshotSchema, id, labelIds),
+  createState: (input) => invoke(IpcChannel.statesCreate, ticketsSnapshotSchema, input),
+  updateState: (id, patch) => invoke(IpcChannel.statesUpdate, ticketsSnapshotSchema, id, patch),
+  moveState: (id, position) => invoke(IpcChannel.statesMove, ticketsSnapshotSchema, id, position),
+  deleteState: (id, moveTo) => invoke(IpcChannel.statesDelete, ticketsSnapshotSchema, id, moveTo),
+  createLabel: (input) => invoke(IpcChannel.labelsCreate, ticketsSnapshotSchema, input),
+  updateLabel: (id, patch) => invoke(IpcChannel.labelsUpdate, ticketsSnapshotSchema, id, patch),
+  deleteLabel: (id) => invoke(IpcChannel.labelsDelete, ticketsSnapshotSchema, id),
 };
 
 contextBridge.exposeInMainWorld('loopy', api);

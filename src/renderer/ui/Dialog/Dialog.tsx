@@ -11,7 +11,7 @@ export interface DialogContentProps {
   closeLabel: string;
   size?: 'sm' | 'md' | 'lg';
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
 }
 
 function Content({ title, description, closeLabel, size = 'md', children, className }: DialogContentProps) {

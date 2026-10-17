@@ -8,7 +8,7 @@ import styles from './ColorPicker.module.scss';
 export interface ColorSwatchProps {
   color: string;
   size?: Size;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function ColorSwatch({ color, size = 'md', className }: ColorSwatchProps) {
@@ -27,7 +27,7 @@ export interface ColorPickerProps {
   label: string;
   size?: Size;
   disabled?: boolean;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function ColorPicker({ value, onChange, label, size = 'md', disabled, className }: ColorPickerProps) {

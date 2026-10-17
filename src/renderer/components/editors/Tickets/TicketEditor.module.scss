@@ -1,0 +1,32 @@
+@use '../../../styles/mixins' as *;
+
+.editor {
+  @include stack(var(--space-3));
+
+  padding: var(--space-3);
+}
+
+.header {
+  @include row(var(--space-2));
+
+  justify-content: space-between;
+}
+
+.key {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.meta {
+  @include stack(var(--space-1));
+
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+}

@@ -13,7 +13,7 @@ export interface SwitchProps {
   size?: Size;
   disabled?: boolean;
   id?: string;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function Switch({

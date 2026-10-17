@@ -8,6 +8,7 @@ import { registerSettingsHandlers } from './ipc/settings';
 import { registerShellHandlers } from './ipc/shell';
 import { registerStateHandlers } from './ipc/state';
 import { registerThemesHandlers } from './ipc/themes';
+import { registerTicketsHandlers } from './ipc/tickets';
 import { registerWindowHandlers } from './ipc/window';
 import { createDeviceStateService } from './services/device-state';
 import { createLogger } from './services/logger';
@@ -57,6 +58,7 @@ async function start(): Promise<void> {
       shell.showItemInFolder(path);
     },
   });
+  registerTicketsHandlers(ipcMain, { project: () => projects.current() });
   app.on('before-quit', () => {
     void projects.close();
   });

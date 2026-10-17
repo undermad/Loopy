@@ -22,7 +22,7 @@ export interface SelectProps {
   disabled?: boolean;
   id?: string;
   'aria-label'?: string;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function Select({

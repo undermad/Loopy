@@ -1,0 +1,21 @@
+.scroll {
+  min-height: 0;
+  flex: 1;
+}
+
+.viewport {
+  height: 100%;
+}
+
+.columns {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+  height: 100%;
+  padding: var(--space-3);
+}
+
+.add {
+  flex-shrink: 0;
+  padding-top: var(--space-1);
+}

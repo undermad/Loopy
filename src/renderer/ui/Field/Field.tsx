@@ -21,7 +21,7 @@ export interface FieldProps {
   error?: ReactNode;
   required?: boolean;
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function Field({ label, hint, error, required = false, children, className }: FieldProps) {

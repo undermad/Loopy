@@ -19,7 +19,9 @@ import type { ProjectInfo } from '@shared/project';
 import { builtInThemes, type Theme } from '@shared/theme';
 import { bootstrap } from '@renderer/bootstrap';
 import { resetProjectStore } from '@renderer/lib/project';
+import { resetTicketsStore } from '@renderer/lib/tickets';
 import { resetWorkspacesStore } from '@renderer/lib/workspaces';
+import { createTicketsFake } from './tickets-fake';
 import { resetSettingsStore } from '@renderer/lib/settings';
 import { resetThemeStore } from '@renderer/lib/theme';
 
@@ -31,6 +33,7 @@ export interface FakeApi extends LoopyApi {
   current: ProjectInfo | null;
   shell: ShellState;
   layouts: LayoutPreset[];
+  tickets: ReturnType<typeof createTicketsFake>['data'];
   emitSettings: (settings: AppSettings) => void;
   emitNativeTheme: (scheme: ColorScheme) => void;
   emitProject: () => void;
@@ -46,6 +49,7 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
   const themeListeners = new Set<(scheme: ColorScheme) => void>();
   const projectListeners = new Set<(state: ProjectState) => void>();
   const projectState = (): ProjectState => ({ current: api.current, recent: api.recent });
+  const ticketsFake = createTicketsFake();
   const api: FakeApi = {
     settings: appSettingsSchema.parse({ schemaVersion: APP_SETTINGS_SCHEMA_VERSION, ...overrides }),
     themes: [...builtInThemes],
@@ -54,6 +58,8 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     current: null,
     shell: { workspaces: null, statusBar: true },
     layouts: [],
+    tickets: ticketsFake.data,
+    ...ticketsFake.api,
     getAppVersion: vi.fn(() => Promise.resolve({ app: '0.1.0', electron: '44.8.0' })),
     getSettings: vi.fn(() => Promise.resolve(api.settings)),
     setSettings: vi.fn((patch: AppSettingsPatch) => {
@@ -162,6 +168,7 @@ export async function bootTestApp(overrides: Partial<AppSettings> = {}, scheme: 
   resetThemeStore();
   resetProjectStore();
   resetWorkspacesStore();
+  resetTicketsStore();
   const api = createFakeApi(overrides, scheme);
   window.loopy = api;
   await bootstrap(api);

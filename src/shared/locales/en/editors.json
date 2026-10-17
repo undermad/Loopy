@@ -27,5 +27,69 @@
     "title": "Component gallery",
     "sizes": "Sizes",
     "states": "States"
+  },
+  "tickets": {
+    "mode": "View",
+    "modes": {
+      "board": "Board",
+      "backlog": "Backlog"
+    },
+    "search": "Search tickets",
+    "quickAdd": "Add a ticket…",
+    "add": "Add ticket",
+    "addState": "Add state",
+    "newState": "New state",
+    "stateName": "State name",
+    "renameState": "Rename state",
+    "stateColor": "Column colour",
+    "category": "Category",
+    "categories": {
+      "todo": "To do",
+      "doing": "In progress",
+      "done": "Done"
+    },
+    "moveLeft": "Move left",
+    "moveRight": "Move right",
+    "deleteState": "Delete state",
+    "deleteStateConfirm": "Delete the state \"{{name}}\"? Its {{count}} tickets move to the backlog.",
+    "moveToBoard": "Move to board",
+    "emptyBacklog": "The backlog is empty",
+    "emptyBacklogHint": "Add a ticket above or drag one from the board.",
+    "emptyColumn": "No tickets",
+    "count": "{{count}} tickets",
+    "dragHandle": "Drag to move",
+    "types": {
+      "task": "Task",
+      "bug": "Bug",
+      "idea": "Idea"
+    },
+    "priorities": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "backlog": "Backlog",
+    "loading": "Loading tickets…"
+  },
+  "ticket": {
+    "none": "No ticket selected",
+    "noneHint": "Click a card on the board or in the backlog.",
+    "title": "Title",
+    "description": "Description",
+    "descriptionPlaceholder": "What needs doing?",
+    "type": "Type",
+    "priority": "Priority",
+    "state": "State",
+    "labels": "Labels",
+    "addLabel": "Add label",
+    "newLabel": "New label",
+    "labelName": "Label name",
+    "created": "Created {{when}}",
+    "updated": "Updated {{when}}",
+    "resolved": "Resolved {{when}}",
+    "delete": "Delete ticket",
+    "deleteConfirm": "Delete {{key}} \"{{title}}\"?",
+    "key": "Key"
   }
 }

@@ -5,7 +5,7 @@ import styles from './Separator.module.scss';
 export interface SeparatorProps {
   orientation?: 'horizontal' | 'vertical';
   decorative?: boolean;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function Separator({ orientation = 'horizontal', decorative = true, className }: SeparatorProps) {

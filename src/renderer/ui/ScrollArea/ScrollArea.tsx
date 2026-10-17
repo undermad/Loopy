@@ -6,8 +6,8 @@ import styles from './ScrollArea.module.scss';
 export interface ScrollAreaProps {
   children: ReactNode;
   orientation?: 'vertical' | 'horizontal' | 'both';
-  className?: string;
-  viewportClassName?: string;
+  className?: string | undefined;
+  viewportClassName?: string | undefined;
 }
 
 export function ScrollArea({

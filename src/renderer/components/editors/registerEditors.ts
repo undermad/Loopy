@@ -4,6 +4,8 @@ import { ColoursEditor } from './ColoursEditor';
 import { EmptyEditor } from './EmptyEditor';
 import { createPlaceholderEditor } from './PlaceholderEditor';
 import { PropertiesEditor } from './PropertiesEditor';
+import { TicketEditor } from './Tickets/TicketEditor';
+import { TicketsEditor } from './Tickets/TicketsEditor';
 
 export function registerEditors(): void {
   registerEditor({
@@ -38,14 +40,15 @@ export function registerEditors(): void {
     id: 'tickets',
     titleKey: 'types.tickets',
     icon: KanbanSquare,
-    component: createPlaceholderEditor('types.tickets', KanbanSquare),
+    component: TicketsEditor,
     category: 'planning',
+    defaultState: () => ({ mode: 'board', search: '' }),
   });
   registerEditor({
     id: 'ticket',
     titleKey: 'types.ticket',
     icon: Ticket,
-    component: createPlaceholderEditor('types.ticket', Ticket),
+    component: TicketEditor,
     category: 'planning',
   });
 }

@@ -5,7 +5,7 @@ import styles from './Spinner.module.scss';
 export interface SpinnerProps {
   size?: Size;
   label?: string;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function Spinner({ size = 'md', label, className }: SpinnerProps) {

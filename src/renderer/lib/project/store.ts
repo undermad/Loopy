@@ -93,6 +93,20 @@ export async function removeRecentProject(id: string): Promise<void> {
   applyState(await requireApi().removeRecentProject(id));
 }
 
+export function currentProject(): ProjectInfo | null {
+  return projectStore.getState().current;
+}
+
+export function subscribeCurrentProject(listener: (project: ProjectInfo | null) => void): () => void {
+  let previous = projectStore.getState().current;
+  return projectStore.subscribe((state) => {
+    if (state.current?.id !== previous?.id) {
+      previous = state.current;
+      listener(state.current);
+    }
+  });
+}
+
 export function resetProjectStore(): void {
   projectStore.setState({ current: null, recent: [], projects: [], api: null });
 }

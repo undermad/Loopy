@@ -9,6 +9,24 @@ import { recentProjectSchema } from './device-state';
 import { layoutPresetSchema, workspacesSchema, type LayoutPreset } from './layout';
 import { projectInfoSchema, projectNameSchema, type ProjectInfo } from './project';
 import { themeSchema, type Theme } from './theme';
+import {
+  labelInputSchema,
+  labelPatchSchema,
+  stateInputSchema,
+  statePatchSchema,
+  ticketInputSchema,
+  ticketMoveSchema,
+  ticketPatchSchema,
+  ticketsSnapshotSchema,
+  type LabelInput,
+  type LabelPatch,
+  type StateInput,
+  type StatePatch,
+  type TicketInput,
+  type TicketMove,
+  type TicketPatch,
+  type TicketsSnapshot,
+} from './tickets';
 
 export const IpcChannel = {
   getAppVersion: 'app:getVersion',
@@ -43,6 +61,19 @@ export const IpcChannel = {
   layoutsDelete: 'layouts:delete',
   layoutsExport: 'layouts:export',
   layoutsImport: 'layouts:import',
+  ticketsSnapshot: 'tickets:snapshot',
+  ticketsCreate: 'tickets:create',
+  ticketsUpdate: 'tickets:update',
+  ticketsMove: 'tickets:move',
+  ticketsDelete: 'tickets:delete',
+  ticketsSetLabels: 'tickets:setLabels',
+  statesCreate: 'states:create',
+  statesUpdate: 'states:update',
+  statesMove: 'states:move',
+  statesDelete: 'states:delete',
+  labelsCreate: 'labels:create',
+  labelsUpdate: 'labels:update',
+  labelsDelete: 'labels:delete',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -156,4 +187,32 @@ export interface LoopyApi {
   deleteLayout: (id: string) => Promise<void>;
   exportLayout: (layout: LayoutPreset) => Promise<ExportResult>;
   importLayout: () => Promise<ImportLayoutResult>;
+  getTickets: () => Promise<TicketsSnapshot>;
+  createTicket: (input: TicketInput) => Promise<TicketsSnapshot>;
+  updateTicket: (id: string, patch: TicketPatch) => Promise<TicketsSnapshot>;
+  moveTicket: (move: TicketMove) => Promise<TicketsSnapshot>;
+  deleteTicket: (id: string) => Promise<TicketsSnapshot>;
+  setTicketLabels: (id: string, labelIds: string[]) => Promise<TicketsSnapshot>;
+  createState: (input: StateInput) => Promise<TicketsSnapshot>;
+  updateState: (id: string, patch: StatePatch) => Promise<TicketsSnapshot>;
+  moveState: (id: string, position: string) => Promise<TicketsSnapshot>;
+  deleteState: (id: string, moveTo: string | null) => Promise<TicketsSnapshot>;
+  createLabel: (input: LabelInput) => Promise<TicketsSnapshot>;
+  updateLabel: (id: string, patch: LabelPatch) => Promise<TicketsSnapshot>;
+  deleteLabel: (id: string) => Promise<TicketsSnapshot>;
 }
+
+export const entityIdSchema = z.string().min(1);
+export const labelIdsSchema = z.array(entityIdSchema);
+export const positionSchema = z.string().min(1);
+
+export {
+  labelInputSchema,
+  labelPatchSchema,
+  stateInputSchema,
+  statePatchSchema,
+  ticketInputSchema,
+  ticketMoveSchema,
+  ticketPatchSchema,
+  ticketsSnapshotSchema,
+};

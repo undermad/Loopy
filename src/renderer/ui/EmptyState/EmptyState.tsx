@@ -7,7 +7,7 @@ export interface EmptyStateProps {
   title: ReactNode;
   description?: ReactNode;
   action?: ReactNode;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
