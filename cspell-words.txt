@@ -13,6 +13,7 @@ excalidraw
 fontsource
 frontmatter
 gitleaks
+godot
 hitbox
 knip
 konva
@@ -23,16 +24,19 @@ lucide
 lycheeverse
 markdownlint
 minimap
+moodboards
 nodrag
 nopan
 nowheel
 nsis
 nvmrc
 pannable
+playtest
 prefault
 radix
 secretlint
 servernum
+sightlines
 stylelint
 tinykeys
 tldraw
