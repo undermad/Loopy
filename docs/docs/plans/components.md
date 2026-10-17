@@ -5,8 +5,8 @@ description: The reusable visual component library under src/renderer/ui, its ru
 
 # UI component library
 
-:::note Draft
-Design proposal, not yet implemented. The shell, the welcome screen, the editors and every dialog are built from these components and nothing else.
+:::note Status
+Implemented in the first iteration. The pages linked from the sidebar describe what shipped; this page keeps the reasoning and the parts still open.
 :::
 
 ## Goals

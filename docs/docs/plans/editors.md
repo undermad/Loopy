@@ -5,8 +5,8 @@ description: Welcome screen, the infinite board and the tickets board, with thei
 
 # Welcome screen and first editors
 
-:::note Draft
-Design proposal, not yet implemented. Builds on the [UI shell plan](./ui-shell.md) for areas, editors and workspaces, on the [component library plan](./components.md) for the widgets, and on ADR 0016 for how the code is split.
+:::note Status
+Implemented in the first iteration. The pages linked from the sidebar describe what shipped; this page keeps the reasoning and the parts still open.
 :::
 
 ## Goals

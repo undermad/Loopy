@@ -51,6 +51,9 @@ The boundary is a convention checked in review, not a lint rule. A deep import s
 | `workspaces` | Workspace list, active workspace, layout presets                | shipped |
 | `editors`    | Editor registry: component, icon, title key, default state      | shipped |
 | `shortcuts`  | Key map and the `useShortcuts` hook                             | shipped |
+| `project`    | Current project, project list, recent projects                  | shipped |
+| `tickets`    | Tickets snapshot, selection, ticket, state and label actions    | shipped |
+| `board`      | Board list, open board snapshots, change commits                | shipped |
 
 ## IPC rules
 

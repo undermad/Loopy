@@ -5,8 +5,8 @@ description: Plan for themes, translations, Blender-style areas and workspaces, 
 
 # UI shell
 
-:::note Draft
-Design proposal, not yet implemented. Each phase below turns into real pages under `docs/docs` and ADRs when it lands.
+:::note Status
+Implemented in the first iteration. The pages linked from the sidebar describe what shipped; this page keeps the reasoning and the parts still open.
 :::
 
 ## Goals
