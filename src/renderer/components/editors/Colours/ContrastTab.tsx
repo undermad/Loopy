@@ -2,9 +2,10 @@ import { ArrowLeftRight, Check, Plus, Trash2, X } from 'lucide-react';
 import { contrastLevels, readableTextColour } from '@renderer/lib/colour';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
-import { usePalettes } from '@renderer/lib/palettes';
+import { usePaletteGroups } from '@renderer/lib/palettes';
 import { Button, DropdownMenu, IconButton, cx } from '@renderer/ui';
 import { ColourInput } from './ColourInput';
+import { PaletteMenuGroup } from './PaletteMenuGroup';
 import editorStyles from './ColoursEditor.module.scss';
 import styles from './ContrastTab.module.scss';
 
@@ -42,7 +43,8 @@ function Badge({ pass, label }: { pass: boolean; label: string }) {
 
 export function ContrastTab({ state, setState }: Props) {
   const { t } = useTranslation('colours');
-  const palettes = usePalettes() ?? [];
+  const groups = usePaletteGroups();
+  const clustered = groups.some((group) => group.cluster);
   const contrast = readContrast(state);
   const update = (patch: Partial<ContrastState>) => {
     setState({ contrast: { ...contrast, ...patch } });
@@ -87,20 +89,28 @@ export function ContrastTab({ state, setState }: Props) {
           </Button>
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <Button size="sm" disabled={palettes.length === 0}>
+              <Button size="sm" disabled={groups.length === 0}>
                 {t('contrast.addPalette')}
               </Button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content align="start">
-              {palettes.map((palette) => (
-                <DropdownMenu.Item
-                  key={palette.id}
-                  onSelect={() => {
-                    add(palette.colours.map((colour) => colour.hex));
-                  }}
+              {groups.map((group, index) => (
+                <PaletteMenuGroup
+                  key={group.cluster?.id ?? 'ungrouped'}
+                  label={clustered ? (group.cluster?.name ?? t('library.ungrouped')) : null}
+                  separated={index > 0}
                 >
-                  {palette.name}
-                </DropdownMenu.Item>
+                  {group.items.map((palette) => (
+                    <DropdownMenu.Item
+                      key={palette.id}
+                      onSelect={() => {
+                        add(palette.colours.map((colour) => colour.hex));
+                      }}
+                    >
+                      {palette.name}
+                    </DropdownMenu.Item>
+                  ))}
+                </PaletteMenuGroup>
               ))}
             </DropdownMenu.Content>
           </DropdownMenu.Root>

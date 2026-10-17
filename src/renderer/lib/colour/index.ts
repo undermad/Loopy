@@ -40,6 +40,24 @@ export {
   syntheticPixels,
 } from './extract';
 export type { Marker, Mood, Pixels } from './extract';
+export {
+  CLUSTER_SCHEMES,
+  HUE_FAMILIES,
+  clusterMember,
+  clusterOffsets,
+  dominantHue,
+  hueFamily,
+  hueOffsetBetween,
+  matchLuminance,
+} from './cluster';
+export type {
+  ClusterMember,
+  ClusterRules,
+  ClusterScheme,
+  ClusterSeed,
+  ClusterStructure,
+  HueFamily,
+} from './cluster';
 export { fetchPixels, loadPixels } from './image';
 export { PALETTE_PRESETS, searchPresets } from './presets';
 export type { PalettePreset } from './presets';

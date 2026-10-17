@@ -91,6 +91,8 @@ export function paletteView(draft: PaletteDraft, stored: Palette | null): Palett
     baseIndex: Math.min(draft.baseIndex, draft.colours.length - 1),
     source: draft.source,
     colours: draft.colours,
+    clusterId: stored?.clusterId ?? null,
+    clusterPosition: stored?.clusterPosition ?? 0,
     createdAt: stamp,
     updatedAt: stored?.updatedAt ?? stamp,
   });

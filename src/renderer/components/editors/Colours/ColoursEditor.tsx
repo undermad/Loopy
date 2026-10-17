@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Aperture, Compass, Contrast, Image, PanelLeft, Palette as PaletteIcon } from 'lucide-react';
+import { Aperture, Compass, Contrast, Image, Layers, PanelLeft, Palette as PaletteIcon } from 'lucide-react';
 import type { Palette } from '@shared/colours';
 import { randomHarmonyColours } from '@renderer/lib/colour';
 import type { EditorProps } from '@renderer/lib/editors';
@@ -16,10 +16,12 @@ import {
   setDraft,
   updatePalette,
   useDrafts,
+  usePaletteClusters,
   usePalettes,
 } from '@renderer/lib/palettes';
 import { EmptyState, IconButton, Spinner, ToggleGroup } from '@renderer/ui';
 import { AreaHeaderContent } from '../../Shell/AreaHeaderContent';
+import { ClusterTab } from './ClusterTab';
 import { ContrastTab } from './ContrastTab';
 import { ExploreTab } from './ExploreTab';
 import { ImageTab } from './ImageTab';
@@ -27,9 +29,9 @@ import { PaletteList, type PaletteListItem } from './PaletteList';
 import { WheelTab, type WheelDraftPatch } from './WheelTab';
 import styles from './ColoursEditor.module.scss';
 
-export type ColoursTab = 'wheel' | 'image' | 'contrast' | 'explore';
+export type ColoursTab = 'wheel' | 'image' | 'cluster' | 'contrast' | 'explore';
 
-const TABS: ColoursTab[] = ['wheel', 'image', 'contrast', 'explore'];
+const TABS: ColoursTab[] = ['wheel', 'image', 'cluster', 'contrast', 'explore'];
 
 function readTab(state: Record<string, unknown>): ColoursTab {
   const raw = state['tab'];
@@ -39,6 +41,7 @@ function readTab(state: Record<string, unknown>): ColoursTab {
 export function ColoursEditor({ state, setState }: EditorProps) {
   const { t } = useTranslation('colours');
   const palettes = usePalettes();
+  const clusters = usePaletteClusters();
   const tab = readTab(state);
   const library = state['library'] !== false;
   const drafts = useDrafts();
@@ -123,6 +126,7 @@ export function ColoursEditor({ state, setState }: EditorProps) {
           items={[
             { value: 'wheel', label: t('tabs.wheel'), icon: <Aperture aria-hidden="true" /> },
             { value: 'image', label: t('tabs.image'), icon: <Image aria-hidden="true" /> },
+            { value: 'cluster', label: t('tabs.cluster'), icon: <Layers aria-hidden="true" /> },
             { value: 'contrast', label: t('tabs.contrast'), icon: <Contrast aria-hidden="true" /> },
             { value: 'explore', label: t('tabs.explore'), icon: <Compass aria-hidden="true" /> },
           ]}
@@ -143,6 +147,7 @@ export function ColoursEditor({ state, setState }: EditorProps) {
           <aside className={styles['sidebar']} aria-label={t('library.title')}>
             <PaletteList
               items={items}
+              clusters={clusters ?? []}
               selectedId={selected?.palette.id ?? null}
               onSelect={(paletteId) => {
                 setState({ paletteId, tab: tab === 'explore' ? 'wheel' : tab });
@@ -150,6 +155,9 @@ export function ColoursEditor({ state, setState }: EditorProps) {
               onNew={startNew}
               onDiscardNew={() => {
                 discard(NEW_PALETTE_KEY);
+              }}
+              onCluster={(paletteId) => {
+                setState({ paletteId, tab: 'cluster' });
               }}
             />
           </aside>
@@ -185,6 +193,16 @@ export function ColoursEditor({ state, setState }: EditorProps) {
             <ImageTab
               palette={storedSelected}
               onSaved={(paletteId) => {
+                setState({ paletteId, tab: 'wheel' });
+              }}
+            />
+          ) : null}
+          {tab === 'cluster' ? (
+            <ClusterTab
+              seed={storedSelected}
+              state={state}
+              setState={setState}
+              onCreated={(paletteId) => {
                 setState({ paletteId, tab: 'wheel' });
               }}
             />

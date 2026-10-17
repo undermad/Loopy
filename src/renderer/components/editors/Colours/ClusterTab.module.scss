@@ -1,0 +1,93 @@
+@use '../../../styles/mixins' as *;
+
+.header {
+  @include stack(var(--space-1));
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.rules {
+  @include stack(var(--space-3));
+
+  width: min(100%, 320px);
+}
+
+.context {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.slider {
+  @include stack(var(--space-1));
+
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+
+  input {
+    width: 100%;
+    accent-color: var(--color-accent);
+  }
+}
+
+.wheel {
+  width: min(100%, 300px);
+}
+
+.members {
+  @include stack(var(--space-2));
+}
+
+.member {
+  display: grid;
+  align-items: center;
+  gap: var(--space-3);
+  grid-template-columns: 56px 200px minmax(160px, 1fr) 120px 28px;
+
+  &[data-excluded='true'] {
+    opacity: 0.5;
+  }
+}
+
+.role {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.memberName {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strip {
+  display: flex;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  grid-column: 3;
+
+  span {
+    flex: 1;
+  }
+}
+
+.shift {
+  color: var(--color-fg-muted);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+}

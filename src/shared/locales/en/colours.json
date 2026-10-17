@@ -4,7 +4,8 @@
     "wheel": "Colour wheel",
     "image": "From image",
     "contrast": "Contrast",
-    "explore": "Explore"
+    "explore": "Explore",
+    "cluster": "Cluster"
   },
   "library": {
     "title": "Palettes",
@@ -26,7 +27,23 @@
     "discard": "Discard unsaved palette",
     "loading": "Loading palettes…",
     "colours": "{{count}} colours",
-    "select": "Select palette {{name}}"
+    "select": "Select palette {{name}}",
+    "ungrouped": "Ungrouped",
+    "clusterMenu": "Cluster menu",
+    "clusterToggle": "Show or hide {{name}}",
+    "clusterPalettes": "{{count}} palettes",
+    "clusterEmpty": "No palettes in this cluster",
+    "moveTo": "Move to cluster",
+    "newCluster": "New cluster…",
+    "removeFromCluster": "Remove from cluster",
+    "generateCluster": "Generate cluster from this palette",
+    "renameCluster": "Rename cluster",
+    "extendCluster": "Add palettes to cluster",
+    "deleteCluster": "Delete cluster",
+    "deleteClusterConfirm": "Delete the cluster \"{{name}}\"? Its palettes stay in the library, ungrouped.",
+    "deleteClusterAll": "Delete cluster and palettes",
+    "deleteClusterAllConfirm": "Delete the cluster \"{{name}}\" and its {{count}} palettes? Items using their colours keep their last colour.",
+    "clusterName": "Cluster name"
   },
   "harmony": {
     "label": "Colour harmony",
@@ -138,5 +155,66 @@
     "added": "Palette \"{{name}}\" added.",
     "noMatch": "No presets match",
     "tags": "Tags"
+  },
+  "cluster": {
+    "title": "Palette cluster",
+    "intro": "Generates palettes that belong with the seed palette. Each one turns the seed around the colour wheel, so they read as one family with different identities.",
+    "seed": "Seed",
+    "seedHint": "Select a saved palette in the library to use as the seed.",
+    "noSeed": "Select a seed palette",
+    "inCluster": "Adding to {{name}}",
+    "existing": "Already in the cluster",
+    "count": "New palettes",
+    "scheme": "Hue scheme",
+    "schemes": {
+      "auto": "Automatic",
+      "complementary": "Complementary",
+      "splitComplementary": "Split complementary",
+      "triad": "Triad",
+      "square": "Square",
+      "analogous": "Analogous",
+      "even": "Evenly spaced",
+      "gaps": "Fill the gaps"
+    },
+    "schemeHints": {
+      "auto": "Complementary for one, triad for two, square for three, then evenly spaced.",
+      "complementary": "Opposite the seed. The strongest contrast.",
+      "splitComplementary": "Either side of the opposite. Contrast with less tension.",
+      "triad": "A third of the wheel apart. Balanced and lively.",
+      "square": "A quarter of the wheel apart. Rich, needs one hue to lead.",
+      "analogous": "Neighbours of the seed. Calm and closely related.",
+      "even": "Spread evenly around the wheel.",
+      "gaps": "Placed in the widest free space between hues already in the cluster."
+    },
+    "structure": "Structure",
+    "keep": "Keep the seed structure",
+    "structureHint": "Keep copies the seed colour by colour, so a monochromatic seed gives monochromatic palettes. A harmony builds each palette from its turned base colour.",
+    "balance": "Lightness balance",
+    "balanceHint": "Matches each colour to the lightness of the seed colour it came from, so no palette looks heavier than another.",
+    "wheel": "Cluster hues, drag a marker to turn that palette",
+    "marker": "{{name}} marker",
+    "include": "Include {{name}}",
+    "name": "Name of palette {{index}}",
+    "shift": "{{degrees}}° from the seed",
+    "reset": "Reset hue",
+    "create": "Create cluster",
+    "extend": "Add to cluster",
+    "created": "Cluster \"{{name}}\" created with {{count}} palettes.",
+    "extended": "Added {{count}} palettes to \"{{name}}\".",
+    "defaultName": "{{name}} cluster",
+    "nothing": "Include at least one palette.",
+    "family": {
+      "red": "Red",
+      "orange": "Orange",
+      "yellow": "Yellow",
+      "lime": "Lime",
+      "green": "Green",
+      "teal": "Teal",
+      "blue": "Blue",
+      "purple": "Purple",
+      "magenta": "Magenta",
+      "pink": "Pink",
+      "grey": "Grey"
+    }
   }
 }

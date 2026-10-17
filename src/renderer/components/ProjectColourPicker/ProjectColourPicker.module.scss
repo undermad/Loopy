@@ -121,3 +121,29 @@
 .customRow {
   @include row(var(--space-1));
 }
+
+.cluster {
+  @include stack(var(--space-1));
+}
+
+.clusterName {
+  @include row(var(--space-1));
+
+  color: var(--color-fg);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+
+  svg {
+    width: 12px;
+    height: 12px;
+    color: var(--color-fg-muted);
+  }
+}
+
+.clusterPalettes {
+  @include stack(var(--space-2));
+
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--color-border);
+  margin-left: 5px;
+}

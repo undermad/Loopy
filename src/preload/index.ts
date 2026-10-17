@@ -19,6 +19,9 @@ import {
   layoutPresetSchema,
   localeSchema,
   openProjectResultSchema,
+  paletteClusterListSchema,
+  paletteClusterSchema,
+  paletteLibrarySchema,
   paletteListSchema,
   paletteSchema,
   pickedColourSchema,
@@ -119,6 +122,12 @@ const api: LoopyApi = {
   createPalette: (input) => invoke(IpcChannel.palettesCreate, paletteSchema, input),
   updatePalette: (id, patch) => invoke(IpcChannel.palettesUpdate, paletteSchema, id, patch),
   deletePalette: (id) => invoke(IpcChannel.palettesDelete, paletteListSchema, id),
+  listPaletteClusters: () => invoke(IpcChannel.paletteClustersList, paletteClusterListSchema),
+  createPaletteCluster: (input) => invoke(IpcChannel.paletteClustersCreate, paletteLibrarySchema, input),
+  updatePaletteCluster: (id, patch) =>
+    invoke(IpcChannel.paletteClustersUpdate, paletteClusterSchema, id, patch),
+  deletePaletteCluster: (id, withPalettes) =>
+    invoke(IpcChannel.paletteClustersDelete, paletteLibrarySchema, id, withPalettes),
   getAssets: () => invoke(IpcChannel.assetsSnapshot, assetsSnapshotSchema),
   createAssetFolder: (input) => invoke(IpcChannel.assetsCreateFolder, assetsSnapshotSchema, input),
   updateAssetFolder: (id, patch) => invoke(IpcChannel.assetsUpdateFolder, assetsSnapshotSchema, id, patch),

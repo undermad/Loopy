@@ -111,9 +111,12 @@ describe('preload API coverage', () => {
     baseIndex: 2,
     source: 'wheel',
     colours: [{ id: 'c', name: '', hex: '#ff0000' }],
+    clusterId: null,
+    clusterPosition: 0,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
   };
+  const cluster = { id: 'k', name: 'Magic', createdAt: project.createdAt, updatedAt: project.updatedAt };
   const assets = {
     folders: [
       { id: 'f', parentId: null, name: 'Images', createdAt: project.createdAt, updatedAt: project.updatedAt },
@@ -177,6 +180,14 @@ describe('preload API coverage', () => {
     ['createPalette', [{ name: 'P', colours: [{ hex: '#ff0000' }] }], palette],
     ['updatePalette', ['p', { name: 'P2' }], palette],
     ['deletePalette', ['p'], []],
+    ['listPaletteClusters', [], [cluster]],
+    [
+      'createPaletteCluster',
+      [{ name: 'Magic', paletteIds: ['p'] }],
+      { palettes: [palette], clusters: [cluster] },
+    ],
+    ['updatePaletteCluster', ['k', { name: 'Spells' }], cluster],
+    ['deletePaletteCluster', ['k', false], { palettes: [palette], clusters: [] }],
     ['getAssets', [], assets],
     ['createAssetFolder', [{ name: 'F' }], assets],
     ['updateAssetFolder', ['f', { name: 'F2' }], assets],

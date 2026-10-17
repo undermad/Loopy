@@ -37,11 +37,27 @@ export const paletteSchema = z.object({
   baseIndex: z.number().int().nonnegative(),
   source: paletteSourceSchema,
   colours: z.array(paletteColourSchema).min(PALETTE_MIN_COLOURS).max(PALETTE_MAX_COLOURS),
+  clusterId: z.string().min(1).nullable(),
+  clusterPosition: z.number().int().nonnegative(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
 
 export const paletteListSchema = z.array(paletteSchema);
+
+export const paletteClusterSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(80),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const paletteClusterListSchema = z.array(paletteClusterSchema);
+
+export const paletteLibrarySchema = z.object({
+  palettes: paletteListSchema,
+  clusters: paletteClusterListSchema,
+});
 
 export const paletteColourInputSchema = z.object({
   id: z.string().min(1).optional(),
@@ -55,6 +71,7 @@ export const paletteInputSchema = z.object({
   baseIndex: paletteSchema.shape.baseIndex.default(DEFAULT_BASE_INDEX),
   source: paletteSourceSchema.default('wheel'),
   colours: z.array(paletteColourInputSchema).min(PALETTE_MIN_COLOURS).max(PALETTE_MAX_COLOURS),
+  clusterId: paletteSchema.shape.clusterId.default(null),
 });
 
 export const palettePatchSchema = z
@@ -63,8 +80,22 @@ export const palettePatchSchema = z
     harmony: harmonySchema,
     baseIndex: paletteSchema.shape.baseIndex,
     colours: z.array(paletteColourInputSchema).min(PALETTE_MIN_COLOURS).max(PALETTE_MAX_COLOURS),
+    clusterId: paletteSchema.shape.clusterId,
   })
   .partial();
+
+export const PALETTE_CLUSTER_MAX_NEW = 8;
+
+export const paletteClusterInputSchema = z.object({
+  name: paletteClusterSchema.shape.name,
+  paletteIds: z.array(z.string().min(1)).max(64).default([]),
+  palettes: z
+    .array(paletteInputSchema.omit({ clusterId: true }))
+    .max(PALETTE_CLUSTER_MAX_NEW)
+    .default([]),
+});
+
+export const paletteClusterPatchSchema = z.object({ name: paletteClusterSchema.shape.name });
 
 export const colourRefSchema = z.object({
   paletteId: z.string().min(1),
@@ -82,6 +113,10 @@ export type Palette = z.infer<typeof paletteSchema>;
 export type PaletteColourInput = z.input<typeof paletteColourInputSchema>;
 export type PaletteInput = z.input<typeof paletteInputSchema>;
 export type PalettePatch = z.input<typeof palettePatchSchema>;
+export type PaletteCluster = z.infer<typeof paletteClusterSchema>;
+export type PaletteLibrary = z.infer<typeof paletteLibrarySchema>;
+export type PaletteClusterInput = z.input<typeof paletteClusterInputSchema>;
+export type PaletteClusterPatch = z.input<typeof paletteClusterPatchSchema>;
 export type ColourRef = z.infer<typeof colourRefSchema>;
 export type ColourValue = z.infer<typeof colourValueSchema>;
 

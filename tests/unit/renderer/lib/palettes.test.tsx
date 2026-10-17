@@ -2,15 +2,21 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { closeProject } from '@renderer/lib/project';
 import {
+  createCluster,
   createPalette,
+  deleteCluster,
   deletePalette,
   duplicatePalette,
   findPalette,
+  moveToCluster,
+  renameCluster,
   resolveColour,
   resolveRef,
   updatePalette,
   useColourFromRef,
   usePalette,
+  usePaletteClusters,
+  usePaletteGroups,
   usePalettes,
   useResolvedColour,
 } from '@renderer/lib/palettes';
@@ -82,5 +88,42 @@ describe('palettes library', () => {
       await closeProject();
     });
     expect(result.current).toBeNull();
+  });
+
+  it('groups palettes under their clusters in order, with ungrouped palettes last', async () => {
+    const { result } = renderHook(() => ({ groups: usePaletteGroups(), clusters: usePaletteClusters() }));
+    const names = () =>
+      result.current.groups.map((group) => [
+        group.cluster?.name ?? null,
+        group.items.map((item) => item.name),
+      ]);
+    const rock = await act(() => createPalette({ name: 'Rock', colours: [{ hex: '#806040' }] }));
+    const fire = await act(() => createPalette({ name: 'Fire', colours: [{ hex: '#e2361b' }] }));
+    expect(names()).toEqual([[null, ['Rock', 'Fire']]]);
+
+    const library = await act(() =>
+      createCluster({
+        name: 'Magic',
+        paletteIds: [fire.id],
+        palettes: [{ name: 'Water', colours: [{ hex: '#1b6ee2' }] }],
+      }),
+    );
+    expect(names()).toEqual([
+      ['Magic', ['Fire', 'Water']],
+      [null, ['Rock']],
+    ]);
+    const magic = library.clusters[0];
+    if (!magic) throw new Error('missing cluster');
+    await act(() => moveToCluster(rock.id, magic.id));
+    expect(names()).toEqual([['Magic', ['Fire', 'Water', 'Rock']]]);
+    await act(() => duplicatePalette(rock.id, 'Rock copy'));
+    expect(names()[0]?.[1]).toEqual(['Fire', 'Water', 'Rock', 'Rock copy']);
+
+    await act(() => renameCluster(magic.id, 'Spells'));
+    expect(result.current.clusters?.map((cluster) => cluster.name)).toEqual(['Spells']);
+    await act(() => createCluster({ name: 'Empty' }));
+    expect(names().map(([name]) => name)).toEqual(['Spells']);
+    await act(() => deleteCluster(magic.id, false));
+    expect(names()).toEqual([[null, ['Rock', 'Fire', 'Water', 'Rock copy']]]);
   });
 });

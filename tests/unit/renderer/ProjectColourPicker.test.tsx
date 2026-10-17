@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ReactFlowProvider } from '@xyflow/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,7 +12,7 @@ import {
   setActiveBoard,
   setBoardSelection,
 } from '@renderer/lib/board';
-import { createPalette, updatePalette } from '@renderer/lib/palettes';
+import { createCluster, createPalette, updatePalette } from '@renderer/lib/palettes';
 import { ToastProvider, TooltipProvider } from '@renderer/ui';
 import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
 
@@ -69,6 +69,29 @@ describe('ProjectColourPicker', () => {
     await user.clear(hex);
     await user.type(hex, 'abcdef');
     expect(onChange).toHaveBeenLastCalledWith({ hex: '#abcdef', ref: null });
+  });
+
+  it('groups palette swatches under their clusters', async () => {
+    const user = userEvent.setup();
+    const fire = await createPalette({ name: 'Fire', colours: [{ hex: '#e2361b', name: 'Flame' }] });
+    await createPalette({ name: 'Rock', colours: [{ hex: '#806040', name: 'Stone' }] });
+    await createCluster({
+      name: 'Magic',
+      paletteIds: [fire.id],
+      palettes: [{ name: 'Water', colours: [{ hex: '#1b6ee2', name: 'Wave' }] }],
+    });
+    render(
+      <TooltipProvider>
+        <ProjectColourPicker value={{ hex: '#ffffff', ref: null }} onChange={vi.fn()} label="Fill" />
+      </TooltipProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Fill' }));
+    const magic = await screen.findByRole('group', { name: 'Magic' });
+    expect(within(magic).getByRole('button', { name: 'Fire: Flame' })).toBeInTheDocument();
+    expect(within(magic).getByRole('button', { name: 'Water: Wave' })).toBeInTheDocument();
+    const loose = screen.getByRole('group', { name: 'Ungrouped' });
+    expect(within(loose).getByRole('button', { name: 'Rock: Stone' })).toBeInTheDocument();
+    expect(within(loose).getByText('Ungrouped')).toBeInTheDocument();
   });
 
   it('shows a hint when no palettes exist', async () => {

@@ -194,6 +194,15 @@ export const projectMigrations: SqlMigrations = [
     ('folder-fonts', NULL, 'Fonts', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'),
     ('folder-models', NULL, 'Models', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'),
     ('folder-archives', NULL, 'Archives', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');`,
+  `CREATE TABLE palette_clusters (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL CHECK (length(name) > 0),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  ALTER TABLE palettes ADD COLUMN cluster_id TEXT REFERENCES palette_clusters(id) ON DELETE SET NULL;
+  ALTER TABLE palettes ADD COLUMN cluster_position INTEGER NOT NULL DEFAULT 0;
+  CREATE INDEX palettes_by_cluster ON palettes(cluster_id, cluster_position);`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Palette } from '@shared/colours';
+import type { Palette, PaletteCluster, PaletteLibrary } from '@shared/colours';
 import { IpcChannel } from '@shared/ipc';
 import { registerPalettesHandlers } from '../../../src/main/ipc/palettes';
 import { createProject, type ProjectDatabase } from '../../../src/main/storage';
@@ -72,8 +72,101 @@ describe('palettes IPC handlers', () => {
     await expect(call(IpcChannel.palettesDelete, palette.id)).resolves.toEqual([]);
   });
 
+  it('creates clusters from existing and new palettes, keeps their order and moves palettes between them', async () => {
+    const call = setup();
+    const fire = await call<Palette>(IpcChannel.palettesCreate, {
+      name: 'Fire',
+      harmony: 'monochromatic',
+      colours,
+    });
+    expect(fire).toMatchObject({ clusterId: null, clusterPosition: 0 });
+
+    const library = await call<PaletteLibrary>(IpcChannel.paletteClustersCreate, {
+      name: 'Magic',
+      paletteIds: [fire.id],
+      palettes: [
+        { name: 'Water', harmony: 'monochromatic', colours },
+        { name: 'Lightning', colours },
+      ],
+    });
+    const [magic] = library.clusters;
+    expect(magic?.name).toBe('Magic');
+    const members = library.palettes
+      .filter((palette) => palette.clusterId === magic?.id)
+      .sort((a, b) => a.clusterPosition - b.clusterPosition)
+      .map((palette) => [palette.name, palette.clusterPosition]);
+    expect(members).toEqual([
+      ['Fire', 0],
+      ['Water', 1],
+      ['Lightning', 2],
+    ]);
+    await expect(call<PaletteCluster[]>(IpcChannel.paletteClustersList)).resolves.toHaveLength(1);
+
+    const extra = await call<Palette>(IpcChannel.palettesCreate, {
+      name: 'Earth',
+      colours,
+      clusterId: magic?.id,
+    });
+    expect(extra).toMatchObject({ clusterId: magic?.id, clusterPosition: 3 });
+    await expect(
+      call(IpcChannel.palettesCreate, { name: 'Lost', colours, clusterId: 'missing' }),
+    ).rejects.toThrow(/Unknown palette cluster/);
+
+    const renamed = await call<PaletteCluster>(IpcChannel.paletteClustersUpdate, magic?.id, {
+      name: 'Spells',
+    });
+    expect(renamed.name).toBe('Spells');
+    await expect(call(IpcChannel.paletteClustersUpdate, magic?.id, { name: ' ' })).rejects.toThrow();
+    await expect(call(IpcChannel.paletteClustersUpdate, 'missing', { name: 'x' })).rejects.toThrow(
+      /Unknown palette cluster/,
+    );
+
+    const second = await call<PaletteLibrary>(IpcChannel.paletteClustersCreate, { name: 'Tech' });
+    const tech = second.clusters.find((cluster) => cluster.name === 'Tech');
+    const moved = await call<Palette>(IpcChannel.palettesUpdate, fire.id, { clusterId: tech?.id });
+    expect(moved).toMatchObject({ clusterId: tech?.id, clusterPosition: 0, name: 'Fire' });
+    const loose = await call<Palette>(IpcChannel.palettesUpdate, fire.id, { clusterId: null });
+    expect(loose).toMatchObject({ clusterId: null, clusterPosition: 0 });
+    await expect(call(IpcChannel.palettesUpdate, fire.id, { clusterId: 'missing' })).rejects.toThrow(
+      /Unknown palette cluster/,
+    );
+
+    const kept = await call<PaletteLibrary>(IpcChannel.paletteClustersDelete, tech?.id, false);
+    expect(kept.clusters.map((cluster) => cluster.name)).toEqual(['Spells']);
+    const removed = await call<PaletteLibrary>(IpcChannel.paletteClustersDelete, magic?.id, true);
+    expect(removed.clusters).toEqual([]);
+    expect(removed.palettes.map((palette) => palette.name)).toEqual(['Fire']);
+    await expect(call(IpcChannel.paletteClustersDelete, magic?.id, 'yes')).rejects.toThrow();
+    await expect(
+      call(IpcChannel.paletteClustersCreate, { name: 'Ghost', paletteIds: ['missing'] }),
+    ).rejects.toThrow(/Unknown palette/);
+    await expect(call<PaletteCluster[]>(IpcChannel.paletteClustersList)).resolves.toEqual([]);
+  });
+
+  it('upgrades an older project so its palettes start ungrouped', async () => {
+    const { DatabaseSync } = await import('node:sqlite');
+    const { migrateDatabase } = await import('../../../src/main/storage/sql-migrations');
+    const { projectMigrations } = await import('../../../src/main/storage/project-migrations');
+    const db = new DatabaseSync(join(directory, 'legacy.loopy'));
+    db.exec('PRAGMA foreign_keys = ON');
+    migrateDatabase(db, projectMigrations.slice(0, -1));
+    db.prepare(
+      `INSERT INTO palettes (id, name, harmony, base_index, source, created_at, updated_at)
+       VALUES ('p1', 'Old', 'analogous', 0, 'wheel', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+    ).run();
+    migrateDatabase(db, projectMigrations);
+    const row = db
+      .prepare('SELECT cluster_id AS clusterId, cluster_position AS clusterPosition FROM palettes')
+      .get();
+    const clusters = db.prepare('SELECT COUNT(*) AS count FROM palette_clusters').get() as { count: number };
+    db.close();
+    expect(row).toEqual({ clusterId: null, clusterPosition: 0 });
+    expect(clusters.count).toBe(0);
+  });
+
   it('refuses every channel when no project is open', async () => {
     const call = setup(false);
     await expect(call(IpcChannel.palettesList)).rejects.toThrow(/No project/);
+    await expect(call(IpcChannel.paletteClustersList)).rejects.toThrow(/No project/);
   });
 });

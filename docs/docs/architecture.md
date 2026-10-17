@@ -42,21 +42,21 @@ Every renderer concern is a library under `src/renderer/lib/<name>` with one pub
 
 The boundary is a convention checked in review, not a lint rule. A deep import such as `@renderer/lib/theme/apply`, or any import of `components` from inside a library, is a review finding. `knip` fails CI on an export nothing uses, which keeps each index small. The rules and a checklist for adding a library are in `.claude/skills/internal-libraries/SKILL.md`, the reasoning in [ADR 0016](./decisions/0016-internal-libraries.md).
 
-| Library      | Owns                                                             | Status  |
-| ------------ | ---------------------------------------------------------------- | ------- |
-| `theme`      | Active theme, applying colour tokens, following the system mode  | shipped |
-| `i18n`       | i18next setup, language switching, `Intl` formatting             | shipped |
-| `settings`   | Settings store synced with main                                  | shipped |
-| `layout`     | Area tree model, split, join, resize, swap, maximise             | shipped |
-| `workspaces` | Workspace list, active workspace, layout presets                 | shipped |
-| `editors`    | Editor registry: component, icon, title key, default state       | shipped |
-| `shortcuts`  | Key map and the `useShortcuts` hook                              | shipped |
-| `project`    | Current project, project list, recent projects                   | shipped |
-| `tickets`    | Tickets snapshot, selection, ticket, state and label actions     | shipped |
-| `board`      | Board list, open board snapshots, change commits                 | shipped |
-| `colour`     | Colour maths: conversions, contrast, harmonies, image extraction | shipped |
-| `palettes`   | Palette list and live resolution of colour references            | shipped |
-| `assets`     | Asset folders, files, import, drop settings                      | shipped |
+| Library      | Owns                                                                               | Status  |
+| ------------ | ---------------------------------------------------------------------------------- | ------- |
+| `theme`      | Active theme, applying colour tokens, following the system mode                    | shipped |
+| `i18n`       | i18next setup, language switching, `Intl` formatting                               | shipped |
+| `settings`   | Settings store synced with main                                                    | shipped |
+| `layout`     | Area tree model, split, join, resize, swap, maximise                               | shipped |
+| `workspaces` | Workspace list, active workspace, layout presets                                   | shipped |
+| `editors`    | Editor registry: component, icon, title key, default state                         | shipped |
+| `shortcuts`  | Key map and the `useShortcuts` hook                                                | shipped |
+| `project`    | Current project, project list, recent projects                                     | shipped |
+| `tickets`    | Tickets snapshot, selection, ticket, state and label actions                       | shipped |
+| `board`      | Board list, open board snapshots, change commits                                   | shipped |
+| `colour`     | Colour maths: conversions, contrast, harmonies, palette clusters, image extraction | shipped |
+| `palettes`   | Palette and cluster lists and live resolution of colour references                 | shipped |
+| `assets`     | Asset folders, files, import, drop settings                                        | shipped |
 
 ## IPC rules
 
@@ -105,4 +105,4 @@ The export is the same format as the working file, so there is nothing to transl
 
 Databases open in WAL mode. While a project is open, SQLite keeps `-wal` and `-shm` files next to it and removes them on close. Schema changes are SQL strings in `src/main/storage/project-migrations.ts`, applied in order inside one transaction by `migrateDatabase`. A file with a `user_version` above the current one is refused rather than guessed at. The renderer never receives a database handle; features will expose what they need through IPC.
 
-Version 1 holds the `project` row and a key-value `settings` table. Version 2 adds the tickets tables, see the tickets page. Version 3 adds boards, nodes, edges and an assets table, see the board page. Version 4 narrows ticket types. Version 5 adds board units, version 6 the grid colour and version 7 sprints, comments, templates and the ticket estimate, due date and sprint columns, see the tickets page. Version 8 adds palettes, asset folders, the asset metadata columns and the board colour references, see the colours and assets pages.
+Version 1 holds the `project` row and a key-value `settings` table. Version 2 adds the tickets tables, see the tickets page. Version 3 adds boards, nodes, edges and an assets table, see the board page. Version 4 narrows ticket types. Version 5 adds board units, version 6 the grid colour and version 7 sprints, comments, templates and the ticket estimate, due date and sprint columns, see the tickets page. Version 8 adds palettes, asset folders, the asset metadata columns and the board colour references, see the colours and assets pages. Version 9 adds palette clusters, see the colours page.

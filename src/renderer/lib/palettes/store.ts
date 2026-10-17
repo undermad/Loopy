@@ -1,20 +1,41 @@
 import { createStore } from 'zustand/vanilla';
-import type { ColourRef, ColourValue, Palette, PaletteInput, PalettePatch } from '@shared/colours';
+import type {
+  ColourRef,
+  ColourValue,
+  Palette,
+  PaletteCluster,
+  PaletteClusterInput,
+  PaletteInput,
+  PaletteLibrary,
+  PalettePatch,
+} from '@shared/colours';
 import type { LoopyApi } from '@shared/ipc';
 import { subscribeCurrentProject } from '@renderer/lib/project';
 import { clearDrafts } from './drafts';
 
 export type PalettesApi = Pick<
   LoopyApi,
-  'listPalettes' | 'createPalette' | 'updatePalette' | 'deletePalette'
+  | 'listPalettes'
+  | 'createPalette'
+  | 'updatePalette'
+  | 'deletePalette'
+  | 'listPaletteClusters'
+  | 'createPaletteCluster'
+  | 'updatePaletteCluster'
+  | 'deletePaletteCluster'
 >;
 
 export interface PalettesState {
   palettes: Palette[] | null;
+  clusters: PaletteCluster[] | null;
   api: PalettesApi | null;
 }
 
-export const palettesStore = createStore<PalettesState>(() => ({ palettes: null, api: null }));
+export const palettesStore = createStore<PalettesState>(() => ({
+  palettes: null,
+  clusters: null,
+  api: null,
+}));
 
 function requireApi(): PalettesApi {
   const { api } = palettesStore.getState();
@@ -27,8 +48,9 @@ let loadToken = 0;
 export async function loadPalettes(): Promise<Palette[]> {
   loadToken += 1;
   const token = loadToken;
-  const palettes = await requireApi().listPalettes();
-  if (token === loadToken) palettesStore.setState({ palettes });
+  const api = requireApi();
+  const [palettes, clusters] = await Promise.all([api.listPalettes(), api.listPaletteClusters()]);
+  if (token === loadToken) palettesStore.setState({ palettes, clusters });
   return palettes;
 }
 
@@ -36,7 +58,7 @@ export async function bootPalettes(api: PalettesApi, hasProject: boolean): Promi
   palettesStore.setState({ api });
   if (hasProject) await loadPalettes();
   subscribeCurrentProject((project) => {
-    palettesStore.setState({ palettes: null });
+    palettesStore.setState({ palettes: null, clusters: null });
     clearDrafts();
     if (project) void loadPalettes();
   });
@@ -80,7 +102,34 @@ export async function duplicatePalette(id: string, name: string): Promise<Palett
     baseIndex: source.baseIndex,
     source: source.source,
     colours: source.colours.map((colour) => ({ name: colour.name, hex: colour.hex })),
+    clusterId: source.clusterId,
   });
+}
+
+function storeLibrary(library: PaletteLibrary): PaletteLibrary {
+  loadToken += 1;
+  palettesStore.setState({ palettes: library.palettes, clusters: library.clusters });
+  return library;
+}
+
+export async function createCluster(input: PaletteClusterInput): Promise<PaletteLibrary> {
+  return storeLibrary(await requireApi().createPaletteCluster(input));
+}
+
+export async function renameCluster(id: string, name: string): Promise<PaletteCluster> {
+  const cluster = await requireApi().updatePaletteCluster(id, { name });
+  loadToken += 1;
+  const { clusters } = palettesStore.getState();
+  palettesStore.setState({ clusters: (clusters ?? []).map((item) => (item.id === id ? cluster : item)) });
+  return cluster;
+}
+
+export async function deleteCluster(id: string, withPalettes: boolean): Promise<PaletteLibrary> {
+  return storeLibrary(await requireApi().deletePaletteCluster(id, withPalettes));
+}
+
+export function moveToCluster(paletteId: string, clusterId: string | null): Promise<Palette> {
+  return updatePalette(paletteId, { clusterId });
 }
 
 export function findPalette(id: string): Palette | null {
@@ -102,6 +151,6 @@ export function resolveColour(
 }
 
 export function resetPalettesStore(): void {
-  palettesStore.setState({ palettes: null, api: null });
+  palettesStore.setState({ palettes: null, clusters: null, api: null });
   clearDrafts();
 }

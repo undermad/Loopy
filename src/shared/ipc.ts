@@ -17,10 +17,17 @@ import {
   type FolderPatch,
 } from './assets';
 import {
+  paletteClusterListSchema,
+  paletteClusterSchema,
+  paletteLibrarySchema,
   paletteListSchema,
   paletteSchema,
   type Palette,
+  type PaletteCluster,
+  type PaletteClusterInput,
+  type PaletteClusterPatch,
   type PaletteInput,
+  type PaletteLibrary,
   type PalettePatch,
 } from './colours';
 import {
@@ -118,6 +125,10 @@ export const IpcChannel = {
   palettesCreate: 'palettes:create',
   palettesUpdate: 'palettes:update',
   palettesDelete: 'palettes:delete',
+  paletteClustersList: 'paletteClusters:list',
+  paletteClustersCreate: 'paletteClusters:create',
+  paletteClustersUpdate: 'paletteClusters:update',
+  paletteClustersDelete: 'paletteClusters:delete',
   assetsSnapshot: 'assets:snapshot',
   assetsCreateFolder: 'assets:createFolder',
   assetsUpdateFolder: 'assets:updateFolder',
@@ -271,6 +282,10 @@ export interface LoopyApi {
   createPalette: (input: PaletteInput) => Promise<Palette>;
   updatePalette: (id: string, patch: PalettePatch) => Promise<Palette>;
   deletePalette: (id: string) => Promise<Palette[]>;
+  listPaletteClusters: () => Promise<PaletteCluster[]>;
+  createPaletteCluster: (input: PaletteClusterInput) => Promise<PaletteLibrary>;
+  updatePaletteCluster: (id: string, patch: PaletteClusterPatch) => Promise<PaletteCluster>;
+  deletePaletteCluster: (id: string, withPalettes: boolean) => Promise<PaletteLibrary>;
   getAssets: () => Promise<AssetsSnapshot>;
   createAssetFolder: (input: FolderInput) => Promise<AssetsSnapshot>;
   updateAssetFolder: (id: string, patch: FolderPatch) => Promise<AssetsSnapshot>;
@@ -296,6 +311,9 @@ export {
   boardListSchema,
   boardSchema,
   boardSnapshotSchema,
+  paletteClusterListSchema,
+  paletteClusterSchema,
+  paletteLibrarySchema,
   paletteListSchema,
   paletteSchema,
   ticketsSnapshotSchema,
