@@ -54,6 +54,34 @@
   cursor: default;
 }
 
+.dropTarget {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    content: '';
+    pointer-events: none;
+  }
+}
+
+.dropChip {
+  position: absolute;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  bottom: calc(100% + 8px);
+  left: 0;
+}
+
 .title {
   font-size: var(--font-size-sm);
   cursor: text;
@@ -88,6 +116,66 @@
   height: 100%;
   overflow: auto;
   margin-top: 4px;
+}
+
+.file {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 100%;
+  min-height: 0;
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.fileIcon {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  opacity: 0.7;
+}
+
+.fileText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fileName {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileMeta {
+  font-size: 0.8em;
+  opacity: 0.65;
+}
+
+.video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: 4px;
+  background: #000;
+  object-fit: contain;
+}
+
+.audio {
+  width: 100%;
+  height: 32px;
+}
+
+.cardInert {
+  pointer-events: none;
 }
 
 .cardMissing {

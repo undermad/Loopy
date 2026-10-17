@@ -3,7 +3,7 @@ import i18next from 'i18next';
 import type { LoopyApi } from '@shared/ipc';
 import { builtInLayoutPresets } from '@shared/layout-presets';
 import { bootAssets } from '@renderer/lib/assets';
-import { bootBoards } from '@renderer/lib/board';
+import { bootBoardShortcuts, bootBoards } from '@renderer/lib/board';
 import { applyLanguage, initI18n } from '@renderer/lib/i18n';
 import { bootCardTemplates } from '@renderer/lib/cards';
 import { bootPalettes } from '@renderer/lib/palettes';
@@ -25,6 +25,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
   await initI18n(settings.language, locale);
   await bootTickets(api, currentProject() !== null);
   await bootBoards(api, currentProject() !== null);
+  bootBoardShortcuts();
   await bootPalettes(api, currentProject() !== null);
   await bootCardTemplates(api, currentProject() !== null);
   await bootAssets(api, currentProject() !== null);

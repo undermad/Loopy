@@ -31,6 +31,8 @@ Object.assign(Range.prototype, {
   getBoundingClientRect: () => rect(0, 0, 0, 0),
 });
 
+Object.assign(document, { elementsFromPoint: () => [] });
+
 Object.assign(Element.prototype, {
   getClientRects: emptyRects,
   hasPointerCapture: () => false,

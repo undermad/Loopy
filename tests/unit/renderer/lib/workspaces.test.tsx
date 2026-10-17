@@ -12,6 +12,7 @@ import {
   duplicateWorkspace,
   flushWorkspaces,
   moveWorkspace,
+  panelActions,
   renameWorkspace,
   saveCurrentLayout,
   setActiveWorkspace,
@@ -102,7 +103,25 @@ describe('workspaces library', () => {
       editor: 'properties',
       state: {},
     });
+    let layersId = '';
     act(() => {
+      layersId = panelActions.open(first, 'layers', 1000, 280, { anchor: 'properties', direction: 'column' });
+    });
+    expect(panelActions.open(first, 'layers', 1000, 280)).toBe(layersId);
+    const layersParent = (node: Workspace['root']): string | null =>
+      node.kind === 'split'
+        ? node.children.some((child) => child.id === layersId)
+          ? node.direction
+          : (node.children.map(layersParent).find((value) => value !== null) ?? null)
+        : null;
+    expect(layersParent(must(result.current).root)).toBe('column');
+    act(() => {
+      panelActions.toggle(first, 'layers', 1000, 280);
+      panelActions.toggle(first, 'assets', 1000, 300, { side: 'before' });
+    });
+    expect(collectAreas(must(result.current).root).map((area) => area.editor)[0]).toBe('assets');
+    act(() => {
+      panelActions.close('assets');
       areaActions.close(propertiesId);
     });
     expect(areaIds(result.current)).toHaveLength(3);

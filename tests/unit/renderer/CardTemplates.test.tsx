@@ -50,6 +50,8 @@ function Providers({
               updateNode,
               updateEdge: vi.fn(),
               openTemplateEditor: vi.fn(),
+              dropTarget: null,
+              dockedPeers: new Set(),
             }}
           >
             {children}

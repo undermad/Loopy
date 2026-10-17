@@ -25,6 +25,20 @@ The toolbar on the left of the canvas holds every tool. A creation tool places a
 
 Escape returns to Select. Every item also has four connection handles that appear on hover, so an arrow can be dragged from any side without the Arrow tool.
 
+## Selecting inside containers and cards
+
+The first click on a container or card selects it, and a drag moves it. Its children and a card's inputs stay inactive, with the grab cursor, until it is selected. A second click then selects the child under the pointer, or puts a card input in edit mode with its own cursor.
+
+| Action                  | How                                                  |
+| ----------------------- | ---------------------------------------------------- |
+| Select the deepest item | Ctrl+click                                           |
+| Drill into a container  | Double-click selects the child under the pointer     |
+| Step out                | Escape selects the parent, then clears the selection |
+| Step in                 | Enter selects a container's children                 |
+| Add to the selection    | Shift+click                                          |
+
+`focus.ts` in `src/renderer/lib/board` works out which items are reachable from the selection. The canvas gives every other item `pointer-events: none`, so a click falls through to its container.
+
 ## Editing
 
 | Action             | How                                                                                                     |
@@ -33,16 +47,55 @@ Escape returns to Select. Every item also has four connection handles that appea
 | Label an arrow     | Double-click the arrow                                                                                  |
 | Nest               | Drop an item onto a container; drag it out to release it                                                |
 | Duplicate          | Ctrl+D, or the item's context menu. A container is copied with its children and the arrows between them |
-| Order              | `]` brings to front, `[` sends to back                                                                  |
+| Copy, cut, paste   | Ctrl+C, Ctrl+X, Ctrl+V, or the Edit menu. Pastes at the pointer and works across boards                 |
+| Undo and redo      | Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y, the header buttons, or the Edit menu                                    |
+| Select all         | Ctrl+A selects every item beside the current selection                                                  |
+| Order              | `]` brings to front, `[` sends to back; the Layers panel and Arrange buttons step one layer at a time   |
 | Lock               | Ctrl+L or the context menu; a locked item cannot move, resize, connect or be deleted                    |
 | Delete             | Delete or Backspace; a container takes its children with it                                             |
 | Pan and zoom       | Middle or right drag, scroll to pan, Ctrl and wheel to zoom                                             |
 
 Right-click an item or arrow for its context menu. A right-button drag still pans; the menu opens only when the pointer did not move.
 
+Pasting an image from the clipboard imports it into assets and places it. Plain text becomes a text item. Copied items carry their children, the arrows between them and their docks.
+
+## Dragging
+
+| While dragging    | Shows                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------------------ |
+| Over a container  | An accent outline, a tint and a "Move into" label. Dropping there nests the item                       |
+| Near another item | A docking bar on the facing side. Dropping there snaps the item flush and docks them                   |
+| Lined up with one | Red guides at matching edges or centres, with a snap of a few screen pixels; off while grid snap is on |
+
+Docked items move together: drag any of them and the rest follow. Alt+drag pulls one out of its dock and skips docking. Selecting a docked item outlines the rest of its group with a dashed line and shows an unlink button on each seam; the button splits the group there. Detach is also in the context menu and in Properties. A dock is a shared `dock` id in item data, kept by `docking.ts`.
+
+## Arranging
+
+With two or more items selected, Properties shows Align and Arrange. Alignment works in board space, so nested items line up with top-level ones.
+
+| Shortcut     | Does                    |
+| ------------ | ----------------------- |
+| Alt+A, Alt+D | Align left, align right |
+| Alt+W, Alt+S | Align top, align bottom |
+| Alt+H, Alt+V | Align centres           |
+| Alt+Shift+H  | Distribute horizontally |
+| Alt+Shift+V  | Distribute vertically   |
+
+A selected item shows a + button on each side. Clicking one adds an item of the same kind and style one gap away, joins it with an arrow and opens it for typing. `arrange.ts` holds the guides, alignment, distribution and quick-create maths.
+
+## Layers
+
+The Layers panel lists the open board's items, top first, with children indented under their container. Click a row to select, Shift or Ctrl+click to add, double-click to rename. Drag the grip to reorder items that share a parent. The eye and lock buttons set `hidden` and `locked`. A hidden item stays in the file but is not drawn or snapped to.
+
+## Assets on the board
+
+Drag a tile from the Assets panel, or files from the system, onto the canvas. An image becomes an image item sized to its proportions. Video plays in a file item, audio gets a player, and any other file shows its icon, name, kind and size. Dropping one image onto an image item replaces its picture, and dropping it onto a card's image field fills that field. A drop inside a container lands in the container, which is highlighted while you drag.
+
+The Assets editor uses dnd-kit inside its own area, so `reportAssetDrag` in `src/renderer/lib/assets` passes the pointer to any element marked with `assetDropZoneProps`. A drop there wins over the folder under the pointer.
+
 ## Items
 
-An item's `data` holds a shared base and its own content. The base is `style`, `name` and `locked`; `resolveItemStyle` in `src/renderer/lib/board` layers the type's defaults, then any template style, then the item's own style.
+An item's `data` holds a shared base and its own content. The base is `style`, `name`, `locked`, `hidden` and `dock`; `resolveItemStyle` in `src/renderer/lib/board` layers the type's defaults, then any template style, then the item's own style.
 
 | Style field                                        | Values                                                             |
 | -------------------------------------------------- | ------------------------------------------------------------------ |
@@ -58,6 +111,7 @@ An item's `data` holds a shared base and its own content. The base is `style`, `
 | `image`     | `assetId`, `fit` (contain by default, cover or stretch) and `alt` |
 | `container` | `title` and `showTitle`. Children point at it through `parent_id` |
 | `card`      | `templateId` and `values`, keyed by field id                      |
+| `file`      | `assetId` of a non-image asset                                    |
 
 `ItemFrame` in `src/renderer/components/editors/Board/items` draws the shape in SVG under the content, clips the content to the shape, and adds the resizer, the handles and the lock badge. A new item type supplies its content component, a data schema in `src/shared/board.ts`, a preset in `items.ts` and a Properties section. Items with no fill take their text colour from the board background, so they stay readable on dark boards.
 
@@ -75,9 +129,11 @@ Board colours and item colours are a hex copy plus an optional palette reference
 
 ## Properties
 
-The Properties editor follows the board selection kept in `src/renderer/lib/board`: the canvas records the active board, the selected item ids and the selected arrow ids. With nothing selected it edits the board itself. With one item it shows the item's name and lock, its type section, position and size in board units, then the style. With one arrow it shows the arrow's style. Several selected items show a count.
+The Properties editor follows the board selection kept in `src/renderer/lib/board`: the canvas records the active board, the selected item ids and the selected arrow ids. With nothing selected it edits the board itself. Every item shows the same sections in the same order: name, locked, visible and docking; position and size in board units; Arrange with its layer number; then its own content and its style. With one arrow it shows the arrow's style. Several selected items show Align and Arrange.
 
-The header's panel button opens a Properties editor by splitting the board area to the right at a default width of 320 pixels.
+Number fields scrub: drag left or right to change the value, hold Shift for tenths of a step, or click to type.
+
+The header holds undo and redo, then three panel buttons. Assets opens on the left of the board, Layers below Properties, and Properties on the right at 320 pixels. The Design workspace starts with all three open.
 
 ## Model
 
@@ -99,4 +155,4 @@ A child's position is relative to its container. `applyChanges` in `src/main/sto
 | `boards:read`                                                    | A board with its items and arrows                               |
 | `boards:applyChanges`                                            | One transaction of item and arrow inserts, updates and removals |
 
-`src/renderer/lib/board` keeps the board list, one snapshot per open board, the active board and the selection, and `items.ts` holds the pure item maths: presets, style resolution, nesting and reparenting, duplication, z-order, hit testing and connection sides. The canvas keeps React Flow's nodes in local state so a drag follows the pointer, and `commitChanges` applies the result to the store first and sends it when the gesture ends. The editor components live in `src/renderer/components/editors/Board` and the panels in `src/renderer/components/editors/Properties`.
+`src/renderer/lib/board` keeps the board list, one snapshot per open board, the active board and the selection, and `items.ts` holds the pure item maths: presets, style resolution, nesting and reparenting, duplication, z-order, hit testing and connection sides. `layers.ts`, `clipboard.ts` and `history.ts` add layer order, copy and paste, and undo. `commitChanges` records each change with its inverse; edits to the same items within half a second, and changes from one gesture, merge into one step. Undo and redo keys work in the board, Properties and Layers, which carry `boardScopeProps`. The canvas keeps React Flow's nodes in local state so a drag follows the pointer, and `commitChanges` applies the result to the store first and sends it when the gesture ends. The editor components live in `src/renderer/components/editors/Board` and the panels in `src/renderer/components/editors/Properties`.

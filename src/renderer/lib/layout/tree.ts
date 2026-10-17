@@ -74,6 +74,7 @@ export function splitArea(
   direction: SplitDirection,
   ratio = 0.5,
   editor?: string,
+  before = false,
 ): SplitResult {
   const area = findArea(root, areaId);
   if (!area) return { root, newAreaId: areaId };
@@ -85,8 +86,12 @@ export function splitArea(
     const size = parent.sizes[index] ?? 1 / parent.children.length;
     const children = [...parent.children];
     const sizes = [...parent.sizes];
-    children.splice(index + 1, 0, added);
-    sizes.splice(index, 1, size * fraction, size * (1 - fraction));
+    children.splice(before ? index : index + 1, 0, added);
+    sizes.splice(
+      index,
+      1,
+      ...(before ? [size * (1 - fraction), size * fraction] : [size * fraction, size * (1 - fraction)]),
+    );
     return {
       root: normalise(replaceNode(root, parent.id, { ...parent, children, sizes })),
       newAreaId: added.id,
@@ -96,8 +101,8 @@ export function splitArea(
     kind: 'split',
     id: crypto.randomUUID(),
     direction,
-    children: [area, added],
-    sizes: [fraction, 1 - fraction],
+    children: before ? [added, area] : [area, added],
+    sizes: before ? [1 - fraction, fraction] : [fraction, 1 - fraction],
   };
   return { root: normalise(replaceNode(root, areaId, split)), newAreaId: added.id };
 }

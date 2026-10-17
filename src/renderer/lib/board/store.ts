@@ -2,6 +2,7 @@ import { createStore } from 'zustand/vanilla';
 import type { Board, BoardChanges, BoardInput, BoardNode, BoardPatch, BoardSnapshot } from '@shared/board';
 import type { LoopyApi } from '@shared/ipc';
 import { subscribeCurrentProject } from '@renderer/lib/project';
+import { clearHistory, recordChanges, takeRedo, takeUndo } from './history';
 
 export type BoardApi = Pick<
   LoopyApi,
@@ -23,6 +24,7 @@ export interface BoardState {
   activeBoardId: string | null;
   selection: BoardSelection | null;
   live: Record<string, LiveGeometry>;
+  history: number;
 }
 
 const EMPTY: Omit<BoardState, 'api'> = {
@@ -31,6 +33,7 @@ const EMPTY: Omit<BoardState, 'api'> = {
   activeBoardId: null,
   selection: null,
   live: {},
+  history: 0,
 };
 
 export function setLiveGeometry(updates: Record<string, LiveGeometry | null>): void {
@@ -58,6 +61,15 @@ export function setBoardSelection(boardId: string, nodeIds: string[], edgeIds: s
   if (same) return;
   const empty = nodeIds.length === 0 && edgeIds.length === 0;
   boardStore.setState({ selection: empty ? null : { boardId, nodeIds, edgeIds } });
+}
+
+export function getBoardNodes(boardId: string): BoardNode[] {
+  return boardStore.getState().snapshots[boardId]?.nodes ?? [];
+}
+
+export function getBoardSelection(boardId: string): { nodeIds: string[]; edgeIds: string[] } {
+  const current = boardStore.getState().selection;
+  return current?.boardId === boardId ? current : { nodeIds: [], edgeIds: [] };
 }
 
 function requireApi(): BoardApi {
@@ -154,11 +166,36 @@ export function applyLocalChanges(boardId: string, changes: BoardChanges): void 
   storeSnapshot({ ...existing, nodes, edges });
 }
 
-export async function commitChanges(boardId: string, changes: BoardChanges): Promise<void> {
+export async function commitChanges(
+  boardId: string,
+  changes: BoardChanges,
+  options: { history?: boolean } = {},
+): Promise<void> {
+  const before = boardStore.getState().snapshots[boardId];
+  if (before && options.history !== false) {
+    recordChanges(boardId, changes, before);
+    boardStore.setState((state) => ({ history: state.history + 1 }));
+  }
   applyLocalChanges(boardId, changes);
   storeSnapshot(await requireApi().applyBoardChanges(boardId, changes));
 }
 
+async function replay(boardId: string, steps: BoardChanges[] | null): Promise<boolean> {
+  if (!steps) return false;
+  boardStore.setState((state) => ({ history: state.history + 1 }));
+  await Promise.all(steps.map((step) => commitChanges(boardId, step, { history: false })));
+  return true;
+}
+
+export function undoBoard(boardId: string): Promise<boolean> {
+  return replay(boardId, takeUndo(boardId));
+}
+
+export function redoBoard(boardId: string): Promise<boolean> {
+  return replay(boardId, takeRedo(boardId));
+}
+
 export function resetBoardStore(): void {
+  clearHistory();
   boardStore.setState({ ...EMPTY, api: null });
 }

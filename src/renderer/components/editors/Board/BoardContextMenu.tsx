@@ -11,6 +11,7 @@ export interface BoardMenuActions {
   back: (node: BoardNode) => void;
   toggleLock: (node: BoardNode) => void;
   release: (node: BoardNode) => void;
+  detach: (node: BoardNode) => void;
   editTemplate: (node: BoardNode) => void;
   removeNode: (node: BoardNode) => void;
   reverseEdge: (edge: BoardEdge) => void;
@@ -110,6 +111,15 @@ export function BoardContextMenu({ nodes, edges, actions, className, children }:
                 }}
               >
                 {t('board.menu.release')}
+              </ContextMenu.Item>
+            ) : null}
+            {typeof node.data['dock'] === 'string' ? (
+              <ContextMenu.Item
+                onSelect={() => {
+                  actions.detach(node);
+                }}
+              >
+                {t('board.menu.detach')}
               </ContextMenu.Item>
             ) : null}
             {node.type === 'card' ? (

@@ -128,3 +128,63 @@ test('places items from the toolbar and connects them with an arrow', async ({ w
   await window.mouse.up();
   await expect(window.locator('.react-flow__edge')).toHaveCount(1);
 });
+
+test('docks items, moves them together, undoes and adds a connected item', async ({ window }) => {
+  await window.getByRole('button', { name: 'New project' }).click();
+  await window.getByLabel(/Project name/).fill('Docking');
+  await window.getByRole('button', { name: 'Create' }).click();
+  await window.getByRole('tab', { name: 'Design' }).click();
+  await window.getByRole('button', { name: 'New board' }).first().click();
+  await window.getByRole('button', { name: 'Create' }).click();
+
+  const pane = window.locator('.react-flow__pane');
+  await expect(pane).toBeVisible();
+  const box = await pane.boundingBox();
+  if (!box) throw new Error('missing pane');
+  for (const [x, name] of [
+    [120, 'Door'],
+    [420, 'Key'],
+  ] as const) {
+    await window.getByRole('button', { name: 'Sticky note (N)' }).click();
+    await window.mouse.click(box.x + x, box.y + 150);
+    await window.getByRole('textbox', { name: 'Text' }).fill(name);
+    await window.mouse.click(box.x + 200, box.y + box.height - 40);
+  }
+  const door = window.getByRole('group', { name: 'Door' });
+  const key = window.getByRole('group', { name: 'Key' });
+  const drag = async (target: typeof door, dx: number, dy: number) => {
+    const start = await target.boundingBox();
+    if (!start) throw new Error('missing item');
+    const x = start.x + 20;
+    const y = start.y + start.height - 15;
+    await window.mouse.move(x, y);
+    await window.mouse.down();
+    await window.mouse.move(x + 1, y);
+    await window.mouse.move(x + 2, y);
+    await window.mouse.move(x + dx, y + dy, { steps: 12 });
+    await window.mouse.up();
+  };
+
+  const doorBox = await door.boundingBox();
+  const keyBox = await key.boundingBox();
+  if (!doorBox || !keyBox) throw new Error('missing items');
+  await drag(key, doorBox.x + doorBox.width + 6 - keyBox.x, 0);
+  await expect
+    .poll(async () => Math.round(((await key.boundingBox())?.x ?? 0) - (doorBox.x + doorBox.width)))
+    .toBe(0);
+
+  await drag(door, 0, 120);
+  await expect
+    .poll(async () => Math.round((await key.boundingBox())?.y ?? 0))
+    .toBe(Math.round(doorBox.y + 120));
+
+  await window.keyboard.press('Control+z');
+  await expect.poll(async () => Math.round((await key.boundingBox())?.y ?? 0)).toBe(Math.round(doorBox.y));
+
+  await key.click();
+  await window.getByRole('button', { name: 'Add a connected item to the right' }).click();
+  await window.keyboard.type('Vault');
+  await window.keyboard.press('Escape');
+  await expect(window.getByRole('group', { name: 'Vault' })).toBeVisible();
+  await expect(window.locator('.react-flow__edge')).toHaveCount(1);
+});

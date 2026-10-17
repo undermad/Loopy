@@ -1,12 +1,35 @@
 import { useState } from 'react';
-import { ChevronDown, Grid3x3, Magnet, Map, Maximize, PanelRight, Plus, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  ChevronDown,
+  Grid3x3,
+  Layers,
+  Magnet,
+  Map,
+  Maximize,
+  PanelLeft,
+  PanelRight,
+  Plus,
+  Redo2,
+  Undo2,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 import type { Board } from '@shared/board';
-import { createBoard, deleteBoard, updateBoard } from '@renderer/lib/board';
+import {
+  createBoard,
+  deleteBoard,
+  redoBoard,
+  undoBoard,
+  updateBoard,
+  useBoardHistory,
+} from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Button, ConfirmDialog, DropdownMenu, IconButton } from '@renderer/ui';
 import { ProjectColourPicker } from '../../ProjectColourPicker/ProjectColourPicker';
 import { PromptDialog } from '../../Shell/PromptDialog';
 import styles from './BoardEditor.module.scss';
+
+export type BoardPanel = 'assets' | 'layers' | 'properties';
 
 export interface BoardHeaderProps {
   boards: Board[];
@@ -14,10 +37,10 @@ export interface BoardHeaderProps {
   grid: boolean;
   minimap: boolean;
   snap: boolean;
-  properties: boolean;
+  panels: Record<BoardPanel, boolean>;
   onSelect: (id: string) => void;
   onToggle: (key: 'grid' | 'minimap' | 'snap', value: boolean) => void;
-  onToggleProperties: () => void;
+  onTogglePanel: (panel: BoardPanel) => void;
   onZoom: (action: 'in' | 'out' | 'fit' | 'reset') => void;
 }
 
@@ -27,15 +50,16 @@ export function BoardHeader({
   grid,
   minimap,
   snap,
-  properties,
+  panels,
   onSelect,
   onToggle,
-  onToggleProperties,
+  onTogglePanel,
   onZoom,
 }: BoardHeaderProps) {
   const { t } = useTranslation('editors');
   const { t: tc } = useTranslation('common');
   const [dialog, setDialog] = useState<'new' | 'rename' | 'delete' | null>(null);
+  const history = useBoardHistory(board?.id ?? '');
 
   async function create(name: string) {
     const created = await createBoard({ name });
@@ -159,10 +183,52 @@ export function BoardHeader({
             <Map aria-hidden="true" />
           </IconButton>
           <IconButton
+            label={t('board.undo')}
+            size="sm"
+            disabled={!history.canUndo}
+            onClick={() => {
+              void undoBoard(board.id);
+            }}
+          >
+            <Undo2 aria-hidden="true" />
+          </IconButton>
+          <IconButton
+            label={t('board.redo')}
+            size="sm"
+            disabled={!history.canRedo}
+            onClick={() => {
+              void redoBoard(board.id);
+            }}
+          >
+            <Redo2 aria-hidden="true" />
+          </IconButton>
+          <IconButton
+            label={t('board.assetsPanel')}
+            size="sm"
+            active={panels.assets}
+            onClick={() => {
+              onTogglePanel('assets');
+            }}
+          >
+            <PanelLeft aria-hidden="true" />
+          </IconButton>
+          <IconButton
+            label={t('board.layersPanel')}
+            size="sm"
+            active={panels.layers}
+            onClick={() => {
+              onTogglePanel('layers');
+            }}
+          >
+            <Layers aria-hidden="true" />
+          </IconButton>
+          <IconButton
             label={t('board.properties')}
             size="sm"
-            active={properties}
-            onClick={onToggleProperties}
+            active={panels.properties}
+            onClick={() => {
+              onTogglePanel('properties');
+            }}
           >
             <PanelRight aria-hidden="true" />
           </IconButton>

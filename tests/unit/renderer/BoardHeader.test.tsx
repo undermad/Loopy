@@ -55,6 +55,12 @@ describe('BoardHeader', () => {
     const split = vi.spyOn(areaActions, 'split');
     await user.click(screen.getByRole('button', { name: 'Properties panel' }));
     expect(split).toHaveBeenCalledWith('a', 'row', 0.7, 'properties');
+    await user.click(screen.getByRole('button', { name: 'Assets panel' }));
+    expect(split).toHaveBeenCalledWith('a', 'row', 0.7, 'assets', true);
+    await user.click(screen.getByRole('button', { name: 'Layers panel' }));
+    expect(split).toHaveBeenCalledWith('a', 'row', 0.7, 'layers');
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'Zoom in' }));
     await user.click(screen.getByRole('button', { name: 'Zoom out' }));
     await user.click(screen.getByRole('button', { name: 'Fit to content' }));

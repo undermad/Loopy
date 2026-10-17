@@ -18,6 +18,7 @@ The Assets editor stores every file a project needs inside the project: sprites,
 | Move files             | Drag a card onto a folder row, pick Move to… in the card's menu, or change Folder in the details panel           |
 | Select many            | Ctrl-click adds a card, Shift-click selects a range. The menu then moves or deletes the whole selection          |
 | Rename, export, delete | Right-click a card, or use the details panel                                                                     |
+| Place on a board       | Drag a card onto a board canvas, see the board page                                                              |
 | Folders                | New folder creates one inside the selected folder. Right-click a row to rename, nest, move or delete it          |
 | Layout                 | The grid and list toggle in the header; list rows show the folder path                                           |
 | Search                 | Matches the name, kind and tags of the files in the current folder or kind. All files searches the whole project |
@@ -62,4 +63,6 @@ The renderer reads bytes through the `loopy-asset://asset/<id>` protocol registe
 
 `src/renderer/lib/assets` keeps the snapshot, reloads when the project changes, and exposes `folderActions`, `assetActions`, `importFiles(files, target)`, `pickFiles(target)` and `dropFolderFor(name, mime)` for other editors that accept drops. Pure helpers such as `buildFolderTree`, `folderCounts`, `kindCounts` and `matchesAssetSearch` derive the views.
 
-The components live in `src/renderer/components/editors/Assets`. View, search, layout, selected folder, kind, selected file and the details toggle are area state, so they survive workspace switches; expanded folders and multi-selection are local. Moving cards onto rows uses `@dnd-kit/core` with a pointer sensor and a keyboard sensor: Space picks up the focused card, the arrow keys move it, Space drops and Escape cancels. Desktop drops use the native drag events and stop propagating once handled, so the app-level drop handler does not import the same files twice.
+The components live in `src/renderer/components/editors/Assets`. View, search, layout, selected folder, kind, selected file and the details toggle are area state, so they survive workspace switches; expanded folders and multi-selection are local. Moving cards onto rows uses `@dnd-kit/core` with a pointer sensor and a keyboard sensor: Space picks up the focused card, the arrow keys move it, Space drops and Escape cancels. Desktop drops use the native drag events and stop propagating once handled, so the app-level drop handler does not import the same files twice. While a card drags, `reportAssetDrag` tells any drop zone under the pointer, such as a board, about the move and the drop.
+
+Below 600 pixels wide, as in the Design workspace, the editor hides the details panel and narrows the folder tree with a container query.

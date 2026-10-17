@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragMoveEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
 import {
@@ -32,6 +33,7 @@ import {
   kindCounts,
   matchesAssetSearch,
   pickFiles,
+  reportAssetDrag,
   useAssetsLoaded,
   useAssetsSnapshot,
 } from '@renderer/lib/assets';
@@ -188,9 +190,26 @@ export function AssetsEditor({ state, setState }: EditorProps) {
     setDragging(dragDataOf(active)?.ids ?? null);
   }
 
-  function onDragEnd({ active, over }: DragEndEvent) {
+  function pointerOf({ activatorEvent, delta }: DragMoveEvent | DragEndEvent): { x: number; y: number } {
+    const start = activatorEvent as Partial<PointerEvent>;
+    return { x: (start.clientX ?? Number.NaN) + delta.x, y: (start.clientY ?? Number.NaN) + delta.y };
+  }
+
+  function onDragMove(event: DragMoveEvent) {
+    const ids = dragDataOf(event.active)?.ids;
+    if (!ids) return;
+    const { x, y } = pointerOf(event);
+    reportAssetDrag(ids, x, y, 'move');
+  }
+
+  function onDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
     setDragging(null);
     const data = dragDataOf(active);
+    if (data) {
+      const { x, y } = pointerOf(event);
+      if (reportAssetDrag(data.ids, x, y, 'drop')) return;
+    }
     const target = dropDataOf(over);
     if (!data || !target) return;
     const ids = data.ids.filter((id) => assets.find((asset) => asset.id === id)?.folderId !== target.id);
@@ -300,9 +319,11 @@ export function AssetsEditor({ state, setState }: EditorProps) {
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragStart={onDragStart}
+          onDragMove={onDragMove}
           onDragEnd={onDragEnd}
           onDragCancel={() => {
             setDragging(null);
+            reportAssetDrag([], Number.NaN, Number.NaN, 'cancel');
           }}
         >
           <div className={styles['body']}>
@@ -346,7 +367,11 @@ export function AssetsEditor({ state, setState }: EditorProps) {
                 }}
               />
             </ScrollArea>
-            {details ? <AssetDetails asset={selectedAsset} folders={folders} /> : null}
+            {details ? (
+              <div className={styles['details']}>
+                <AssetDetails asset={selectedAsset} folders={folders} />
+              </div>
+            ) : null}
           </div>
           <DragOverlay dropAnimation={null}>
             {draggingAssets[0] ? (

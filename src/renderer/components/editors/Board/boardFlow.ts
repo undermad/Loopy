@@ -16,6 +16,7 @@ export function toFlowNodes(snapshot: BoardSnapshot): ItemFlowNode[] {
     zIndex: effectiveZ(node, snapshot.nodes),
     ...(node.parentId ? { parentId: node.parentId } : {}),
     draggable: node.data['locked'] !== true,
+    hidden: node.data['hidden'] === true,
     data: { node },
   }));
 }

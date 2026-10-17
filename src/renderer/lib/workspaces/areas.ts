@@ -17,10 +17,10 @@ function updateActive(update: (workspace: Workspace) => Workspace): void {
 }
 
 export const areaActions = {
-  split(areaId: string, direction: SplitDirection, ratio = 0.5, editor?: string): string {
+  split(areaId: string, direction: SplitDirection, ratio = 0.5, editor?: string, before = false): string {
     let newAreaId = areaId;
     updateActive((workspace) => {
-      const result = splitArea(workspace.root, areaId, direction, ratio, editor);
+      const result = splitArea(workspace.root, areaId, direction, ratio, editor, before);
       newAreaId = result.newAreaId;
       return { ...workspace, root: result.root };
     });

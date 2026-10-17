@@ -27,6 +27,7 @@ export interface ItemFrameProps {
   className?: string | undefined;
   onDoubleClick?: () => void;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
+  overlay?: ReactNode;
   children: (colours: FrameColours) => ReactNode;
 }
 
@@ -117,6 +118,7 @@ export function ItemFrame({
   height,
   layers = [],
   className,
+  overlay,
   onDoubleClick,
   onKeyDown,
   children,
@@ -138,6 +140,7 @@ export function ItemFrame({
         selected && styles['selected'],
         dragging && styles['dragging'],
         locked && styles['locked'],
+        !selected && actions.dockedPeers.has(node.id) && styles['dockedPeer'],
         className,
       )}
       style={{ opacity: style.opacity }}
@@ -182,6 +185,7 @@ export function ItemFrame({
         />
       ))}
       {locked ? <Lock aria-hidden="true" className={styles['lock']} /> : null}
+      {overlay}
     </div>
   );
 }

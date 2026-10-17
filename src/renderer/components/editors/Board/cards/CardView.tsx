@@ -378,6 +378,7 @@ export function CardView({
             )}
             style={{ gridColumn: `span ${String(field.span)}` }}
             data-kind={field.kind}
+            data-field-id={field.id}
             onClick={
               onSelectField
                 ? () => {

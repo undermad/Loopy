@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { NodeProps } from '@xyflow/react';
 import { itemData, withData } from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
+import { cx } from '@renderer/ui';
 import { useBoardActions } from '../BoardContext';
 import { ItemFrame } from './ItemFrame';
 import type { ItemFlowNode } from './TextItem';
@@ -17,6 +18,7 @@ export function ContainerItem({ data, selected, dragging, width, height }: NodeP
   const input = useRef<HTMLInputElement>(null);
   const title = content.title || t('board.containerTitle');
   const editing = local || actions.editingId === node.id;
+  const target = actions.dropTarget?.id === node.id ? actions.dropTarget : null;
 
   useEffect(() => {
     if (editing) input.current?.select();
@@ -39,7 +41,14 @@ export function ContainerItem({ data, selected, dragging, width, height }: NodeP
       dragging={dragging}
       width={width ?? node.width}
       height={height ?? node.height}
-      className={styles['container']}
+      className={cx(styles['container'], target && styles['dropTarget'])}
+      overlay={
+        target && target.kind !== 'stay' ? (
+          <span className={styles['dropChip']}>
+            {t(target.kind === 'add' ? 'board.dropAdd' : 'board.dropMove', { name: title })}
+          </span>
+        ) : null
+      }
     >
       {() =>
         content.showTitle ? (

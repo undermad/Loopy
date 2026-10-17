@@ -90,7 +90,19 @@ describe('boards IPC handlers', () => {
     });
     expect(snapshot.nodes.find((item) => item.id === 'a')).toMatchObject({ x: 50, data: { text: 'moved' } });
 
-    snapshot = await call<BoardSnapshot>(IpcChannel.boardsApplyChanges, board.id, { removeNodeIds: ['b'] });
+    snapshot = await call<BoardSnapshot>(IpcChannel.boardsApplyChanges, board.id, {
+      upsertNodes: [
+        { ...node('file', 600), type: 'file', data: { assetId: 'asset-1', dock: 'd', hidden: true } },
+      ],
+    });
+    expect(snapshot.nodes.find((item) => item.id === 'file')).toMatchObject({
+      type: 'file',
+      data: { assetId: 'asset-1', dock: 'd', hidden: true },
+    });
+
+    snapshot = await call<BoardSnapshot>(IpcChannel.boardsApplyChanges, board.id, {
+      removeNodeIds: ['b', 'file'],
+    });
     expect(snapshot.nodes).toHaveLength(1);
     expect(snapshot.edges).toHaveLength(0);
 

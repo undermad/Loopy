@@ -24,10 +24,12 @@ import type { ColourValue } from '@shared/colours';
 import { useAssetsSnapshot } from '@renderer/lib/assets';
 import {
   commitChanges,
+  dockCluster,
   fromUnits,
   itemData,
   resolveItemStyle,
   toUnits,
+  undock,
   useLiveNode,
   withData,
 } from '@renderer/lib/board';
@@ -37,6 +39,7 @@ import { Button, Field, Input, Select, Switch, TextArea, ToggleGroup } from '@re
 import { CardView } from '../Board/cards/CardView';
 import { TemplateEditorDialog } from '../Board/cards/TemplateEditorDialog';
 import { ProjectColourPicker } from '../../ProjectColourPicker/ProjectColourPicker';
+import { ArrangeSection } from './ArrangeSection';
 import { NumberField } from './NumberField';
 import styles from './PropertiesEditor.module.scss';
 
@@ -158,9 +161,10 @@ function ColourField({ label, value, fallback, onChange }: ColourFieldProps) {
   );
 }
 
-function ItemSection({ node }: { node: BoardNode }) {
+function ItemSection({ node, nodes }: { node: BoardNode; nodes: BoardNode[] }) {
   const { t } = useTranslation('editors');
   const data = itemData(node);
+  const peers = dockCluster(node.id, nodes).length - 1;
   const [name, setName] = useState<string | null>(null);
   return (
     <>
@@ -178,14 +182,38 @@ function ItemSection({ node }: { node: BoardNode }) {
           }}
         />
       </Field>
-      <Switch
-        size="sm"
-        label={t('properties.locked')}
-        checked={data.locked}
-        onCheckedChange={(locked) => {
-          save(withData(node, { locked }));
-        }}
-      />
+      <div className={styles['pair']}>
+        <Switch
+          size="sm"
+          label={t('properties.locked')}
+          checked={data.locked}
+          onCheckedChange={(locked) => {
+            save(withData(node, { locked }));
+          }}
+        />
+        <Switch
+          size="sm"
+          label={t('properties.visible')}
+          checked={!data.hidden}
+          onCheckedChange={(visible) => {
+            save(withData(node, { hidden: !visible }));
+          }}
+        />
+      </div>
+      {peers > 0 ? (
+        <div className={styles['docked']}>
+          <span>{t('properties.docked', { count: peers })}</span>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              void commitChanges(node.boardId, { upsertNodes: undock([node.id], nodes) });
+            }}
+          >
+            {t('properties.detach')}
+          </Button>
+        </div>
+      ) : null}
     </>
   );
 }
@@ -528,11 +556,34 @@ function CardSection({ node }: { node: BoardNode }) {
   );
 }
 
+function FileSection({ node }: { node: BoardNode }) {
+  const { t } = useTranslation('editors');
+  const data = itemData({ type: 'file', data: node.data });
+  const assets = useAssetsSnapshot().assets.filter((asset) => asset.kind !== 'image');
+  return (
+    <Field label={t('properties.chooseFile')}>
+      <Select
+        size="sm"
+        value={data.assetId ?? NONE}
+        aria-label={t('properties.chooseFile')}
+        options={[
+          { value: NONE, label: t('board.fileMissing') },
+          ...assets.map((asset) => ({ value: asset.id, label: asset.name })),
+        ]}
+        onValueChange={(value) => {
+          save(withData(node, { assetId: value === NONE ? null : value }));
+        }}
+      />
+    </Field>
+  );
+}
+
 const TYPE_SECTIONS: Record<BoardNodeType, ComponentType<{ node: BoardNode }>> = {
   text: TextSection,
   image: ImageSection,
   container: ContainerSection,
   card: CardSection,
+  file: FileSection,
 };
 
 function CardStyleSection({ node }: { node: BoardNode }) {
@@ -540,15 +591,22 @@ function CardStyleSection({ node }: { node: BoardNode }) {
   return <StyleSection node={node} layers={[template?.style]} />;
 }
 
-export function NodeProperties({ board, node }: { board: Board; node: BoardNode }) {
+export interface NodePropertiesProps {
+  board: Board;
+  node: BoardNode;
+  nodes: BoardNode[];
+}
+
+export function NodeProperties({ board, node, nodes }: NodePropertiesProps) {
   const { t } = useTranslation('editors');
   const TypeSection = TYPE_SECTIONS[node.type];
   return (
     <section className={styles['section']} aria-label={t(`properties.${node.type}`)}>
       <h3 className={styles['heading']}>{t(`properties.${node.type}`)}</h3>
-      <ItemSection node={node} />
-      <TypeSection node={node} />
+      <ItemSection node={node} nodes={nodes} />
       <TransformSection board={board} node={node} />
+      <ArrangeSection boardId={board.id} ids={[node.id]} nodes={nodes} />
+      <TypeSection node={node} />
       {node.type === 'card' ? <CardStyleSection node={node} /> : <StyleSection node={node} />}
     </section>
   );

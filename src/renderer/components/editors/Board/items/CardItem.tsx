@@ -4,6 +4,7 @@ import { itemData, withData } from '@renderer/lib/board';
 import { useCardTemplate } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useResolvedColour } from '@renderer/lib/palettes';
+import { cx } from '@renderer/ui';
 import { useBoardActions } from '../BoardContext';
 import { CardView } from '../cards/CardView';
 import { ItemFrame } from './ItemFrame';
@@ -36,7 +37,7 @@ export function CardItem({ data, selected, dragging, width, height }: NodeProps<
           {accent ? <span className={styles['accent']} style={{ background: accent }} /> : null}
           {template ? (
             <CardView
-              className={`nowheel ${styles['cardBody'] ?? ''}`}
+              className={cx('nowheel', styles['cardBody'], !selected && styles['cardInert'])}
               layout={template}
               values={content.values}
               editable={!content.locked}

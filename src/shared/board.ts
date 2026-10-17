@@ -17,7 +17,7 @@ export const boardSchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 
-export const BOARD_NODE_TYPES = ['text', 'image', 'container', 'card'] as const;
+export const BOARD_NODE_TYPES = ['text', 'image', 'container', 'card', 'file'] as const;
 export const boardNodeTypeSchema = z.enum(BOARD_NODE_TYPES);
 
 export const ITEM_SHAPES = ['rectangle', 'rounded', 'ellipse', 'diamond', 'pill'] as const;
@@ -58,6 +58,8 @@ const itemDataSchema = z.object({
   style: itemStyleSchema.default({}),
   name: z.string().max(80).default(''),
   locked: z.boolean().default(false),
+  hidden: z.boolean().default(false),
+  dock: z.string().min(1).nullable().default(null),
 });
 
 export const textDataSchema = itemDataSchema.extend({
@@ -80,11 +82,16 @@ export const cardDataSchema = itemDataSchema.extend({
   values: z.record(z.string(), cardValueSchema).default({}),
 });
 
+export const fileDataSchema = itemDataSchema.extend({
+  assetId: z.string().min(1).nullable().default(null),
+});
+
 export const itemDataSchemas = {
   text: textDataSchema,
   image: imageDataSchema,
   container: containerDataSchema,
   card: cardDataSchema,
+  file: fileDataSchema,
 } as const;
 
 export const boardNodeSchema = z.object({

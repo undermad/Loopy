@@ -43,6 +43,17 @@ describe('splitArea', () => {
     expect(sum(root)).toBeCloseTo(1);
   });
 
+  it('places the new area first when asked', () => {
+    const { root, newAreaId } = splitArea(a, a.id, 'row', 0.75, 'assets', true);
+    const split = root as SplitNode;
+    expect(split.children.map((child) => child.id)).toEqual([newAreaId, a.id]);
+    expect(split.sizes).toEqual([0.25, 0.75]);
+    const inserted = splitArea(row, b.id, 'row', 0.5, 'assets', true);
+    const parent = inserted.root as SplitNode;
+    expect(parent.children.map((child) => child.id)).toEqual([a.id, inserted.newAreaId, b.id]);
+    expect(parent.sizes.map((size) => Number(size.toFixed(2)))).toEqual([0.7, 0.15, 0.15]);
+  });
+
   it('clamps the ratio and ignores unknown areas', () => {
     expect((splitArea(a, a.id, 'row', 0.01).root as SplitNode).sizes[0]).toBe(0.1);
     expect(splitArea(row, 'missing', 'row').root).toBe(row);

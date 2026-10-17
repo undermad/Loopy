@@ -145,6 +145,8 @@ describe('note fill', () => {
                 updateNode: vi.fn(),
                 updateEdge: vi.fn(),
                 openTemplateEditor: vi.fn(),
+                dropTarget: null,
+                dockedPeers: new Set(),
               }}
             >
               <TextItem

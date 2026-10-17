@@ -12,6 +12,7 @@ export {
 } from './store';
 export { areaActions, setHoveredArea } from './areas';
 export { panelActions } from './panels';
+export type { PanelPlacement } from './panels';
 export {
   applyLayout,
   currentLayout,

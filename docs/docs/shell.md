@@ -36,7 +36,7 @@ A layout preset is a saved set of workspaces. Built-in presets come from `src/sh
 
 ## Menu bar and shortcuts
 
-The menu bar is a Radix Menubar rendered in the renderer. Edit commands go to the main process, which calls the matching `webContents` method. Shortcuts are declared once in `src/renderer/lib/shortcuts/keymap.ts` and bound with `tinykeys`; the Help menu lists them.
+The menu bar is a Radix Menubar rendered in the renderer. Edit commands first go to `runEditCommand` in `src/renderer/lib/commands`, which offers them to the area that last had focus; the board handles undo, redo, cut, copy, paste, delete and select all this way. Anything not handled goes to the main process, which calls the matching `webContents` method. The library exports `runEditCommand`, `registerEditTarget`, the `useEditTarget` hook and `isEditable`. Shortcuts are declared once in `src/renderer/lib/shortcuts/keymap.ts` and bound with `tinykeys`; the Help menu lists them.
 
 | Shortcut      | Action                      |
 | ------------- | --------------------------- |

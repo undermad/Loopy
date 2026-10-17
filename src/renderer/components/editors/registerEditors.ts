@@ -1,6 +1,7 @@
 import {
   FolderOpen,
   KanbanSquare,
+  Layers,
   LayoutTemplate,
   Palette,
   PenTool,
@@ -12,6 +13,7 @@ import { AssetsEditor } from './Assets/AssetsEditor';
 import { BoardEditor } from './Board/BoardEditor';
 import { ColoursEditor } from './Colours/ColoursEditor';
 import { EmptyEditor } from './EmptyEditor';
+import { LayersEditor } from './Layers/LayersEditor';
 import { PropertiesEditor } from './Properties/PropertiesEditor';
 import { TicketEditor } from './Tickets/TicketEditor';
 import { TicketsEditor } from './Tickets/TicketsEditor';
@@ -30,6 +32,13 @@ export function registerEditors(): void {
     icon: SlidersHorizontal,
     component: PropertiesEditor,
     category: 'general',
+  });
+  registerEditor({
+    id: 'layers',
+    titleKey: 'types.layers',
+    icon: Layers,
+    component: LayersEditor,
+    category: 'design',
   });
   registerEditor({
     id: 'colours',
