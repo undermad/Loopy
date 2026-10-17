@@ -22,3 +22,5 @@ Hard-to-reverse choices are recorded here, one file each, with Context, Decision
 | [0011](./0011-storybook-later.md)       | Storybook deferred to iteration 2                |
 | [0012](./0012-docusaurus.md)            | Docusaurus for documentation                     |
 | [0013](./0013-commit-format.md)         | Conventional Commits without scope, squash merge |
+| [0014](./0014-sqlite-project-file.md)   | One SQLite database per project, `.loopy`        |
+| [0015](./0015-app-state-json.md)        | App settings and device state as JSON files      |
