@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PreferencesDialog } from '@renderer/components/Preferences/PreferencesDialog';
+import { ThemeProvider } from '@renderer/lib/theme';
 import { ToastProvider, TooltipProvider } from '@renderer/ui';
 import { bootTestApp, type FakeApi } from './helpers/api';
 
@@ -9,11 +10,13 @@ let api: FakeApi;
 
 function Harness() {
   return (
-    <TooltipProvider>
-      <ToastProvider closeLabel="Dismiss" regionLabel="Notifications">
-        <PreferencesDialog open onOpenChange={vi.fn()} />
-      </ToastProvider>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <ToastProvider closeLabel="Dismiss" regionLabel="Notifications">
+          <PreferencesDialog open onOpenChange={vi.fn()} />
+        </ToastProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   );
 }
 

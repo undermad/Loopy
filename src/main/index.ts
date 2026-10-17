@@ -25,6 +25,7 @@ import { createMainWindow } from './window';
 loadDotenv({ quiet: true });
 const env = parseEnv(process.env);
 const logger = createLogger(env.LOOPY_LOG_LEVEL);
+if (env.LOOPY_USER_DATA) app.setPath('userData', env.LOOPY_USER_DATA);
 
 function broadcast(channel: string, payload: unknown): void {
   for (const window of BrowserWindow.getAllWindows()) window.webContents.send(channel, payload);

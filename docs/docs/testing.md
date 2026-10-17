@@ -51,3 +51,7 @@ The E2E suite launches the built app from `out/`, so run `npm run build` first. 
 ## jsdom stubs
 
 `tests/setup/renderer.ts` stubs `ResizeObserver`, pointer capture and `scrollIntoView`, which jsdom lacks, and moves every `react-resizable-panels` separator away from the origin. Without that, every element sits at 0,0 in jsdom, the library takes each click for a divider drag and Radix menus never open.
+
+## E2E user data
+
+The Electron fixture in `tests/e2e/fixtures/electron.ts` starts every test with an empty temporary directory passed as `LOOPY_USER_DATA`, which main applies with `app.setPath` before anything is read. A run never touches the settings, projects or themes of the machine it runs on.
