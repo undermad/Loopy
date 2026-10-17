@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import { attachClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { describe, expect, it } from 'vitest';
 import { previewFor } from '@renderer/components/editors/Tickets/BoardView';
 import { columnTargetIndex, isStateDrag } from '@renderer/components/editors/Tickets/dnd';
@@ -25,7 +26,15 @@ snapshot.tickets = [ticket('a', 'a'), ticket('b', 'b')];
 const location = (data: Record<string | symbol, unknown> | null) => ({
   current: { dropTargets: data ? [{ data }] : [] },
 });
-const edge = Symbol.for('closestEdge');
+const box = {
+  getBoundingClientRect: () => ({ top: 0, bottom: 100, left: 0, right: 100, width: 100, height: 100 }),
+} as unknown as Element;
+const withEdge = (
+  data: Record<string, unknown>,
+  x: number,
+  y: number,
+  allowedEdges: ('top' | 'bottom' | 'left' | 'right')[],
+) => attachClosestEdge(data, { element: box, input: { clientX: x, clientY: y } as never, allowedEdges });
 
 describe('previewFor', () => {
   it('resolves ticket drops onto cards, columns and nothing', () => {
@@ -37,7 +46,11 @@ describe('previewFor', () => {
       index: 0,
     });
     expect(
-      previewFor(snapshot, source, location({ type: 'card', id: 'b', stateId: 'todo', [edge]: 'bottom' })),
+      previewFor(
+        snapshot,
+        source,
+        location(withEdge({ type: 'card', id: 'b', stateId: 'todo' }, 50, 95, ['top', 'bottom'])),
+      ),
     ).toEqual({
       kind: 'ticket',
       stateId: 'todo',
@@ -50,10 +63,18 @@ describe('previewFor', () => {
     const source = { data: { type: 'state', id: 'todo' } };
     expect(isStateDrag(source.data)).toBe(true);
     expect(
-      previewFor(snapshot, source, location({ type: 'column', stateId: 'done', [edge]: 'right' })),
+      previewFor(
+        snapshot,
+        source,
+        location(withEdge({ type: 'column', stateId: 'done' }, 95, 50, ['left', 'right'])),
+      ),
     ).toEqual({ kind: 'state', index: 2 });
     expect(
-      previewFor(snapshot, source, location({ type: 'column', stateId: 'doing', [edge]: 'left' })),
+      previewFor(
+        snapshot,
+        source,
+        location(withEdge({ type: 'column', stateId: 'doing' }, 5, 50, ['left', 'right'])),
+      ),
     ).toEqual({ kind: 'state', index: 0 });
     expect(previewFor(snapshot, source, location({ type: 'card', id: 'a' }))).toBeNull();
     expect(
