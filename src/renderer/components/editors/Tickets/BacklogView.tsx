@@ -1,140 +1,178 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   DndContext,
+  DragOverlay,
+  KeyboardSensor,
   PointerSensor,
-  closestCenter,
+  closestCorners,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import { ArrowRight, Inbox } from 'lucide-react';
-import { ticketKey } from '@shared/tickets';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { Plus } from 'lucide-react';
+import { ticketKey, type Ticket } from '@shared/tickets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useCurrentProject } from '@renderer/lib/project';
 import {
-  firstTodoState,
   labelsOf,
   matchesSearch,
-  selectTicket,
+  openSprints,
+  sprintActions,
   ticketActions,
-  ticketsInState,
-  useSelectedTicketId,
+  ticketsInSprint,
   useTicketsSnapshot,
 } from '@renderer/lib/tickets';
-import { Button, EmptyState, cx } from '@renderer/ui';
-import { arrayMove } from './dnd';
-import { QuickAdd } from './QuickAdd';
+import { Button, ScrollArea } from '@renderer/ui';
+import { PromptDialog } from '../../Shell/PromptDialog';
+import {
+  BACKLOG_KEY,
+  dataOf,
+  dropTicket,
+  findColumn,
+  ordersFromLists,
+  overTicket,
+  stateIdOf,
+  type ColumnKey,
+  type Orders,
+} from './dnd';
+import { SprintSection } from './SprintSection';
 import { TicketCard } from './TicketCard';
 import styles from './BacklogView.module.scss';
-
-const VIRTUAL_THRESHOLD = 100;
 
 export function BacklogView({ search }: { search: string }) {
   const { t } = useTranslation('editors');
   const snapshot = useTicketsSnapshot();
   const project = useCurrentProject();
-  const selectedId = useSelectedTicketId();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const keyFor = (ticket: { number: number }) => ticketKey(project?.name ?? '', ticket.number);
-  const tickets = ticketsInState(snapshot, null).filter((ticket) =>
-    matchesSearch(ticket, keyFor(ticket), search),
+  const projectName = project?.name ?? '';
+  const keyFor = (ticket: { number: number }) => ticketKey(projectName, ticket.number);
+  const [creating, setCreating] = useState(false);
+  const [active, setActive] = useState<{ id: string; fromKey: ColumnKey } | null>(null);
+  const [orders, setOrders] = useState<Orders | null>(null);
+  const settling = useRef(0);
+  const sprints = openSprints(snapshot);
+  const lists = useMemo(() => {
+    const visible = (ticket: Ticket) => matchesSearch(ticket, ticketKey(projectName, ticket.number), search);
+    const result: Record<ColumnKey, Ticket[]> = {};
+    for (const sprint of openSprints(snapshot)) {
+      result[sprint.id] = ticketsInSprint(snapshot, sprint.id).filter(visible);
+    }
+    result[BACKLOG_KEY] = ticketsInSprint(snapshot, null).filter(visible);
+    return result;
+  }, [snapshot, search, projectName]);
+  const liveOrders = orders ?? ordersFromLists(lists);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-  const virtualizer = useVirtualizer({
-    count: tickets.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => 40,
-    overscan: 10,
-    initialRect: { width: 0, height: 600 },
-  });
 
-  const board = firstTodoState(snapshot);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-  const [settledOrder, setSettledOrder] = useState<string[] | null>(null);
-  const byId = new Map(tickets.map((ticket) => [ticket.id, ticket]));
-  const rowsSource = settledOrder
-    ? settledOrder.flatMap((id) => {
-        const ticket = byId.get(id);
-        return ticket ? [ticket] : [];
-      })
-    : tickets;
-  const ids = rowsSource.map((ticket) => ticket.id);
+  function onDragStart({ active: item }: DragStartEvent) {
+    const data = dataOf(item);
+    if (data?.type !== 'ticket') return;
+    const base = ordersFromLists(lists);
+    setOrders(base);
+    setActive({ id: data.id, fromKey: findColumn(base, data.id) ?? BACKLOG_KEY });
+  }
 
-  function onDragEnd({ active, over }: DragEndEvent) {
-    if (!over || active.id === over.id) return;
-    const from = ids.indexOf(String(active.id));
-    const to = ids.indexOf(String(over.id));
-    if (from < 0 || to < 0) return;
-    setSettledOrder(arrayMove(ids, from, to));
-    void ticketActions.moveTo(String(active.id), null, to).finally(() => {
-      setSettledOrder(null);
+  function onDragOver({ active: item, over }: DragOverEvent) {
+    const data = dataOf(item);
+    if (data?.type === 'ticket' && orders) setOrders(overTicket(orders, data.id, dataOf(over)));
+  }
+
+  function onDragEnd({ over }: DragEndEvent) {
+    const target = dataOf(over);
+    const current = active;
+    setActive(null);
+    const drop = current && orders ? dropTicket(orders, current.id, target, current.fromKey) : null;
+    if (!current || !drop) {
+      setOrders(null);
+      return;
+    }
+    setOrders(drop.orders);
+    const key = findColumn(drop.orders, current.id) ?? BACKLOG_KEY;
+    const token = (settling.current += 1);
+    void ticketActions.place(current.id, stateIdOf(key), drop.index, lists[key] ?? []).finally(() => {
+      if (token === settling.current) setOrders(null);
     });
   }
-  const virtual = tickets.length > VIRTUAL_THRESHOLD;
-  const rows = virtual
-    ? virtualizer.getVirtualItems().map((item) => ({ index: item.index, start: item.start }))
-    : tickets.map((_, index) => ({ index, start: null }));
+
+  const activeTicket = active ? snapshot.tickets.find((ticket) => ticket.id === active.id) : undefined;
+  const anyActive = sprints.some((sprint) => sprint.status === 'active');
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-      <div className={styles['backlog']}>
-        <div className={styles['toolbar']}>
-          <QuickAdd stateId={null} className={styles['quickAdd']} />
-        </div>
-        {tickets.length === 0 ? (
-          <EmptyState
-            icon={<Inbox />}
-            title={t('tickets.emptyBacklog')}
-            description={t('tickets.emptyBacklogHint')}
-          />
-        ) : (
-          <div ref={scrollRef} className={styles['list']}>
-            <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-              <div style={virtual ? { height: virtualizer.getTotalSize(), position: 'relative' } : undefined}>
-                {rows.map((item) => {
-                  const ticket = rowsSource[item.index];
-                  if (!ticket) return null;
-                  return (
-                    <div
-                      key={ticket.id}
-                      className={cx(styles['row'], virtual && styles['virtualRow'])}
-                      style={
-                        item.start === null ? undefined : { transform: `translateY(${String(item.start)}px)` }
-                      }
-                      ref={virtual ? virtualizer.measureElement : undefined}
-                      data-index={item.index}
-                    >
-                      <TicketCard
-                        ticket={ticket}
-                        ticketKey={keyFor(ticket)}
-                        labels={labelsOf(snapshot, ticket.id)}
-                        selected={ticket.id === selectedId}
-                        variant="row"
-                        onSelect={() => {
-                          selectTicket(ticket.id);
-                        }}
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        icon={<ArrowRight aria-hidden="true" />}
-                        disabled={board === null}
-                        className={styles['move']}
-                        onClick={() => {
-                          if (board) void ticketActions.update(ticket.id, { stateId: board });
-                        }}
-                      >
-                        {t('tickets.moveToBoard')}
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </SortableContext>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => {
+        setActive(null);
+        setOrders(null);
+      }}
+    >
+      <ScrollArea className={styles['scroll']}>
+        <div className={styles['backlog']}>
+          <div className={styles['toolbar']}>
+            {sprints.length === 0 ? <p className={styles['hint']}>{t('tickets.noSprintsHint')}</p> : null}
+            <Button
+              size="sm"
+              icon={<Plus aria-hidden="true" />}
+              className={styles['create']}
+              onClick={() => {
+                setCreating(true);
+              }}
+            >
+              {t('tickets.createSprint')}
+            </Button>
           </div>
-        )}
-      </div>
+          {sprints.map((sprint) => (
+            <SprintSection
+              key={sprint.id}
+              sprint={sprint}
+              tickets={lists[sprint.id] ?? []}
+              orderedIds={liveOrders[sprint.id] ?? []}
+              keyFor={keyFor}
+              canStart={!anyActive}
+            />
+          ))}
+          <SprintSection
+            sprint={null}
+            tickets={lists[BACKLOG_KEY] ?? []}
+            orderedIds={liveOrders[BACKLOG_KEY] ?? []}
+            keyFor={keyFor}
+            canStart={false}
+          />
+        </div>
+      </ScrollArea>
+      <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2, 0, 0, 1)' }}>
+        {activeTicket ? (
+          <TicketCard
+            ticket={activeTicket}
+            ticketKey={keyFor(activeTicket)}
+            labels={labelsOf(snapshot, activeTicket.id)}
+            selected={false}
+            variant="row"
+            onSelect={() => undefined}
+            overlay
+          />
+        ) : null}
+      </DragOverlay>
+      {creating ? (
+        <PromptDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setCreating(false);
+          }}
+          title={t('tickets.createSprint')}
+          label={t('tickets.sprintName')}
+          initialValue={t('tickets.defaultSprintName', { number: snapshot.sprints.length + 1 })}
+          submitLabel={t('tickets.createSprint')}
+          onSubmit={(name) => sprintActions.create({ name }).then(() => undefined)}
+        />
+      ) : null}
     </DndContext>
   );
 }

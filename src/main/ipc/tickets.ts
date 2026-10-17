@@ -1,5 +1,5 @@
 import type { IpcMain } from 'electron';
-import { IpcChannel, entityIdSchema, labelIdsSchema, positionSchema } from '@shared/ipc';
+import { IpcChannel, commentBodySchema, entityIdSchema, labelIdsSchema, positionSchema } from '@shared/ipc';
 import type { ProjectDatabase } from '../storage/project-database';
 import {
   createLabel,
@@ -16,6 +16,19 @@ import {
   updateState,
   updateTicket,
 } from '../storage/tickets-repository';
+import {
+  completeSprint,
+  createComment,
+  createSprint,
+  createTemplate,
+  deleteComment,
+  deleteSprint,
+  deleteTemplate,
+  startSprint,
+  updateComment,
+  updateSprint,
+  updateTemplate,
+} from '../storage/sprints-repository';
 
 export interface TicketsHandlerDeps {
   project: () => ProjectDatabase | null;
@@ -62,4 +75,21 @@ export function registerTicketsHandlers(ipc: Pick<IpcMain, 'handle'>, deps: Tick
     updateLabel(db(), id(rawId), patch),
   );
   ipc.handle(IpcChannel.labelsDelete, (_event, rawId: unknown) => deleteLabel(db(), id(rawId)));
+  ipc.handle(IpcChannel.sprintsCreate, (_event, input: unknown) => createSprint(db(), input));
+  ipc.handle(IpcChannel.sprintsUpdate, (_event, rawId: unknown, patch: unknown) =>
+    updateSprint(db(), id(rawId), patch),
+  );
+  ipc.handle(IpcChannel.sprintsStart, (_event, rawId: unknown) => startSprint(db(), id(rawId)));
+  ipc.handle(IpcChannel.sprintsComplete, (_event, input: unknown) => completeSprint(db(), input));
+  ipc.handle(IpcChannel.sprintsDelete, (_event, rawId: unknown) => deleteSprint(db(), id(rawId)));
+  ipc.handle(IpcChannel.commentsCreate, (_event, input: unknown) => createComment(db(), input));
+  ipc.handle(IpcChannel.commentsUpdate, (_event, rawId: unknown, body: unknown) =>
+    updateComment(db(), id(rawId), commentBodySchema.parse(body)),
+  );
+  ipc.handle(IpcChannel.commentsDelete, (_event, rawId: unknown) => deleteComment(db(), id(rawId)));
+  ipc.handle(IpcChannel.templatesCreate, (_event, input: unknown) => createTemplate(db(), input));
+  ipc.handle(IpcChannel.templatesUpdate, (_event, rawId: unknown, patch: unknown) =>
+    updateTemplate(db(), id(rawId), patch),
+  );
+  ipc.handle(IpcChannel.templatesDelete, (_event, rawId: unknown) => deleteTemplate(db(), id(rawId)));
 }

@@ -24,7 +24,15 @@ function rect(x: number, y: number, width: number, height: number): DOMRect {
   };
 }
 
+const emptyRects = () => [] as unknown as DOMRectList;
+
+Object.assign(Range.prototype, {
+  getClientRects: emptyRects,
+  getBoundingClientRect: () => rect(0, 0, 0, 0),
+});
+
 Object.assign(Element.prototype, {
+  getClientRects: emptyRects,
   hasPointerCapture: () => false,
   setPointerCapture: () => undefined,
   releasePointerCapture: () => undefined,

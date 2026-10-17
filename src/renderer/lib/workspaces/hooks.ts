@@ -1,5 +1,6 @@
 import { useStore } from 'zustand';
 import type { LayoutPreset, Workspace } from '@shared/layout';
+import { panelAreaIds } from './panels';
 import { workspacesStore } from './store';
 
 export function useWorkspaces(): Workspace[] {
@@ -27,4 +28,13 @@ export function useLayoutPresets(): LayoutPreset[] {
 
 export function useHoveredAreaId(): string | null {
   return useStore(workspacesStore, (state) => state.hoveredAreaId);
+}
+
+export function usePanelOpen(editor: string): boolean {
+  return useStore(
+    workspacesStore,
+    (state) =>
+      panelAreaIds(state.workspaces.find((workspace) => workspace.id === state.activeId) ?? null, editor)
+        .length > 0,
+  );
 }

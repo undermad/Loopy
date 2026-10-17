@@ -2,14 +2,19 @@ import { keyBetween } from '@shared/ordering';
 import type {
   LabelInput,
   LabelPatch,
+  SprintInput,
+  SprintPatch,
   StateInput,
   StatePatch,
+  TemplateInput,
+  TemplatePatch,
   Ticket,
   TicketInput,
   TicketPatch,
+  TicketTemplate,
 } from '@shared/tickets';
 import { mutate, ticketsStore } from './store';
-import { ticketsInState } from './select';
+import { boardTickets } from './select';
 
 export const ticketActions = {
   create: (input: TicketInput) => mutate((api) => api.createTicket(input)),
@@ -19,12 +24,57 @@ export const ticketActions = {
   moveTo(id: string, stateId: string | null, index: number) {
     const snapshot = ticketsStore.getState().snapshot;
     if (!snapshot) return Promise.resolve(snapshot);
-    const column = ticketsInState(snapshot, stateId).filter((ticket) => ticket.id !== id);
-    const before: Ticket | undefined = column[index - 1];
-    const after: Ticket | undefined = column[index];
-    const position = keyBetween(before?.position ?? null, after?.position ?? null);
-    return mutate((api) => api.moveTicket({ id, stateId, position }));
+    const column = (stateId ? boardTickets(snapshot, stateId) : []).filter((ticket) => ticket.id !== id);
+    return mutate((api) => api.moveTicket({ id, stateId, position: positionAt(column, index) }));
   },
+  place(id: string, sprintId: string | null, index: number, siblings: Ticket[]) {
+    const snapshot = ticketsStore.getState().snapshot;
+    if (!snapshot) return Promise.resolve(snapshot);
+    const ticket = snapshot.tickets.find((candidate) => candidate.id === id);
+    if (!ticket) return Promise.resolve(snapshot);
+    const list = siblings.filter((candidate) => candidate.id !== id);
+    return mutate((api) =>
+      api.moveTicket({ id, stateId: ticket.stateId, sprintId, position: positionAt(list, index) }),
+    );
+  },
+  fromTemplate(template: TicketTemplate, overrides: Partial<TicketInput> = {}) {
+    return mutate((api) =>
+      api.createTicket({
+        title: template.title || template.name,
+        description: template.description,
+        type: template.type,
+        priority: template.priority,
+        estimate: template.estimate,
+        labelIds: template.labelIds,
+        ...overrides,
+      }),
+    );
+  },
+};
+
+function positionAt(list: Ticket[], index: number): string {
+  const clamped = Math.max(0, Math.min(index, list.length));
+  return keyBetween(list[clamped - 1]?.position ?? null, list[clamped]?.position ?? null);
+}
+
+export const sprintActions = {
+  create: (input: SprintInput) => mutate((api) => api.createSprint(input)),
+  update: (id: string, patch: SprintPatch) => mutate((api) => api.updateSprint(id, patch)),
+  start: (id: string) => mutate((api) => api.startSprint(id)),
+  complete: (id: string, moveTo: string | null) => mutate((api) => api.completeSprint({ id, moveTo })),
+  remove: (id: string) => mutate((api) => api.deleteSprint(id)),
+};
+
+export const commentActions = {
+  create: (ticketId: string, body: string) => mutate((api) => api.createComment({ ticketId, body })),
+  update: (id: string, body: string) => mutate((api) => api.updateComment(id, body)),
+  remove: (id: string) => mutate((api) => api.deleteComment(id)),
+};
+
+export const templateActions = {
+  create: (input: TemplateInput) => mutate((api) => api.createTemplate(input)),
+  update: (id: string, patch: TemplatePatch) => mutate((api) => api.updateTemplate(id, patch)),
+  remove: (id: string) => mutate((api) => api.deleteTemplate(id)),
 };
 
 export const stateActions = {

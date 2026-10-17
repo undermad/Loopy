@@ -16,10 +16,16 @@ import {
 } from './board';
 import {
   ticketsSnapshotSchema,
+  type CommentInput,
   type LabelInput,
   type LabelPatch,
   type StateInput,
+  type SprintComplete,
+  type SprintInput,
+  type SprintPatch,
   type StatePatch,
+  type TemplateInput,
+  type TemplatePatch,
   type TicketInput,
   type TicketMove,
   type TicketPatch,
@@ -72,6 +78,17 @@ export const IpcChannel = {
   labelsCreate: 'labels:create',
   labelsUpdate: 'labels:update',
   labelsDelete: 'labels:delete',
+  sprintsCreate: 'sprints:create',
+  sprintsUpdate: 'sprints:update',
+  sprintsStart: 'sprints:start',
+  sprintsComplete: 'sprints:complete',
+  sprintsDelete: 'sprints:delete',
+  commentsCreate: 'comments:create',
+  commentsUpdate: 'comments:update',
+  commentsDelete: 'comments:delete',
+  templatesCreate: 'templates:create',
+  templatesUpdate: 'templates:update',
+  templatesDelete: 'templates:delete',
   boardsList: 'boards:list',
   boardsCreate: 'boards:create',
   boardsUpdate: 'boards:update',
@@ -195,6 +212,17 @@ export interface LoopyApi {
   createLabel: (input: LabelInput) => Promise<TicketsSnapshot>;
   updateLabel: (id: string, patch: LabelPatch) => Promise<TicketsSnapshot>;
   deleteLabel: (id: string) => Promise<TicketsSnapshot>;
+  createSprint: (input: SprintInput) => Promise<TicketsSnapshot>;
+  updateSprint: (id: string, patch: SprintPatch) => Promise<TicketsSnapshot>;
+  startSprint: (id: string) => Promise<TicketsSnapshot>;
+  completeSprint: (input: SprintComplete) => Promise<TicketsSnapshot>;
+  deleteSprint: (id: string) => Promise<TicketsSnapshot>;
+  createComment: (input: CommentInput) => Promise<TicketsSnapshot>;
+  updateComment: (id: string, body: string) => Promise<TicketsSnapshot>;
+  deleteComment: (id: string) => Promise<TicketsSnapshot>;
+  createTemplate: (input: TemplateInput) => Promise<TicketsSnapshot>;
+  updateTemplate: (id: string, patch: TemplatePatch) => Promise<TicketsSnapshot>;
+  deleteTemplate: (id: string) => Promise<TicketsSnapshot>;
   listBoards: () => Promise<Board[]>;
   createBoard: (input: BoardInput) => Promise<Board>;
   updateBoard: (id: string, patch: BoardPatch) => Promise<Board>;
@@ -206,5 +234,6 @@ export interface LoopyApi {
 export const entityIdSchema = z.string().min(1);
 export const labelIdsSchema = z.array(entityIdSchema);
 export const positionSchema = z.string().min(1);
+export const commentBodySchema = z.string().min(1).max(20_000);
 
 export { boardListSchema, boardSchema, boardSnapshotSchema, ticketsSnapshotSchema };

@@ -115,6 +115,41 @@ export const projectMigrations: SqlMigrations = [
   `ALTER TABLE boards ADD COLUMN unit TEXT NOT NULL DEFAULT 'm' CHECK (unit IN ('px', 'mm', 'cm', 'm', 'km'));
   ALTER TABLE boards ADD COLUMN unit_scale REAL NOT NULL DEFAULT 100 CHECK (unit_scale > 0);`,
   `ALTER TABLE boards ADD COLUMN grid_color TEXT NOT NULL DEFAULT '#808080';`,
+  `CREATE TABLE sprints (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL CHECK (length(name) > 0),
+    goal TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL CHECK (status IN ('planned', 'active', 'completed')),
+    position TEXT NOT NULL,
+    started_at TEXT,
+    completed_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  ALTER TABLE tickets ADD COLUMN sprint_id TEXT REFERENCES sprints(id) ON DELETE SET NULL;
+  ALTER TABLE tickets ADD COLUMN estimate REAL CHECK (estimate IS NULL OR estimate >= 0);
+  ALTER TABLE tickets ADD COLUMN due_at TEXT;
+  CREATE INDEX tickets_by_sprint ON tickets(sprint_id, position);
+  CREATE TABLE ticket_comments (
+    id TEXT PRIMARY KEY,
+    ticket_id TEXT NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+    body TEXT NOT NULL CHECK (length(body) > 0),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX ticket_comments_by_ticket ON ticket_comments(ticket_id, created_at);
+  CREATE TABLE ticket_templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL CHECK (length(name) > 0),
+    title TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '',
+    type TEXT NOT NULL CHECK (type IN ('task', 'spike', 'bug')),
+    priority TEXT NOT NULL CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+    estimate REAL CHECK (estimate IS NULL OR estimate >= 0),
+    label_ids TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

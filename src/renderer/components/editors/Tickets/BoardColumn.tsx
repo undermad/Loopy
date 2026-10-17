@@ -8,7 +8,7 @@ import { useTranslation } from '@renderer/lib/i18n';
 import { labelsOf, selectTicket, stateActions, useSelectedTicketId } from '@renderer/lib/tickets';
 import { ColorPicker, ConfirmDialog, DropdownMenu, IconButton, ScrollArea, cx } from '@renderer/ui';
 import { PromptDialog } from '../../Shell/PromptDialog';
-import { columnId, type ColumnDropData, type StateDragData } from './dnd';
+import { columnId, columnKey, type ColumnDropData, type StateDragData } from './dnd';
 import { QuickAdd } from './QuickAdd';
 import { TicketCard } from './TicketCard';
 import styles from './BoardColumn.module.scss';
@@ -22,6 +22,7 @@ export interface BoardColumnProps {
   total: number;
   orderedIds: string[];
   dragKind: 'ticket' | 'state' | null;
+  sprintId: string | null;
 }
 
 const CATEGORIES: StateCategory[] = ['todo', 'doing', 'done'];
@@ -35,11 +36,12 @@ export function BoardColumn({
   total,
   orderedIds,
   dragKind,
+  sprintId,
 }: BoardColumnProps) {
   const { t } = useTranslation('editors');
   const { t: tc } = useTranslation('common');
   const selectedId = useSelectedTicketId();
-  const dropData: ColumnDropData = { type: 'column', stateId: state.id };
+  const dropData: ColumnDropData = { type: 'column', key: columnKey(state.id) };
   const dragData: StateDragData = { type: 'state', id: state.id };
   const { setNodeRef: setBodyRef, isOver } = useDroppable({
     id: columnId(state.id),
@@ -162,7 +164,7 @@ export function BoardColumn({
         </div>
       </ScrollArea>
       <footer className={styles['footer']}>
-        <QuickAdd stateId={state.id} />
+        <QuickAdd stateId={state.id} sprintId={sprintId} />
       </footer>
       {dialog === 'rename' ? (
         <PromptDialog

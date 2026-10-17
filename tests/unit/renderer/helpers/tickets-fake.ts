@@ -2,14 +2,23 @@ import { vi } from 'vitest';
 import type { LoopyApi } from '@shared/ipc';
 import { keyBetween } from '@shared/ordering';
 import {
+  commentInputSchema,
   labelInputSchema,
+  sprintCompleteSchema,
+  sprintInputSchema,
   stateInputSchema,
+  templateInputSchema,
   ticketInputSchema,
+  type Comment,
   type LabelPatch,
+  type Sprint,
+  type SprintPatch,
   type StatePatch,
+  type TemplatePatch,
   type Ticket,
   type TicketMove,
   type TicketPatch,
+  type TicketTemplate,
   type TicketsSnapshot,
 } from '@shared/tickets';
 
@@ -28,6 +37,17 @@ export type TicketsFakeApi = Pick<
   | 'createLabel'
   | 'updateLabel'
   | 'deleteLabel'
+  | 'createSprint'
+  | 'updateSprint'
+  | 'startSprint'
+  | 'completeSprint'
+  | 'deleteSprint'
+  | 'createComment'
+  | 'updateComment'
+  | 'deleteComment'
+  | 'createTemplate'
+  | 'updateTemplate'
+  | 'deleteTemplate'
 >;
 
 function merge<T extends object>(item: T, patch: object): T {
@@ -45,6 +65,9 @@ export function emptyTicketsSnapshot(): TicketsSnapshot {
     tickets: [],
     labels: [],
     ticketLabels: [],
+    sprints: [],
+    comments: [],
+    templates: [],
   };
 }
 
@@ -67,16 +90,20 @@ export function createTicketsFake(initial: TicketsSnapshot = emptyTicketsSnapsho
         id: `ticket-${String(number)}`,
         number,
         title: input.title,
-        description: '',
+        description: input.description,
         type: input.type,
         priority: input.priority,
-        stateId: input.stateId,
+        stateId: input.stateId ?? (input.sprintId ? 'todo' : null),
+        sprintId: input.sprintId,
+        estimate: input.estimate,
+        dueAt: input.dueAt,
         position: keyBetween(lastPosition(input.stateId), null),
         createdAt: stamp,
         updatedAt: stamp,
         resolvedAt: null,
       };
       data.snapshot.tickets.push(ticket);
+      for (const labelId of input.labelIds) data.snapshot.ticketLabels.push({ ticketId: ticket.id, labelId });
       return snapshot();
     }),
     updateTicket: vi.fn((id: string, patch: TicketPatch) => {
@@ -87,7 +114,14 @@ export function createTicketsFake(initial: TicketsSnapshot = emptyTicketsSnapsho
     }),
     moveTicket: vi.fn((move: TicketMove) => {
       data.snapshot.tickets = data.snapshot.tickets.map((ticket) =>
-        ticket.id === move.id ? { ...ticket, stateId: move.stateId, position: move.position } : ticket,
+        ticket.id === move.id
+          ? {
+              ...ticket,
+              stateId: move.stateId ?? (move.sprintId ? 'todo' : null),
+              position: move.position,
+              sprintId: move.sprintId === undefined ? ticket.sprintId : move.sprintId,
+            }
+          : ticket,
       );
       return snapshot();
     }),
@@ -146,6 +180,99 @@ export function createTicketsFake(initial: TicketsSnapshot = emptyTicketsSnapsho
     }),
     deleteLabel: vi.fn((id: string) => {
       data.snapshot.labels = data.snapshot.labels.filter((label) => label.id !== id);
+      return snapshot();
+    }),
+    createSprint: vi.fn((raw: unknown) => {
+      const input = sprintInputSchema.parse(raw);
+      const sprint: Sprint = {
+        id: `sprint-${String(data.snapshot.sprints.length + 1)}`,
+        name: input.name,
+        goal: input.goal,
+        status: 'planned',
+        position: keyBetween(data.snapshot.sprints.at(-1)?.position ?? null, null),
+        startedAt: null,
+        completedAt: null,
+        createdAt: stamp,
+        updatedAt: stamp,
+      };
+      data.snapshot.sprints.push(sprint);
+      return snapshot();
+    }),
+    updateSprint: vi.fn((id: string, patch: SprintPatch) => {
+      data.snapshot.sprints = data.snapshot.sprints.map((sprint) =>
+        sprint.id === id ? merge(sprint, patch) : sprint,
+      );
+      return snapshot();
+    }),
+    startSprint: vi.fn((id: string) => {
+      if (data.snapshot.sprints.some((sprint) => sprint.status === 'active')) {
+        return Promise.reject(new Error('Another sprint is already active'));
+      }
+      data.snapshot.sprints = data.snapshot.sprints.map((sprint) =>
+        sprint.id === id ? { ...sprint, status: 'active', startedAt: stamp } : sprint,
+      );
+      return snapshot();
+    }),
+    completeSprint: vi.fn((raw: unknown) => {
+      const input = sprintCompleteSchema.parse(raw);
+      data.snapshot.tickets = data.snapshot.tickets.map((ticket) =>
+        ticket.sprintId === input.id && ticket.resolvedAt === null
+          ? { ...ticket, sprintId: input.moveTo }
+          : ticket,
+      );
+      data.snapshot.sprints = data.snapshot.sprints.map((sprint) =>
+        sprint.id === input.id ? { ...sprint, status: 'completed', completedAt: stamp } : sprint,
+      );
+      return snapshot();
+    }),
+    deleteSprint: vi.fn((id: string) => {
+      data.snapshot.sprints = data.snapshot.sprints.filter((sprint) => sprint.id !== id);
+      data.snapshot.tickets = data.snapshot.tickets.map((ticket) =>
+        ticket.sprintId === id ? { ...ticket, sprintId: null } : ticket,
+      );
+      return snapshot();
+    }),
+    createComment: vi.fn((raw: unknown) => {
+      const input = commentInputSchema.parse(raw);
+      const comment: Comment = {
+        id: `comment-${String(data.snapshot.comments.length + 1)}`,
+        ticketId: input.ticketId,
+        body: input.body,
+        createdAt: stamp,
+        updatedAt: stamp,
+      };
+      data.snapshot.comments.push(comment);
+      return snapshot();
+    }),
+    updateComment: vi.fn((id: string, body: string) => {
+      data.snapshot.comments = data.snapshot.comments.map((comment) =>
+        comment.id === id ? { ...comment, body } : comment,
+      );
+      return snapshot();
+    }),
+    deleteComment: vi.fn((id: string) => {
+      data.snapshot.comments = data.snapshot.comments.filter((comment) => comment.id !== id);
+      return snapshot();
+    }),
+    createTemplate: vi.fn((raw: unknown) => {
+      const input = templateInputSchema.parse(raw);
+      const template: TicketTemplate = {
+        id: `template-${String(data.snapshot.templates.length + 1)}`,
+        ...input,
+        createdAt: stamp,
+        updatedAt: stamp,
+      };
+      data.snapshot.templates.push(template);
+      return snapshot();
+    }),
+    updateTemplate: vi.fn((id: string, patch: TemplatePatch) => {
+      data.snapshot.templates = data.snapshot.templates.map((template) =>
+        template.id === id ? merge(template, patch) : template,
+      );
+      return snapshot();
+    }),
+    deleteTemplate: vi.fn((id: string) => {
+      data.snapshot.templates = data.snapshot.templates.filter((template) => template.id !== id);
       return snapshot();
     }),
   };

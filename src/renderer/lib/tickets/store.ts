@@ -18,6 +18,17 @@ export type TicketsApi = Pick<
   | 'createLabel'
   | 'updateLabel'
   | 'deleteLabel'
+  | 'createSprint'
+  | 'updateSprint'
+  | 'startSprint'
+  | 'completeSprint'
+  | 'deleteSprint'
+  | 'createComment'
+  | 'updateComment'
+  | 'deleteComment'
+  | 'createTemplate'
+  | 'updateTemplate'
+  | 'deleteTemplate'
 >;
 
 export interface TicketsState {
@@ -26,7 +37,15 @@ export interface TicketsState {
   api: TicketsApi | null;
 }
 
-export const EMPTY_SNAPSHOT: TicketsSnapshot = { states: [], tickets: [], labels: [], ticketLabels: [] };
+export const EMPTY_SNAPSHOT: TicketsSnapshot = {
+  states: [],
+  tickets: [],
+  labels: [],
+  ticketLabels: [],
+  sprints: [],
+  comments: [],
+  templates: [],
+};
 
 export const ticketsStore = createStore<TicketsState>(() => ({
   snapshot: null,

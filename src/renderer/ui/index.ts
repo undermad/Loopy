@@ -11,6 +11,7 @@ export * from './Input';
 export * from './Kbd';
 export * from './Menubar';
 export * from './Popover';
+export * from './RichText';
 export * from './ScrollArea';
 export * from './Select';
 export * from './Separator';

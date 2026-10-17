@@ -11,6 +11,7 @@ export {
   setActiveWorkspace,
 } from './store';
 export { areaActions, setHoveredArea } from './areas';
+export { panelActions } from './panels';
 export {
   applyLayout,
   currentLayout,
@@ -26,6 +27,7 @@ export {
   useActiveWorkspaceId,
   useHoveredAreaId,
   useLayoutPresets,
+  usePanelOpen,
   useStatusBarVisible,
   useWorkspaces,
 } from './hooks';

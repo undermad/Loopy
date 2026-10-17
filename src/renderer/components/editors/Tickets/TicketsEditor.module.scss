@@ -15,3 +15,10 @@
   justify-content: center;
   flex: 1;
 }
+
+.sprintTag {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

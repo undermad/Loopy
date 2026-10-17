@@ -83,7 +83,15 @@ describe('preload API coverage', () => {
     createdAt: '2026-10-17T09:00:00.000Z',
     updatedAt: '2026-10-17T09:00:00.000Z',
   };
-  const snapshot = { states: [], tickets: [], labels: [], ticketLabels: [] };
+  const snapshot = {
+    states: [],
+    tickets: [],
+    labels: [],
+    ticketLabels: [],
+    sprints: [],
+    comments: [],
+    templates: [],
+  };
   const board = {
     id: 'b',
     name: 'Board',

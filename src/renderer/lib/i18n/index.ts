@@ -37,9 +37,11 @@ export function useFormat() {
   const language = i18n.language;
   return useMemo(() => {
     const dateTime = new Intl.DateTimeFormat(language, { dateStyle: 'medium', timeStyle: 'short' });
+    const dateOnly = new Intl.DateTimeFormat(language, { dateStyle: 'medium' });
     const relative = new Intl.RelativeTimeFormat(language, { numeric: 'auto' });
     return {
       dateTime: (value: string | number | Date) => dateTime.format(new Date(value)),
+      date: (value: string) => dateOnly.format(new Date(`${value}T00:00:00`)),
       relative: (value: string | number | Date, now = Date.now()) => {
         const seconds = Math.round((new Date(value).getTime() - now) / 1000);
         const units: [Intl.RelativeTimeFormatUnit, number][] = [

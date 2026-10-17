@@ -21,11 +21,12 @@ import { ticketKey } from '@shared/tickets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useCurrentProject } from '@renderer/lib/project';
 import {
+  activeSprint,
+  boardTickets,
   labelsOf,
   matchesSearch,
   stateActions,
   ticketActions,
-  ticketsInState,
   useTicketsSnapshot,
 } from '@renderer/lib/tickets';
 import { Button, ScrollArea } from '@renderer/ui';
@@ -33,12 +34,12 @@ import { PromptDialog } from '../../Shell/PromptDialog';
 import { BoardColumn } from './BoardColumn';
 import {
   arrayMove,
+  dataOf,
   dropTicket,
   findColumn,
   ordersFrom,
   overTicket,
   type ColumnKey,
-  type DragData,
   type Orders,
 } from './dnd';
 import { TicketCard } from './TicketCard';
@@ -46,10 +47,7 @@ import styles from './BoardView.module.scss';
 
 type Active = { kind: 'ticket'; id: string; fromKey: ColumnKey } | { kind: 'state'; id: string };
 
-export function dataOf(item: { data: { current?: unknown } } | null | undefined): DragData | null {
-  const current = item?.data.current;
-  return typeof current === 'object' && current !== null && 'type' in current ? (current as DragData) : null;
-}
+export { dataOf } from './dnd';
 
 export function BoardView({ search }: { search: string }) {
   const { t } = useTranslation('editors');
@@ -71,6 +69,7 @@ export function BoardView({ search }: { search: string }) {
     [snapshot, search, projectName],
   );
   const liveOrders = orders ?? baseOrders;
+  const sprint = activeSprint(snapshot);
   const states = stateOrder
     ? stateOrder.flatMap((id) => snapshot.states.filter((state) => state.id === id))
     : snapshot.states;
@@ -169,7 +168,8 @@ export function BoardView({ search }: { search: string }) {
                 total={states.length}
                 dragKind={active?.kind ?? null}
                 orderedIds={liveOrders[state.id] ?? []}
-                tickets={ticketsInState(snapshot, state.id)}
+                sprintId={sprint?.id ?? null}
+                tickets={boardTickets(snapshot, state.id)}
               />
             ))}
           </SortableContext>

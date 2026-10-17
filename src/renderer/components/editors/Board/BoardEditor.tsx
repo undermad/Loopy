@@ -28,8 +28,7 @@ import {
 import type { LiveGeometry } from '@renderer/lib/board';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
-import { collectAreas } from '@renderer/lib/layout';
-import { areaActions, useActiveWorkspace } from '@renderer/lib/workspaces';
+import { panelActions, usePanelOpen } from '@renderer/lib/workspaces';
 import { EmptyState, Spinner } from '@renderer/ui';
 import { AreaHeaderContent } from '../../Shell/AreaHeaderContent';
 import { BoardHeader } from './BoardHeader';
@@ -192,22 +191,14 @@ function BoardArea({ areaId, state, setState }: EditorProps) {
   const { t } = useTranslation('editors');
   const boards = useBoards();
   const flow = useReactFlow();
-  const workspace = useActiveWorkspace();
+  const propertiesOpen = usePanelOpen('properties');
   const editorRef = useRef<HTMLDivElement>(null);
   const requested = typeof state['boardId'] === 'string' ? state['boardId'] : null;
   const board = boards?.find((item) => item.id === requested) ?? boards?.[0] ?? null;
-  const propertiesAreas = workspace
-    ? collectAreas(workspace.root).filter((area) => area.editor === 'properties')
-    : [];
 
   function toggleProperties() {
-    if (propertiesAreas.length > 0) {
-      for (const area of propertiesAreas) areaActions.close(area.id);
-      return;
-    }
     const width = editorRef.current?.getBoundingClientRect().width ?? 0;
-    const ratio = width > PROPERTIES_WIDTH * 2 ? 1 - PROPERTIES_WIDTH / width : 0.7;
-    areaActions.split(areaId, 'row', ratio, 'properties');
+    panelActions.toggle(areaId, 'properties', width, PROPERTIES_WIDTH);
   }
 
   if (boards === null) {
@@ -227,7 +218,7 @@ function BoardArea({ areaId, state, setState }: EditorProps) {
           grid={state['grid'] !== false}
           minimap={state['minimap'] === true}
           snap={state['snap'] === true}
-          properties={propertiesAreas.length > 0}
+          properties={propertiesOpen}
           onSelect={(boardId) => {
             setState({ boardId });
           }}

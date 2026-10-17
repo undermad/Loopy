@@ -3,7 +3,13 @@ import { useTranslation } from '@renderer/lib/i18n';
 import { ticketActions } from '@renderer/lib/tickets';
 import { Input } from '@renderer/ui';
 
-export function QuickAdd({ stateId, className }: { stateId: string | null; className?: string | undefined }) {
+export interface QuickAddProps {
+  stateId: string | null;
+  sprintId?: string | null;
+  className?: string | undefined;
+}
+
+export function QuickAdd({ stateId, sprintId = null, className }: QuickAddProps) {
   const { t } = useTranslation('editors');
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
@@ -13,7 +19,7 @@ export function QuickAdd({ stateId, className }: { stateId: string | null; class
     if (!trimmed || busy) return;
     setBusy(true);
     try {
-      await ticketActions.create({ title: trimmed, stateId });
+      await ticketActions.create({ title: trimmed, stateId, sprintId });
       setTitle('');
     } finally {
       setBusy(false);

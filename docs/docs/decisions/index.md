@@ -27,3 +27,4 @@ Hard-to-reverse choices are recorded here, one file each, with Context, Decision
 | [0016](./0016-internal-libraries.md)    | One internal library per concern                 |
 | [0017](./0017-zustand.md)               | zustand for renderer state                       |
 | [0018](./0018-i18next.md)               | i18next for translations                         |
+| [0019](./0019-tiptap.md)                | TipTap for rich text                             |

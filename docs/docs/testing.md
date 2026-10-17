@@ -52,7 +52,7 @@ Drag and drop in the tickets editor is pointer-driven, so a test drags with `mou
 
 ## jsdom stubs
 
-`tests/setup/renderer.ts` stubs `ResizeObserver`, pointer capture and `scrollIntoView`, which jsdom lacks, and moves every `react-resizable-panels` separator away from the origin. Without that, every element sits at 0,0 in jsdom, the library takes each click for a divider drag and Radix menus never open.
+`tests/setup/renderer.ts` stubs `ResizeObserver`, pointer capture, `scrollIntoView` and `getClientRects`, which jsdom lacks, and moves every `react-resizable-panels` separator away from the origin. Without that, every element sits at 0,0 in jsdom, the library takes each click for a divider drag and Radix menus never open. TipTap editors cannot be typed into with `userEvent`: a test sets the text of a paragraph inside the content-editable element and waits a tick for ProseMirror's mutation observer, then fires `blur` or clicks a toolbar button.
 
 ## E2E user data
 

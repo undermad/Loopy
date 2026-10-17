@@ -8,6 +8,7 @@ import {
   moveAcross,
   moveWithin,
   ordersFrom,
+  ordersFromLists,
   overTicket,
   resolveDrop,
 } from '@renderer/components/editors/Tickets/dnd';
@@ -24,6 +25,9 @@ const ticket = (id: string, stateId: string | null, position: string) => ({
   type: 'task' as const,
   priority: 'low' as const,
   stateId,
+  sprintId: null,
+  estimate: null,
+  dueAt: null,
   position,
   createdAt: '2026-10-17T09:00:00.000Z',
   updatedAt: '2026-10-17T09:00:00.000Z',
@@ -33,8 +37,9 @@ snapshot.tickets = [ticket('a', 'todo', 'a'), ticket('b', 'todo', 'b'), ticket('
 
 describe('board drag orders', () => {
   it('builds column orders from the snapshot and resolves drops', () => {
-    const orders = ordersFrom(snapshot, () => true);
-    expect(orders).toEqual({ backlog: ['c'], todo: ['a', 'b'], doing: [], done: [] });
+    const orders = { backlog: ['c'], ...ordersFrom(snapshot, () => true) };
+    expect(ordersFrom(snapshot, () => true)).toEqual({ todo: ['a', 'b'], doing: [], done: [] });
+    expect(ordersFromLists({ backlog: [{ id: 'c' }], todo: [] })).toEqual({ backlog: ['c'], todo: [] });
     expect(ordersFrom(snapshot, (id) => id !== 'a')['todo']).toEqual(['b']);
     expect(findColumn(orders, 'c')).toBe('backlog');
     expect(findColumn(orders, 'missing')).toBeNull();
@@ -45,7 +50,7 @@ describe('board drag orders', () => {
   });
 
   it('moves within a column and across columns, keeping unknown ids put', () => {
-    const orders = ordersFrom(snapshot, () => true);
+    const orders = { backlog: ['c'], ...ordersFrom(snapshot, () => true) };
     expect(moveWithin(orders, 'a', 'b')['todo']).toEqual(['b', 'a']);
     expect(moveWithin(orders, 'a', 'a')).toBe(orders);
     expect(moveWithin(orders, 'missing', 'a')).toBe(orders);
@@ -60,19 +65,19 @@ describe('board drag orders', () => {
   });
 
   it('previews cross-column moves while dragging and settles same-column sorts on drop', () => {
-    const orders = ordersFrom(snapshot, () => true);
+    const orders = { backlog: ['c'], ...ordersFrom(snapshot, () => true) };
     const overB = { type: 'ticket' as const, id: 'b', stateId: 'todo' };
     expect(overTicket(orders, 'a', null)).toBe(orders);
     expect(overTicket(orders, 'a', { type: 'state', id: 'todo' })).toBe(orders);
     expect(overTicket(orders, 'a', overB)).toBe(orders);
     expect(overTicket(orders, 'a', { type: 'ticket', id: 'missing', stateId: 'todo' })).toBe(orders);
-    expect(overTicket(orders, 'a', { type: 'column', stateId: 'doing' })['doing']).toEqual(['a']);
+    expect(overTicket(orders, 'a', { type: 'column', key: 'doing' })['doing']).toEqual(['a']);
     expect(overTicket(orders, 'c', overB)['todo']).toEqual(['a', 'c', 'b']);
 
     expect(dropTicket(orders, 'a', overB, 'todo')).toMatchObject({ stateId: 'todo', index: 1 });
     const crossed = overTicket(orders, 'c', overB);
     expect(dropTicket(crossed, 'c', overB, 'backlog')).toMatchObject({ stateId: 'todo', index: 1 });
-    expect(dropTicket(orders, 'a', { type: 'column', stateId: 'todo' }, 'todo')).toMatchObject({
+    expect(dropTicket(orders, 'a', { type: 'column', key: 'todo' }, 'todo')).toMatchObject({
       stateId: 'todo',
       index: 0,
     });

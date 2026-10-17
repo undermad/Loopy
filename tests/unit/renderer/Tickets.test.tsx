@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TicketEditor } from '@renderer/components/editors/Tickets/TicketEditor';
@@ -42,7 +42,9 @@ describe('TicketsEditor', () => {
     const todo = screen.getByRole('region', { name: 'To do' });
     await user.type(within(todo).getByRole('textbox', { name: 'Add ticket' }), 'Design the hero{Enter}');
 
-    expect(api.createTicket).toHaveBeenCalledWith({ title: 'Design the hero', stateId: 'todo' });
+    expect(api.createTicket).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Design the hero', stateId: 'todo' }) as object,
+    );
     expect(await within(todo).findByRole('button', { name: 'SPA-1 Design the hero' })).toBeInTheDocument();
     expect(screen.getByTestId('count')).toHaveTextContent('1');
   });
@@ -67,7 +69,7 @@ describe('TicketsEditor', () => {
     expect(await screen.findByRole('region', { name: 'QA' })).toBeInTheDocument();
   });
 
-  it('selects a ticket, edits it in the ticket editor and moves backlog items to the board', async () => {
+  it('selects a ticket, edits it in the ticket editor and adds backlog items to a sprint', async () => {
     const user = userEvent.setup();
     await ticketActions.create({ title: 'Backlog idea' });
     render(<Harness mode="backlog" />);
@@ -80,9 +82,30 @@ describe('TicketsEditor', () => {
     await user.type(title, 'Polished idea{Enter}');
     expect(api.updateTicket).toHaveBeenCalledWith('ticket-1', { title: 'Polished idea' });
 
-    await user.click(screen.getByRole('button', { name: 'Move to board' }));
-    expect(api.updateTicket).toHaveBeenCalledWith('ticket-1', { stateId: 'todo' });
-    expect(await screen.findByText('The backlog is empty')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'SPA-1: Open' }));
+    expect(await screen.findByRole('menuitem', { name: /Create a sprint/ })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    await user.keyboard('{Escape}');
+
+    await user.click(screen.getByRole('button', { name: 'Create sprint' }));
+    const sprintName = await screen.findByLabelText(/Sprint name/);
+    expect(sprintName).toHaveValue('Sprint 1');
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Create sprint' }));
+    expect(api.createSprint).toHaveBeenCalledWith({ name: 'Sprint 1' });
+    const sprintSection = await screen.findByRole('region', { name: 'Sprint 1' });
+    expect(within(sprintSection).getByRole('button', { name: 'Start sprint' })).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: 'SPA-1: Open' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Add to Sprint 1' }));
+    expect(api.updateTicket).toHaveBeenCalledWith('ticket-1', { sprintId: 'sprint-1' });
+    expect(
+      await within(sprintSection).findByRole('button', { name: 'SPA-1 Polished idea' }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('region', { name: 'Backlog' })).getByText('The backlog is empty'),
+    ).toBeInTheDocument();
 
     selectTicket(null);
     expect(await screen.findByText('No ticket selected')).toBeInTheDocument();
@@ -143,10 +166,19 @@ describe('ticket description', () => {
     render(<Harness />);
 
     await user.click(await screen.findByRole('button', { name: 'SPA-1 Notes' }));
-    const description = await screen.findByLabelText('Description');
-    await user.type(description, 'Some detail');
-    description.blur();
-    expect(api.updateTicket).toHaveBeenCalledWith('ticket-1', { description: 'Some detail' });
+    const block = await screen.findByRole('region', { name: 'Description' });
+    const description = within(block)
+      .getAllByLabelText('Text editor')
+      .find((element) => element.getAttribute('contenteditable') === 'true');
+    if (!description) throw new Error('Missing editor');
+    const paragraph = description.querySelector('p');
+    if (!paragraph) throw new Error('Missing paragraph');
+    await act(async () => {
+      paragraph.textContent = 'Some detail';
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    fireEvent.blur(description);
+    expect(api.updateTicket).toHaveBeenCalledWith('ticket-1', { description: '<p>Some detail</p>' });
 
     const title = screen.getByLabelText('Title');
     title.focus();

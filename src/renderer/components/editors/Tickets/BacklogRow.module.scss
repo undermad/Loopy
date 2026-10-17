@@ -1,0 +1,22 @@
+@use '../../../styles/mixins' as *;
+
+.row {
+  @include row(var(--space-2));
+
+  > :first-child {
+    min-width: 0;
+    flex: 1;
+  }
+}
+
+.points,
+.due {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.overdue {
+  color: var(--color-danger);
+}
