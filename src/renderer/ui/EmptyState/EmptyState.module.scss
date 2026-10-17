@@ -1,0 +1,35 @@
+@use '../../styles/mixins' as *;
+
+.empty {
+  @include stack(var(--space-2));
+
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--color-fg-muted);
+  text-align: center;
+}
+
+.icon {
+  color: var(--color-fg-muted);
+
+  svg {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.title {
+  color: var(--color-fg);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+}
+
+.description {
+  max-width: 36ch;
+  font-size: var(--font-size-sm);
+}
+
+.action {
+  padding-top: var(--space-2);
+}

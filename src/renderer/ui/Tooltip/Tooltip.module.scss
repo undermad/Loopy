@@ -1,0 +1,15 @@
+.content {
+  max-width: 280px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  box-shadow: var(--shadow-md);
+  z-index: 60;
+}
+
+.arrow {
+  fill: var(--color-fg);
+}

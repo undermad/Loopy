@@ -1,0 +1,18 @@
+@use '../../styles/mixins' as *;
+
+.root {
+  @include row(var(--space-1));
+
+  min-width: 0;
+}
+
+.group {
+  @include row(var(--space-1));
+}
+
+.separator {
+  width: 1px;
+  height: 16px;
+  margin: 0 var(--space-1);
+  background: var(--color-border);
+}

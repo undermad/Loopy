@@ -1,6 +1,7 @@
 @layer tokens {
   :root {
     --font-family: 'Inter', system-ui, sans-serif;
+    --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-md: 1rem;
     --font-size-lg: 1.25rem;
@@ -13,14 +14,28 @@
     --space-8: 2rem;
     --radius-sm: 4px;
     --radius-md: 8px;
+    --control-height-sm: 24px;
+    --control-height-md: 32px;
+    --shadow-sm: 0 1px 3px rgb(0 0 0 / 12%);
     --shadow-md: 0 4px 12px rgb(0 0 0 / 15%);
     --color-bg: #fafafa;
     --color-surface: #fff;
+    --color-surface-raised: #fff;
+    --color-surface-sunken: #f0f0f0;
     --color-fg: #1a1a1a;
     --color-fg-muted: #5c5c5c;
     --color-border: #d9d9d9;
     --color-accent: #4f46e5;
+    --color-accent-fg: #fff;
     --color-focus: #4f46e5;
+    --color-danger: #dc2626;
+    --color-warning: #d97706;
+    --color-success: #16a34a;
+    --color-selection: #c7d2fe;
+    --color-hover: color-mix(in srgb, var(--color-fg) 8%, transparent);
+    --color-pressed: color-mix(in srgb, var(--color-fg) 14%, transparent);
+    --color-accent-hover: color-mix(in srgb, var(--color-accent) 88%, var(--color-fg));
+    --color-danger-hover: color-mix(in srgb, var(--color-danger) 88%, var(--color-fg));
 
     color-scheme: light;
   }
@@ -28,11 +43,18 @@
   [data-theme='dark'] {
     --color-bg: #141414;
     --color-surface: #1f1f1f;
+    --color-surface-raised: #262626;
+    --color-surface-sunken: #0f0f0f;
     --color-fg: #f0f0f0;
     --color-fg-muted: #a0a0a0;
     --color-border: #333;
     --color-accent: #818cf8;
+    --color-accent-fg: #141414;
     --color-focus: #818cf8;
+    --color-danger: #f87171;
+    --color-warning: #fbbf24;
+    --color-success: #4ade80;
+    --color-selection: #3730a3;
 
     color-scheme: dark;
   }

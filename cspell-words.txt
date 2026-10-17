@@ -24,6 +24,7 @@ markdownlint
 minimap
 nsis
 nvmrc
+prefault
 radix
 secretlint
 servernum
