@@ -61,11 +61,9 @@ export const DEFAULT_BOARD_BACKGROUND = '#f4f4f5';
 export const DEFAULT_NOTE_SIZE = { width: 200, height: 120 };
 
 export type Board = z.infer<typeof boardSchema>;
-export type BoardNodeType = z.infer<typeof boardNodeTypeSchema>;
 export type BoardNode = z.infer<typeof boardNodeSchema>;
 export type BoardEdge = z.infer<typeof boardEdgeSchema>;
 export type BoardSnapshot = z.infer<typeof boardSnapshotSchema>;
 export type BoardInput = z.input<typeof boardInputSchema>;
 export type BoardPatch = z.infer<typeof boardPatchSchema>;
 export type BoardChanges = Partial<z.infer<typeof boardChangesSchema>>;
-export type NoteData = z.infer<typeof noteDataSchema>;

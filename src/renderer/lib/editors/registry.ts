@@ -31,7 +31,3 @@ export function getEditor(id: string): EditorDefinition | undefined {
 export function listEditors(): EditorDefinition[] {
   return [...editors.values()];
 }
-
-export function resetEditors(): void {
-  editors.clear();
-}

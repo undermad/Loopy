@@ -1,2 +1,2 @@
-export { bootSettings, resetSettingsStore, updateSettings, type SettingsApi } from './store';
+export { bootSettings, resetSettingsStore, updateSettings } from './store';
 export { useSetting, useSettings } from './hooks';

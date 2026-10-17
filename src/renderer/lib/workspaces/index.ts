@@ -9,7 +9,6 @@ export {
   renameWorkspace,
   resetWorkspacesStore,
   setActiveWorkspace,
-  type WorkspacesApi,
 } from './store';
 export { areaActions, setHoveredArea } from './areas';
 export {

@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import {
-  appSettingsPatchSchema,
-  appSettingsSchema,
-  type AppSettings,
-  type AppSettingsPatch,
-} from './app-settings';
+import { appSettingsSchema, type AppSettings, type AppSettingsPatch } from './app-settings';
 import { recentProjectSchema } from './device-state';
 import { layoutPresetSchema, workspacesSchema, type LayoutPreset } from './layout';
 import { projectInfoSchema, projectNameSchema, type ProjectInfo } from './project';
@@ -20,13 +15,6 @@ import {
   type BoardSnapshot,
 } from './board';
 import {
-  labelInputSchema,
-  labelPatchSchema,
-  stateInputSchema,
-  statePatchSchema,
-  ticketInputSchema,
-  ticketMoveSchema,
-  ticketPatchSchema,
   ticketsSnapshotSchema,
   type LabelInput,
   type LabelPatch,
@@ -92,8 +80,6 @@ export const IpcChannel = {
   boardsApplyChanges: 'boards:applyChanges',
 } as const;
 
-export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
-
 export const appVersionSchema = z.object({ app: z.string().min(1), electron: z.string().min(1) });
 export const colorSchemeSchema = z.enum(['light', 'dark']);
 export const localeSchema = z.string().min(2);
@@ -146,14 +132,7 @@ export const importProjectResultSchema = z.discriminatedUnion('status', [
 export const shellStateSchema = z.object({ workspaces: workspacesSchema.nullable(), statusBar: z.boolean() });
 export const shellStatePatchSchema = shellStateSchema.partial();
 
-export {
-  appSettingsPatchSchema,
-  appSettingsSchema,
-  layoutPresetSchema,
-  projectInfoSchema,
-  projectNameSchema,
-  themeSchema,
-};
+export { appSettingsSchema, layoutPresetSchema, projectInfoSchema, projectNameSchema, themeSchema };
 
 export type AppVersion = z.infer<typeof appVersionSchema>;
 export type ColorScheme = z.infer<typeof colorSchemeSchema>;
@@ -228,16 +207,4 @@ export const entityIdSchema = z.string().min(1);
 export const labelIdsSchema = z.array(entityIdSchema);
 export const positionSchema = z.string().min(1);
 
-export {
-  boardListSchema,
-  boardSchema,
-  boardSnapshotSchema,
-  labelInputSchema,
-  labelPatchSchema,
-  stateInputSchema,
-  statePatchSchema,
-  ticketInputSchema,
-  ticketMoveSchema,
-  ticketPatchSchema,
-  ticketsSnapshotSchema,
-};
+export { boardListSchema, boardSchema, boardSnapshotSchema, ticketsSnapshotSchema };

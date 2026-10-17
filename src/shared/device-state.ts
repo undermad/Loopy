@@ -26,6 +26,5 @@ export const deviceStateSchema = z.object({
   statusBar: z.boolean().default(true),
 });
 
-export type WindowBounds = z.infer<typeof windowBoundsSchema>;
 export type RecentProject = z.infer<typeof recentProjectSchema>;
 export type DeviceState = z.infer<typeof deviceStateSchema>;

@@ -1,9 +1,2 @@
-export {
-  getEditor,
-  listEditors,
-  registerEditor,
-  resetEditors,
-  type EditorCategory,
-  type EditorDefinition,
-  type EditorProps,
-} from './registry';
+export { getEditor, listEditors, registerEditor } from './registry';
+export type { EditorProps } from './registry';

@@ -12,7 +12,5 @@ export {
   setAreaEditor,
   splitArea,
   swapAreas,
-  type ParentMatch,
-  type Side,
-  type SplitResult,
 } from './tree';
+export type { Side } from './tree';

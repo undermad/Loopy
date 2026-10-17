@@ -95,7 +95,6 @@ export type TicketPriority = z.infer<typeof ticketPrioritySchema>;
 export type TicketState = z.infer<typeof ticketStateSchema>;
 export type Ticket = z.infer<typeof ticketSchema>;
 export type Label = z.infer<typeof labelSchema>;
-export type TicketLabel = z.infer<typeof ticketLabelSchema>;
 export type TicketsSnapshot = z.infer<typeof ticketsSnapshotSchema>;
 export type TicketInput = z.input<typeof ticketInputSchema>;
 export type TicketPatch = z.infer<typeof ticketPatchSchema>;

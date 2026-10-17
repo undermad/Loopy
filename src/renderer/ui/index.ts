@@ -24,4 +24,3 @@ export * from './Toolbar';
 export * from './Tooltip';
 export * from './Toast';
 export { cx } from './cx';
-export type { Size } from './types';
