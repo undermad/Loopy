@@ -1,72 +1,54 @@
-import { useEffect, useState } from 'react';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { useMemo, useState } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCorners,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
-import { ticketKey, type TicketsSnapshot } from '@shared/tickets';
+import { ticketKey } from '@shared/tickets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useCurrentProject } from '@renderer/lib/project';
 import {
+  labelsOf,
   matchesSearch,
   stateActions,
   ticketActions,
   ticketsInState,
   useTicketsSnapshot,
 } from '@renderer/lib/tickets';
-import { Button, ScrollArea, cx } from '@renderer/ui';
+import { Button, ScrollArea } from '@renderer/ui';
 import { PromptDialog } from '../../Shell/PromptDialog';
 import { BoardColumn } from './BoardColumn';
 import {
-  asDropData,
-  columnTargetIndex,
-  isStateDrag,
-  isTicketDrag,
-  targetIndex,
-  type DragPreview,
-  type Edge,
+  arrayMove,
+  dropTicket,
+  findColumn,
+  ordersFrom,
+  overTicket,
+  type ColumnKey,
+  type DragData,
+  type Orders,
 } from './dnd';
+import { TicketCard } from './TicketCard';
 import styles from './BoardView.module.scss';
 
-interface Location {
-  current: { dropTargets: { data: Record<string | symbol, unknown> }[] };
-}
-interface Source {
-  data: Record<string | symbol, unknown>;
-}
+type Active = { kind: 'ticket'; id: string; fromKey: ColumnKey } | { kind: 'state'; id: string };
 
-function edgeOf(data: Record<string | symbol, unknown>): Edge | null {
-  const closest = extractClosestEdge(data);
-  return closest === 'top' || closest === 'bottom' || closest === 'left' || closest === 'right'
-    ? closest
-    : null;
-}
-
-export function previewFor(
-  snapshot: TicketsSnapshot,
-  source: Source,
-  location: Location,
-): DragPreview | null {
-  const target = location.current.dropTargets[0];
-  if (!target) return null;
-  if (isTicketDrag(source.data)) {
-    const drop = asDropData(target.data);
-    if (!drop) return null;
-    return {
-      kind: 'ticket',
-      stateId: drop.stateId,
-      index: targetIndex(snapshot, source.data, drop, edgeOf(target.data)),
-    };
-  }
-  if (
-    isStateDrag(source.data) &&
-    typeof target.data['stateId'] === 'string' &&
-    target.data['type'] === 'column'
-  ) {
-    return {
-      kind: 'state',
-      index: columnTargetIndex(snapshot, source.data.id, target.data['stateId'], edgeOf(target.data)),
-    };
-  }
-  return null;
+export function dataOf(item: { data: { current?: unknown } } | null | undefined): DragData | null {
+  const current = item?.data.current;
+  return typeof current === 'object' && current !== null && 'type' in current ? (current as DragData) : null;
 }
 
 export function BoardView({ search }: { search: string }) {
@@ -74,71 +56,127 @@ export function BoardView({ search }: { search: string }) {
   const snapshot = useTicketsSnapshot();
   const project = useCurrentProject();
   const [adding, setAdding] = useState(false);
-  const [preview, setPreview] = useState<DragPreview | null>(null);
-  const keyFor = (ticket: { number: number }) => ticketKey(project?.name ?? '', ticket.number);
-
-  useEffect(
+  const [active, setActive] = useState<Active | null>(null);
+  const [orders, setOrders] = useState<Orders | null>(null);
+  const [stateOrder, setStateOrder] = useState<string[] | null>(null);
+  const projectName = project?.name ?? '';
+  const keyFor = (ticket: { number: number }) => ticketKey(projectName, ticket.number);
+  const baseOrders = useMemo(
     () =>
-      monitorForElements({
-        canMonitor: ({ source }) => isTicketDrag(source.data) || isStateDrag(source.data),
-        onDrag: ({ source, location }) => {
-          setPreview(previewFor(snapshot, source, location));
-        },
-        onDrop: ({ source, location }) => {
-          setPreview(null);
-          const next = previewFor(snapshot, source, location);
-          if (!next) return;
-          if (next.kind === 'ticket' && isTicketDrag(source.data)) {
-            void ticketActions.moveTo(source.data.id, next.stateId, next.index);
-          } else if (next.kind === 'state' && isStateDrag(source.data)) {
-            void stateActions.reorder(source.data.id, next.index);
-          }
-        },
+      ordersFrom(snapshot, (id) => {
+        const ticket = snapshot.tickets.find((candidate) => candidate.id === id);
+        return ticket ? matchesSearch(ticket, ticketKey(projectName, ticket.number), search) : false;
       }),
-    [snapshot],
+    [snapshot, search, projectName],
+  );
+  const liveOrders = orders ?? baseOrders;
+  const states = stateOrder
+    ? stateOrder.flatMap((id) => snapshot.states.filter((state) => state.id === id))
+    : snapshot.states;
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const columnIndicator = preview?.kind === 'state' ? preview.index : null;
+  function reset() {
+    setActive(null);
+    setOrders(null);
+    setStateOrder(null);
+  }
+
+  function onDragStart({ active: item }: DragStartEvent) {
+    const data = dataOf(item);
+    if (data?.type === 'ticket') {
+      setActive({ kind: 'ticket', id: data.id, fromKey: findColumn(baseOrders, data.id) ?? 'backlog' });
+      setOrders(baseOrders);
+    } else if (data?.type === 'state') {
+      setActive({ kind: 'state', id: data.id });
+      setStateOrder(snapshot.states.map((state) => state.id));
+    }
+  }
+
+  function onDragOver({ active: item, over }: DragOverEvent) {
+    const data = dataOf(item);
+    if (data?.type === 'ticket' && orders) setOrders(overTicket(orders, data.id, dataOf(over)));
+  }
+
+  function onDragEnd({ over }: DragEndEvent) {
+    const target = dataOf(over);
+    if (active?.kind === 'ticket' && orders) {
+      const drop = dropTicket(orders, active.id, target, active.fromKey);
+      if (drop) void ticketActions.moveTo(active.id, drop.stateId, drop.index);
+    } else if (
+      active?.kind === 'state' &&
+      stateOrder &&
+      target?.type === 'state' &&
+      target.id !== active.id
+    ) {
+      const next = arrayMove(stateOrder, stateOrder.indexOf(active.id), stateOrder.indexOf(target.id));
+      void stateActions.reorder(active.id, next.indexOf(active.id));
+    }
+    reset();
+  }
+
+  const activeTicket =
+    active?.kind === 'ticket' ? snapshot.tickets.find((ticket) => ticket.id === active.id) : undefined;
+  const activeState =
+    active?.kind === 'state' ? snapshot.states.find((state) => state.id === active.id) : undefined;
 
   return (
-    <ScrollArea orientation="horizontal" className={styles['scroll']} viewportClassName={styles['viewport']}>
-      <div className={styles['columns']}>
-        {snapshot.states.map((state, index) => (
-          <div key={state.id} className={styles['slot']}>
-            <span
-              className={cx(styles['gap'], columnIndicator === index && styles['gapActive'])}
-              aria-hidden="true"
-            />
-            <BoardColumn
-              state={state}
-              snapshot={snapshot}
-              keyFor={keyFor}
-              index={index}
-              total={snapshot.states.length}
-              placeholderIndex={
-                preview?.kind === 'ticket' && preview.stateId === state.id ? preview.index : null
-              }
-              tickets={ticketsInState(snapshot, state.id).filter((ticket) =>
-                matchesSearch(ticket, keyFor(ticket), search),
-              )}
-            />
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
+      onDragCancel={reset}
+    >
+      <ScrollArea
+        orientation="horizontal"
+        className={styles['scroll']}
+        viewportClassName={styles['viewport']}
+      >
+        <div className={styles['columns']}>
+          <SortableContext items={states.map((state) => state.id)} strategy={horizontalListSortingStrategy}>
+            {states.map((state, index) => (
+              <BoardColumn
+                key={state.id}
+                state={state}
+                snapshot={snapshot}
+                keyFor={keyFor}
+                index={index}
+                total={states.length}
+                dragKind={active?.kind ?? null}
+                orderedIds={liveOrders[state.id] ?? []}
+                tickets={ticketsInState(snapshot, state.id)}
+              />
+            ))}
+          </SortableContext>
+          <div className={styles['add']}>
+            <Button
+              icon={<Plus aria-hidden="true" />}
+              onClick={() => {
+                setAdding(true);
+              }}
+            >
+              {t('tickets.addState')}
+            </Button>
           </div>
-        ))}
-        <span
-          className={cx(styles['gap'], columnIndicator === snapshot.states.length && styles['gapActive'])}
-          aria-hidden="true"
-        />
-        <div className={styles['add']}>
-          <Button
-            icon={<Plus aria-hidden="true" />}
-            onClick={() => {
-              setAdding(true);
-            }}
-          >
-            {t('tickets.addState')}
-          </Button>
         </div>
-      </div>
+      </ScrollArea>
+      <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2, 0, 0, 1)' }}>
+        {activeTicket ? (
+          <TicketCard
+            ticket={activeTicket}
+            ticketKey={keyFor(activeTicket)}
+            labels={labelsOf(snapshot, activeTicket.id)}
+            selected={false}
+            onSelect={() => undefined}
+            overlay
+          />
+        ) : null}
+        {activeState ? <div className={styles['stateGhost']}>{activeState.name}</div> : null}
+      </DragOverlay>
       {adding ? (
         <PromptDialog
           open
@@ -151,6 +189,6 @@ export function BoardView({ search }: { search: string }) {
           onSubmit={(name) => stateActions.create({ name }).then(() => undefined)}
         />
       ) : null}
-    </ScrollArea>
+    </DndContext>
   );
 }

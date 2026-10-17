@@ -48,6 +48,8 @@ Use a snapshot only for a presentational component whose markup is stable and re
 
 The E2E suite launches the built app from `out/`, so run `npm run build` first. The preload must stay CommonJS and bundle its dependencies, because the sandboxed renderer cannot load ES modules or `node_modules`; `electron.vite.config.ts` sets this. axe-core is injected with `page.evaluate` because the Content Security Policy blocks injected script tags.
 
+Drag and drop in the tickets editor is pointer-driven, so a test drags with `mouse.move`, `mouse.down`, a few more moves and `mouse.up`, as `dragWithMouse` in `tests/e2e/app.spec.ts` does. Playwright's `dragTo` dispatches native HTML5 drag events, which the Electron driver does not deliver.
+
 ## jsdom stubs
 
 `tests/setup/renderer.ts` stubs `ResizeObserver`, pointer capture and `scrollIntoView`, which jsdom lacks, and moves every `react-resizable-panels` separator away from the origin. Without that, every element sits at 0,0 in jsdom, the library takes each click for a divider drag and Radix menus never open.

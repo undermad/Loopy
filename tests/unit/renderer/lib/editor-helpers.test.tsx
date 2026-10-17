@@ -1,6 +1,6 @@
 import type { Node } from '@xyflow/react';
 import { describe, expect, it } from 'vitest';
-import { asDropData, isTicketDrag, targetIndex } from '@renderer/components/editors/Tickets/dnd';
+import { arrayMove, stateIdOf } from '@renderer/components/editors/Tickets/dnd';
 import {
   newEdge,
   newNote,
@@ -9,39 +9,15 @@ import {
   toFlowEdges,
   toFlowNodes,
 } from '@renderer/components/editors/Board/boardFlow';
-import { emptyTicketsSnapshot } from '../helpers/tickets-fake';
 
 describe('ticket drag helpers', () => {
-  const snapshot = emptyTicketsSnapshot();
-  const ticket = (id: string, stateId: string | null, position: string) => ({
-    id,
-    number: 1,
-    title: id,
-    description: '',
-    type: 'task' as const,
-    priority: 'low' as const,
-    stateId,
-    position,
-    createdAt: '2026-10-17T09:00:00.000Z',
-    updatedAt: '2026-10-17T09:00:00.000Z',
-    resolvedAt: null,
-  });
-  snapshot.tickets = [ticket('a', 'todo', 'a'), ticket('b', 'todo', 'b'), ticket('c', 'todo', 'c')];
-  const drag = { type: 'ticket' as const, id: 'a', stateId: 'todo' };
-
-  it('recognises drag and drop payloads', () => {
-    expect(isTicketDrag({ type: 'ticket', id: 'a' })).toBe(true);
-    expect(isTicketDrag({ type: 'card', id: 'a' })).toBe(false);
-    expect(asDropData({ type: 'column', stateId: 'done' })).toEqual({ type: 'column', stateId: 'done' });
-    expect(asDropData({ type: 'card', id: 'b' })).toEqual({ type: 'card', id: 'b', stateId: null });
-    expect(asDropData({ type: 'other' })).toBeNull();
-  });
-
-  it('computes the target index without the dragged ticket', () => {
-    expect(targetIndex(snapshot, drag, { type: 'column', stateId: 'todo' }, null)).toBe(2);
-    expect(targetIndex(snapshot, drag, { type: 'card', id: 'c', stateId: 'todo' }, 'top')).toBe(1);
-    expect(targetIndex(snapshot, drag, { type: 'card', id: 'c', stateId: 'todo' }, 'bottom')).toBe(2);
-    expect(targetIndex(snapshot, drag, { type: 'card', id: 'missing', stateId: 'todo' }, 'top')).toBe(2);
+  it('moves items and clamps missing sources', () => {
+    expect(arrayMove(['a', 'b', 'c'], 0, 2)).toEqual(['b', 'c', 'a']);
+    expect(arrayMove(['a', 'b', 'c'], 2, 0)).toEqual(['c', 'a', 'b']);
+    const same = ['a'];
+    expect(arrayMove(same, 5, 0)).toBe(same);
+    expect(stateIdOf('backlog')).toBeNull();
+    expect(stateIdOf('todo')).toBe('todo');
   });
 });
 

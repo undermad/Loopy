@@ -1,14 +1,14 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { attachClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { useState } from 'react';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, MoreHorizontal } from 'lucide-react';
 import type { StateCategory, Ticket, TicketState, TicketsSnapshot } from '@shared/tickets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { labelsOf, selectTicket, stateActions, useSelectedTicketId } from '@renderer/lib/tickets';
 import { ColorPicker, ConfirmDialog, DropdownMenu, IconButton, ScrollArea, cx } from '@renderer/ui';
 import { PromptDialog } from '../../Shell/PromptDialog';
-import type { ColumnDropData, StateDragData } from './dnd';
+import { columnId, type ColumnDropData, type StateDragData } from './dnd';
 import { QuickAdd } from './QuickAdd';
 import { TicketCard } from './TicketCard';
 import styles from './BoardColumn.module.scss';
@@ -20,7 +20,8 @@ export interface BoardColumnProps {
   keyFor: (ticket: Ticket) => string;
   index: number;
   total: number;
-  placeholderIndex: number | null;
+  orderedIds: string[];
+  dragKind: 'ticket' | 'state' | null;
 }
 
 const CATEGORIES: StateCategory[] = ['todo', 'doing', 'done'];
@@ -32,72 +33,54 @@ export function BoardColumn({
   keyFor,
   index,
   total,
-  placeholderIndex,
+  orderedIds,
+  dragKind,
 }: BoardColumnProps) {
   const { t } = useTranslation('editors');
   const { t: tc } = useTranslation('common');
   const selectedId = useSelectedTicketId();
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const sectionRef = useRef<HTMLElement>(null);
-  const handleRef = useRef<HTMLButtonElement>(null);
-  const [over, setOver] = useState(false);
-  const [draggingColumn, setDraggingColumn] = useState(false);
+  const dropData: ColumnDropData = { type: 'column', stateId: state.id };
+  const dragData: StateDragData = { type: 'state', id: state.id };
+  const { setNodeRef: setBodyRef, isOver } = useDroppable({
+    id: columnId(state.id),
+    data: dropData,
+    disabled: dragKind === 'state',
+  });
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setColumnRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: state.id,
+    data: dragData,
+    disabled: { draggable: dragKind === 'ticket', droppable: dragKind === 'ticket' },
+  });
+  const byId = new Map(snapshot.tickets.map((ticket) => [ticket.id, ticket]));
+  const ordered = orderedIds.flatMap((id) => {
+    const ticket = byId.get(id);
+    return ticket ? [ticket] : [];
+  });
   const [dialog, setDialog] = useState<'rename' | 'delete' | null>(null);
-
-  useEffect(() => {
-    const body = bodyRef.current;
-    const section = sectionRef.current;
-    const handle = handleRef.current;
-    if (!body || !section || !handle) return;
-    const data: ColumnDropData = { type: 'column', stateId: state.id };
-    const drag: StateDragData = { type: 'state', id: state.id };
-    return combine(
-      dropTargetForElements({
-        element: body,
-        canDrop: ({ source }) => source.data['type'] === 'ticket',
-        getData: () => ({ ...data }),
-        onDragEnter: () => {
-          setOver(true);
-        },
-        onDragLeave: () => {
-          setOver(false);
-        },
-        onDrop: () => {
-          setOver(false);
-        },
-      }),
-      dropTargetForElements({
-        element: section,
-        canDrop: ({ source }) => source.data['type'] === 'state' && source.data['id'] !== state.id,
-        getData: ({ input, element }) =>
-          attachClosestEdge({ ...data }, { input, element, allowedEdges: ['left', 'right'] }),
-      }),
-      draggable({
-        element: section,
-        dragHandle: handle,
-        getInitialData: () => ({ ...drag }),
-        onDragStart: () => {
-          setDraggingColumn(true);
-        },
-        onDrop: () => {
-          setDraggingColumn(false);
-        },
-      }),
-    );
-  }, [state.id]);
 
   return (
     <section
-      ref={sectionRef}
-      className={cx(styles['column'], over && styles['over'], draggingColumn && styles['draggingColumn'])}
+      ref={setColumnRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cx(styles['column'], isOver && styles['over'], isDragging && styles['draggingColumn'])}
       aria-label={state.name}
     >
       <header className={styles['header']}>
         <button
-          ref={handleRef}
+          ref={setActivatorNodeRef}
           type="button"
           className={styles['handle']}
           aria-label={t('tickets.dragState')}
+          {...attributes}
+          {...listeners}
         >
           <GripVertical aria-hidden="true" />
         </button>
@@ -159,27 +142,23 @@ export function BoardColumn({
         </DropdownMenu.Root>
       </header>
       <ScrollArea className={styles['scroll']} viewportClassName={styles['viewport']}>
-        <div ref={bodyRef} className={styles['body']}>
-          {tickets.length === 0 ? <p className={styles['empty']}>{t('tickets.emptyColumn')}</p> : null}
-          {tickets.map((ticket, position) => (
-            <Fragment key={ticket.id}>
-              {placeholderIndex === position ? (
-                <div className={styles['placeholder']} aria-hidden="true" />
-              ) : null}
+        <div ref={setBodyRef} className={styles['body']}>
+          {ordered.length === 0 ? <p className={styles['empty']}>{t('tickets.emptyColumn')}</p> : null}
+          <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
+            {ordered.map((ticket) => (
               <TicketCard
+                key={ticket.id}
                 ticket={ticket}
                 ticketKey={keyFor(ticket)}
                 labels={labelsOf(snapshot, ticket.id)}
                 selected={ticket.id === selectedId}
+                sortable={dragKind !== 'state'}
                 onSelect={() => {
                   selectTicket(ticket.id);
                 }}
               />
-            </Fragment>
-          ))}
-          {placeholderIndex !== null && placeholderIndex >= tickets.length ? (
-            <div className={styles['placeholder']} aria-hidden="true" />
-          ) : null}
+            ))}
+          </SortableContext>
         </div>
       </ScrollArea>
       <footer className={styles['footer']}>

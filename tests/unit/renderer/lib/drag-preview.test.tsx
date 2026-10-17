@@ -1,89 +1,95 @@
 import { act, renderHook } from '@testing-library/react';
-import { attachClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { describe, expect, it } from 'vitest';
-import { previewFor } from '@renderer/components/editors/Tickets/BoardView';
-import { columnTargetIndex, isStateDrag } from '@renderer/components/editors/Tickets/dnd';
+import { dataOf } from '@renderer/components/editors/Tickets/BoardView';
+import {
+  columnId,
+  dropTicket,
+  findColumn,
+  moveAcross,
+  moveWithin,
+  ordersFrom,
+  overTicket,
+  resolveDrop,
+} from '@renderer/components/editors/Tickets/dnd';
 import { stateActions, useTicketsSnapshot } from '@renderer/lib/tickets';
 import { bootTestApp, makeProject } from '../helpers/api';
 import { emptyTicketsSnapshot } from '../helpers/tickets-fake';
 
 const snapshot = emptyTicketsSnapshot();
-const ticket = (id: string, position: string) => ({
+const ticket = (id: string, stateId: string | null, position: string) => ({
   id,
   number: 1,
   title: id,
   description: '',
   type: 'task' as const,
   priority: 'low' as const,
-  stateId: 'todo',
+  stateId,
   position,
   createdAt: '2026-10-17T09:00:00.000Z',
   updatedAt: '2026-10-17T09:00:00.000Z',
   resolvedAt: null,
 });
-snapshot.tickets = [ticket('a', 'a'), ticket('b', 'b')];
+snapshot.tickets = [ticket('a', 'todo', 'a'), ticket('b', 'todo', 'b'), ticket('c', null, 'c')];
 
-const location = (data: Record<string | symbol, unknown> | null) => ({
-  current: { dropTargets: data ? [{ data }] : [] },
-});
-const box = {
-  getBoundingClientRect: () => ({ top: 0, bottom: 100, left: 0, right: 100, width: 100, height: 100 }),
-} as unknown as Element;
-const withEdge = (
-  data: Record<string, unknown>,
-  x: number,
-  y: number,
-  allowedEdges: ('top' | 'bottom' | 'left' | 'right')[],
-) => attachClosestEdge(data, { element: box, input: { clientX: x, clientY: y } as never, allowedEdges });
+describe('board drag orders', () => {
+  it('builds column orders from the snapshot and resolves drops', () => {
+    const orders = ordersFrom(snapshot, () => true);
+    expect(orders).toEqual({ backlog: ['c'], todo: ['a', 'b'], doing: [], done: [] });
+    expect(ordersFrom(snapshot, (id) => id !== 'a')['todo']).toEqual(['b']);
+    expect(findColumn(orders, 'c')).toBe('backlog');
+    expect(findColumn(orders, 'missing')).toBeNull();
+    expect(columnId(null)).toBe('column:backlog');
+    expect(resolveDrop(orders, 'b')).toEqual({ stateId: 'todo', index: 1 });
+    expect(resolveDrop(orders, 'c')).toEqual({ stateId: null, index: 0 });
+    expect(resolveDrop(orders, 'missing')).toBeNull();
+  });
 
-describe('previewFor', () => {
-  it('resolves ticket drops onto cards, columns and nothing', () => {
-    const source = { data: { type: 'ticket', id: 'a', stateId: 'todo' } };
-    expect(previewFor(snapshot, source, location(null))).toBeNull();
-    expect(previewFor(snapshot, source, location({ type: 'column', stateId: 'done' }))).toEqual({
-      kind: 'ticket',
-      stateId: 'done',
+  it('moves within a column and across columns, keeping unknown ids put', () => {
+    const orders = ordersFrom(snapshot, () => true);
+    expect(moveWithin(orders, 'a', 'b')['todo']).toEqual(['b', 'a']);
+    expect(moveWithin(orders, 'a', 'a')).toBe(orders);
+    expect(moveWithin(orders, 'missing', 'a')).toBe(orders);
+    expect(moveWithin(orders, 'a', 'missing')).toBe(orders);
+    const across = moveAcross(orders, 'a', 'doing', null);
+    expect(across['todo']).toEqual(['b']);
+    expect(across['doing']).toEqual(['a']);
+    expect(moveAcross(orders, 'c', 'todo', 'b')['todo']).toEqual(['a', 'c', 'b']);
+    expect(moveAcross(orders, 'c', 'todo', 'missing')['todo']).toEqual(['a', 'b', 'c']);
+    expect(moveAcross(orders, 'a', 'todo', null)).toBe(orders);
+    expect(moveAcross(orders, 'missing', 'todo', null)).toBe(orders);
+  });
+
+  it('previews cross-column moves while dragging and settles same-column sorts on drop', () => {
+    const orders = ordersFrom(snapshot, () => true);
+    const overB = { type: 'ticket' as const, id: 'b', stateId: 'todo' };
+    expect(overTicket(orders, 'a', null)).toBe(orders);
+    expect(overTicket(orders, 'a', { type: 'state', id: 'todo' })).toBe(orders);
+    expect(overTicket(orders, 'a', overB)).toBe(orders);
+    expect(overTicket(orders, 'a', { type: 'ticket', id: 'missing', stateId: 'todo' })).toBe(orders);
+    expect(overTicket(orders, 'a', { type: 'column', stateId: 'doing' })['doing']).toEqual(['a']);
+    expect(overTicket(orders, 'c', overB)['todo']).toEqual(['a', 'c', 'b']);
+
+    expect(dropTicket(orders, 'a', overB, 'todo')).toEqual({ stateId: 'todo', index: 1 });
+    const crossed = overTicket(orders, 'c', overB);
+    expect(dropTicket(crossed, 'c', overB, 'backlog')).toEqual({ stateId: 'todo', index: 1 });
+    expect(dropTicket(orders, 'a', { type: 'column', stateId: 'todo' }, 'todo')).toEqual({
+      stateId: 'todo',
       index: 0,
     });
-    expect(
-      previewFor(
-        snapshot,
-        source,
-        location(withEdge({ type: 'card', id: 'b', stateId: 'todo' }, 50, 95, ['top', 'bottom'])),
-      ),
-    ).toEqual({
-      kind: 'ticket',
-      stateId: 'todo',
-      index: 1,
-    });
-    expect(previewFor(snapshot, source, location({ type: 'other' }))).toBeNull();
+    expect(dropTicket(orders, 'a', null, 'todo')).toEqual({ stateId: 'todo', index: 0 });
+    expect(dropTicket(orders, 'missing', null, 'todo')).toBeNull();
   });
 
-  it('resolves column drops by edge and ignores unknown sources', () => {
-    const source = { data: { type: 'state', id: 'todo' } };
-    expect(isStateDrag(source.data)).toBe(true);
-    expect(
-      previewFor(
-        snapshot,
-        source,
-        location(withEdge({ type: 'column', stateId: 'done' }, 95, 50, ['left', 'right'])),
-      ),
-    ).toEqual({ kind: 'state', index: 2 });
-    expect(
-      previewFor(
-        snapshot,
-        source,
-        location(withEdge({ type: 'column', stateId: 'doing' }, 5, 50, ['left', 'right'])),
-      ),
-    ).toEqual({ kind: 'state', index: 0 });
-    expect(previewFor(snapshot, source, location({ type: 'card', id: 'a' }))).toBeNull();
-    expect(
-      previewFor(snapshot, { data: { type: 'mystery' } }, location({ type: 'column', stateId: 'done' })),
-    ).toBeNull();
-    expect(columnTargetIndex(snapshot, 'todo', 'missing', null)).toBe(2);
+  it('reads drag data only from items that carry a type', () => {
+    expect(dataOf(null)).toBeNull();
+    expect(dataOf({ data: {} })).toBeNull();
+    expect(dataOf({ data: { current: 'text' } })).toBeNull();
+    expect(dataOf({ data: { current: { type: 'state', id: 'todo' } } })).toEqual({
+      type: 'state',
+      id: 'todo',
+    });
   });
 });
-
 describe('stateActions.reorder', () => {
   it('moves a state to an index and clamps out-of-range targets', async () => {
     const api = await bootTestApp();

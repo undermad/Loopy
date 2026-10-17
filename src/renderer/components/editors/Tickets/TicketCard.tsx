@@ -1,12 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { attachClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { AlertTriangle, ArrowDown, ArrowUp, Bug, CheckSquare, FlaskConical, Minus } from 'lucide-react';
 import type { Label, Ticket, TicketPriority, TicketType } from '@shared/tickets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Tag, cx } from '@renderer/ui';
-import type { CardDropData, TicketDragData } from './dnd';
+import type { TicketDragData } from './dnd';
 import styles from './TicketCard.module.scss';
 
 export const TYPE_ICONS: Record<TicketType, typeof Bug> = {
@@ -28,6 +26,8 @@ export interface TicketCardProps {
   selected: boolean;
   onSelect: () => void;
   variant?: 'card' | 'row';
+  sortable?: boolean;
+  overlay?: boolean;
 }
 
 export function TicketCard({
@@ -37,41 +37,24 @@ export function TicketCard({
   selected,
   onSelect,
   variant = 'card',
+  sortable = true,
+  overlay = false,
 }: TicketCardProps) {
   const { t } = useTranslation('editors');
-  const ref = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState(false);
+  const data: TicketDragData = { type: 'ticket', id: ticket.id, stateId: ticket.stateId };
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: ticket.id,
+    data,
+    disabled: { draggable: !sortable || overlay, droppable: !sortable || overlay },
+  });
   const TypeIcon = TYPE_ICONS[ticket.type];
   const PriorityIcon = PRIORITY_ICONS[ticket.priority];
 
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const drag: TicketDragData = { type: 'ticket', id: ticket.id, stateId: ticket.stateId };
-    const drop: CardDropData = { type: 'card', id: ticket.id, stateId: ticket.stateId };
-    return combine(
-      draggable({
-        element,
-        getInitialData: () => ({ ...drag }),
-        onDragStart: () => {
-          setDragging(true);
-        },
-        onDrop: () => {
-          setDragging(false);
-        },
-      }),
-      dropTargetForElements({
-        element,
-        canDrop: ({ source }) => source.data['type'] === 'ticket' && source.data['id'] !== ticket.id,
-        getData: ({ input, element: target }) =>
-          attachClosestEdge({ ...drop }, { input, element: target, allowedEdges: ['top', 'bottom'] }),
-      }),
-    );
-  }, [ticket.id, ticket.stateId]);
-
   return (
     <div
-      ref={ref}
+      ref={overlay ? undefined : setNodeRef}
+      style={overlay ? undefined : { transform: CSS.Transform.toString(transform), transition }}
+      {...(overlay ? {} : { ...attributes, ...listeners })}
       role="button"
       tabIndex={0}
       aria-pressed={selected}
@@ -80,14 +63,17 @@ export function TicketCard({
         styles['card'],
         styles[variant],
         selected && styles['selected'],
-        dragging && styles['dragging'],
+        isDragging && styles['dragging'],
+        overlay && styles['overlay'],
       )}
       onClick={onSelect}
       onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
+        if (event.key === 'Enter') {
           event.preventDefault();
           onSelect();
+          return;
         }
+        if (!overlay) listeners?.['onKeyDown']?.(event);
       }}
     >
       <div className={styles['head']}>

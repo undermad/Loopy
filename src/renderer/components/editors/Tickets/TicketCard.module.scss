@@ -10,10 +10,7 @@
   background: var(--color-surface-raised);
   cursor: grab;
   user-select: none;
-  transition:
-    transform 150ms ease,
-    opacity 150ms ease,
-    box-shadow 150ms ease;
+  touch-action: none;
 
   &:hover {
     border-color: color-mix(in srgb, var(--color-border) 40%, var(--color-fg-muted));
@@ -44,8 +41,13 @@
 }
 
 .dragging {
-  opacity: 0.35;
-  transform: scale(0.98);
+  opacity: 0.3;
+}
+
+.overlay {
+  box-shadow: var(--shadow-md);
+  cursor: grabbing;
+  transform: rotate(1.5deg) scale(1.02);
 }
 
 .head {

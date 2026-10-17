@@ -16,7 +16,13 @@
 }
 
 .draggingColumn {
-  opacity: 0.5;
+  opacity: 0.4;
+}
+
+.columnOverlay {
+  box-shadow: var(--shadow-md);
+  cursor: grabbing;
+  transform: rotate(1deg);
 }
 
 .handle {
@@ -35,21 +41,6 @@
 
   &:focus-visible {
     @include focus-ring;
-  }
-}
-
-.placeholder {
-  height: 56px;
-  border: 2px dashed var(--color-accent);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
-  animation: grow 150ms ease-out;
-}
-
-@keyframes grow {
-  from {
-    height: 0;
-    opacity: 0;
   }
 }
 
@@ -88,7 +79,8 @@
 .body {
   @include stack(var(--space-2));
 
-  min-height: 48px;
+  min-height: 64px;
+  padding-top: 1px;
   padding-bottom: var(--space-2);
 }
 

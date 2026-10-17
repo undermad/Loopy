@@ -1,6 +1,12 @@
 import type { TicketsSnapshot } from '@shared/tickets';
 import { ticketsInState } from '@renderer/lib/tickets';
 
+export const BACKLOG_KEY = 'backlog';
+
+export type ColumnKey = string;
+
+export type Orders = Record<ColumnKey, string[]>;
+
 export interface TicketDragData {
   type: 'ticket';
   id: string;
@@ -12,73 +18,103 @@ export interface StateDragData {
   id: string;
 }
 
-export interface CardDropData {
-  type: 'card';
-  id: string;
-  stateId: string | null;
-}
-
 export interface ColumnDropData {
   type: 'column';
   stateId: string | null;
 }
 
-export type DropData = CardDropData | ColumnDropData;
-export type Edge = 'top' | 'bottom' | 'left' | 'right';
+export type DragData = TicketDragData | StateDragData | ColumnDropData;
 
-type Data = Record<string | symbol, unknown>;
-
-export function isTicketDrag(data: Data): data is Data & TicketDragData {
-  return data['type'] === 'ticket' && typeof data['id'] === 'string';
+export function columnKey(stateId: string | null): ColumnKey {
+  return stateId ?? BACKLOG_KEY;
 }
 
-export function isStateDrag(data: Data): data is Data & StateDragData {
-  return data['type'] === 'state' && typeof data['id'] === 'string';
+export function stateIdOf(key: ColumnKey): string | null {
+  return key === BACKLOG_KEY ? null : key;
 }
 
-export function asDropData(data: Data): DropData | null {
-  if (data['type'] === 'column')
-    return { type: 'column', stateId: (data['stateId'] as string | null | undefined) ?? null };
-  if (data['type'] === 'card' && typeof data['id'] === 'string') {
-    return { type: 'card', id: data['id'], stateId: (data['stateId'] as string | null | undefined) ?? null };
+export function columnId(stateId: string | null): string {
+  return `column:${columnKey(stateId)}`;
+}
+
+export function ordersFrom(snapshot: TicketsSnapshot, visible: (id: string) => boolean): Orders {
+  const orders: Orders = {
+    [BACKLOG_KEY]: ticketsInState(snapshot, null)
+      .map((ticket) => ticket.id)
+      .filter(visible),
+  };
+  for (const state of snapshot.states) {
+    orders[state.id] = ticketsInState(snapshot, state.id)
+      .map((ticket) => ticket.id)
+      .filter(visible);
   }
-  return null;
+  return orders;
 }
 
-export function targetIndex(
-  snapshot: TicketsSnapshot,
-  drag: TicketDragData,
-  drop: DropData,
-  edge: Edge | null,
-): number {
-  const column = ticketsInState(snapshot, drop.stateId).filter((ticket) => ticket.id !== drag.id);
-  if (drop.type === 'column') return column.length;
-  const index = column.findIndex((ticket) => ticket.id === drop.id);
-  if (index < 0) return column.length;
-  return edge === 'bottom' ? index + 1 : index;
+export function findColumn(orders: Orders, ticketId: string): ColumnKey | null {
+  return Object.keys(orders).find((key) => orders[key]?.includes(ticketId)) ?? null;
 }
 
-export function columnTargetIndex(
-  snapshot: TicketsSnapshot,
-  dragId: string,
-  overStateId: string,
-  edge: Edge | null,
-): number {
-  const others = snapshot.states.filter((state) => state.id !== dragId);
-  const index = others.findIndex((state) => state.id === overStateId);
-  if (index < 0) return others.length;
-  return edge === 'right' ? index + 1 : index;
+export function arrayMove<T>(items: T[], from: number, to: number): T[] {
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  if (moved === undefined) return items;
+  next.splice(to, 0, moved);
+  return next;
 }
 
-export interface TicketPreview {
-  kind: 'ticket';
-  stateId: string | null;
-  index: number;
+export function moveWithin(orders: Orders, ticketId: string, overId: string): Orders {
+  const key = findColumn(orders, ticketId);
+  const list = key ? orders[key] : undefined;
+  if (!key || !list) return orders;
+  const from = list.indexOf(ticketId);
+  const to = list.indexOf(overId);
+  if (from < 0 || to < 0 || from === to) return orders;
+  return { ...orders, [key]: arrayMove(list, from, to) };
 }
 
-export interface StatePreview {
-  kind: 'state';
-  index: number;
+export function moveAcross(
+  orders: Orders,
+  ticketId: string,
+  targetKey: ColumnKey,
+  overTicketId: string | null,
+): Orders {
+  const sourceKey = findColumn(orders, ticketId);
+  if (!sourceKey || sourceKey === targetKey) return orders;
+  const source = (orders[sourceKey] ?? []).filter((id) => id !== ticketId);
+  const target = [...(orders[targetKey] ?? [])];
+  const overIndex = overTicketId ? target.indexOf(overTicketId) : -1;
+  target.splice(overIndex >= 0 ? overIndex : target.length, 0, ticketId);
+  return { ...orders, [sourceKey]: source, [targetKey]: target };
 }
 
-export type DragPreview = TicketPreview | StatePreview;
+export function resolveDrop(
+  orders: Orders,
+  ticketId: string,
+): { stateId: string | null; index: number } | null {
+  const key = findColumn(orders, ticketId);
+  if (!key) return null;
+  return { stateId: stateIdOf(key), index: orders[key]?.indexOf(ticketId) ?? 0 };
+}
+
+export function overTicket(orders: Orders, ticketId: string, target: DragData | null): Orders {
+  if (!target || target.type === 'state') return orders;
+  const targetKey = target.type === 'ticket' ? findColumn(orders, target.id) : columnKey(target.stateId);
+  if (!targetKey || findColumn(orders, ticketId) === targetKey) return orders;
+  return moveAcross(orders, ticketId, targetKey, target.type === 'ticket' ? target.id : null);
+}
+
+export function dropTicket(
+  orders: Orders,
+  ticketId: string,
+  target: DragData | null,
+  fromKey: ColumnKey,
+): { stateId: string | null; index: number } | null {
+  const settled =
+    target?.type === 'ticket' &&
+    findColumn(orders, ticketId) === fromKey &&
+    findColumn(orders, target.id) === fromKey
+      ? moveWithin(orders, ticketId, target.id)
+      : orders;
+  return resolveDrop(settled, ticketId);
+}

@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures/electron';
+import type { Locator, Page } from '@playwright/test';
 
 test('launches on the welcome screen and reports its version', async ({ app, window }) => {
   await expect(window).toHaveTitle('Loopy');
@@ -34,6 +35,22 @@ test('runs with context isolation and without Node access in the renderer', asyn
   expect(nodeExposed).toBe('undefined');
 });
 
+async function dragWithMouse(window: Page, from: Locator, to: Locator, at: { x: number; y: number }) {
+  const source = await from.boundingBox();
+  const target = await to.boundingBox();
+  if (!source || !target) throw new Error('drag endpoints are not visible');
+  const startX = source.x + source.width / 2;
+  const startY = source.y + source.height / 2;
+  await window.mouse.move(startX, startY);
+  await window.mouse.down();
+  await window.mouse.move(startX + 10, startY + 10, { steps: 4 });
+  await window.mouse.move(target.x + target.width * at.x, target.y + target.height * at.y, { steps: 20 });
+  await window.mouse.move(target.x + target.width * at.x + 1, target.y + target.height * at.y + 1, {
+    steps: 2,
+  });
+  await window.mouse.up();
+}
+
 test('drags a ticket between states and reorders columns', async ({ window }) => {
   await window.getByRole('button', { name: 'New project' }).click();
   await window.getByLabel(/Project name/).fill('Drag Game');
@@ -45,14 +62,13 @@ test('drags a ticket between states and reorders columns', async ({ window }) =>
   const card = todo.getByRole('button', { name: 'DRA-1 First' });
   await expect(card).toBeVisible();
 
-  await card.dragTo(doing.getByRole('textbox', { name: 'Add ticket' }), {
-    targetPosition: { x: 10, y: -40 },
-  });
+  await dragWithMouse(window, card, doing, { x: 0.5, y: 0.5 });
   await expect(doing.getByRole('button', { name: 'DRA-1 First' })).toBeVisible();
 
-  await doing
-    .getByRole('button', { name: 'Drag to reorder states' })
-    .dragTo(todo, { targetPosition: { x: 10, y: 60 } });
+  await dragWithMouse(window, doing.getByRole('button', { name: 'Drag to reorder states' }), todo, {
+    x: 0.2,
+    y: 0.1,
+  });
   const names = await window
     .getByRole('region')
     .filter({ has: window.getByRole('button', { name: 'Drag to reorder states' }) })
