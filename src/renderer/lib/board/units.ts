@@ -13,12 +13,18 @@ export const BOARD_UNITS: readonly BoardUnit[] = ['px', 'mm', 'cm', 'm', 'km'];
 
 export const GRID_MIN_SCREEN_GAP = 12;
 
+const UNITS_PER_METRE: Record<Exclude<BoardUnit, 'px'>, number> = { mm: 1000, cm: 100, m: 1, km: 0.001 };
+
+export function unitInPixels(board: BoardUnits): number {
+  return board.unit === 'px' ? 1 : board.unitScale / UNITS_PER_METRE[board.unit];
+}
+
 export function toUnits(pixels: number, board: BoardUnits): number {
-  return pixels / board.unitScale;
+  return pixels / unitInPixels(board);
 }
 
 export function fromUnits(value: number, board: BoardUnits): number {
-  return value * board.unitScale;
+  return value * unitInPixels(board);
 }
 
 export function formatLength(pixels: number, board: BoardUnits, digits = 2): string {
@@ -28,7 +34,7 @@ export function formatLength(pixels: number, board: BoardUnits, digits = 2): str
 }
 
 export function gridStep(board: BoardUnits, zoom: number): number {
-  const base = board.unitScale;
+  const base = unitInPixels(board);
   const safeZoom = zoom > 0 ? zoom : 1;
   const exponent = Math.ceil(Math.log10(GRID_MIN_SCREEN_GAP / (base * safeZoom)));
   return Number((base * 10 ** exponent).toPrecision(12));

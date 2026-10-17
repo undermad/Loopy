@@ -13,15 +13,32 @@ export interface BoardSelection {
   nodeIds: string[];
 }
 
+export type LiveGeometry = Pick<BoardNode, 'x' | 'y' | 'width' | 'height'>;
+
 export interface BoardState {
   boards: Board[] | null;
   snapshots: Record<string, BoardSnapshot>;
   api: BoardApi | null;
   activeBoardId: string | null;
   selection: BoardSelection | null;
+  live: Record<string, LiveGeometry>;
 }
 
-const EMPTY: Omit<BoardState, 'api'> = { boards: null, snapshots: {}, activeBoardId: null, selection: null };
+const EMPTY: Omit<BoardState, 'api'> = {
+  boards: null,
+  snapshots: {},
+  activeBoardId: null,
+  selection: null,
+  live: {},
+};
+
+export function setLiveGeometry(updates: Record<string, LiveGeometry | null>): void {
+  const live: Record<string, LiveGeometry> = {};
+  for (const [id, geometry] of Object.entries({ ...boardStore.getState().live, ...updates })) {
+    if (geometry) live[id] = geometry;
+  }
+  boardStore.setState({ live });
+}
 
 export const boardStore = createStore<BoardState>(() => ({ ...EMPTY, api: null }));
 

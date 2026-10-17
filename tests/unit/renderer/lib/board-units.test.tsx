@@ -1,15 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { formatLength, fromUnits, gridLevels, gridStep, snapToStep, toUnits } from '@renderer/lib/board';
+import {
+  formatLength,
+  fromUnits,
+  gridLevels,
+  gridStep,
+  snapToStep,
+  toUnits,
+  unitInPixels,
+} from '@renderer/lib/board';
 
 const metres = { unit: 'm' as const, unitScale: 100 };
 
 describe('board units', () => {
-  it('converts between canvas pixels and board units', () => {
+  it('derives every display unit from one pixels-per-metre scale', () => {
+    expect(unitInPixels(metres)).toBe(100);
+    expect(unitInPixels({ unit: 'cm', unitScale: 100 })).toBe(1);
+    expect(unitInPixels({ unit: 'mm', unitScale: 100 })).toBe(0.1);
+    expect(unitInPixels({ unit: 'km', unitScale: 100 })).toBe(100000);
+    expect(unitInPixels({ unit: 'px', unitScale: 100 })).toBe(1);
     expect(toUnits(250, metres)).toBe(2.5);
+    expect(toUnits(250, { unit: 'cm', unitScale: 100 })).toBe(250);
+    expect(toUnits(10, { unit: 'px', unitScale: 100 })).toBe(10);
     expect(fromUnits(2.5, metres)).toBe(250);
+    expect(fromUnits(10, { unit: 'px', unitScale: 100 })).toBe(10);
     expect(formatLength(250, metres)).toBe('2.5 m');
     expect(formatLength(-0.0001, metres)).toBe('0 m');
-    expect(formatLength(33.3333, { unit: 'cm', unitScale: 10 }, 1)).toBe('3.3 cm');
+    expect(formatLength(33.3333, { unit: 'cm', unitScale: 100 }, 1)).toBe('33.3 cm');
   });
 
   it('picks a grid step that keeps lines at least twelve screen pixels apart', () => {
@@ -18,7 +34,9 @@ describe('board units', () => {
     expect(gridStep(metres, 0.01)).toBe(10000);
     expect(gridStep(metres, 4)).toBe(10);
     expect(gridStep(metres, 0)).toBe(100);
-    expect(gridStep({ unit: 'px', unitScale: 1 }, 1)).toBe(100);
+    expect(gridStep({ unit: 'px', unitScale: 100 }, 1)).toBe(100);
+    expect(gridStep({ unit: 'cm', unitScale: 100 }, 1)).toBe(100);
+    expect(gridStep({ unit: 'cm', unitScale: 100 }, 20)).toBe(1);
   });
 
   it('builds three grid levels a decade apart that hand over smoothly across zoom', () => {

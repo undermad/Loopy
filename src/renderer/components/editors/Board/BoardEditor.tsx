@@ -20,10 +20,12 @@ import {
   loadBoard,
   setActiveBoard,
   setBoardSelection,
+  setLiveGeometry,
   snapToStep,
   useBoardSnapshot,
   useBoards,
 } from '@renderer/lib/board';
+import type { LiveGeometry } from '@renderer/lib/board';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
 import { collectAreas } from '@renderer/lib/layout';
@@ -33,6 +35,7 @@ import { AreaHeaderContent } from '../../Shell/AreaHeaderContent';
 import { BoardHeader } from './BoardHeader';
 import { Grid } from './Grid';
 import { NoteNode } from './NoteNode';
+import { SelectionGuard } from './SelectionGuard';
 import { newEdge, newNote, readViewport, settleNodeChanges, toFlowEdges, toFlowNodes } from './boardFlow';
 import styles from './BoardEditor.module.scss';
 
@@ -91,6 +94,22 @@ function Canvas({ boardId, state, setState }: { boardId: string } & Pick<EditorP
       setSelectedIds(selected);
       setBoardSelection(boardId, selected);
       const { updates, removed } = settleNodeChanges(changes, next, snapshot.nodes, pending.current);
+      const live: Record<string, LiveGeometry | null> = {};
+      for (const change of changes) {
+        if (change.type !== 'position' && change.type !== 'dimensions') continue;
+        const node = next.find((candidate) => candidate.id === change.id);
+        if (node) {
+          live[change.id] = {
+            x: node.position.x,
+            y: node.position.y,
+            width: node.width ?? node.measured?.width ?? 0,
+            height: node.height ?? node.measured?.height ?? 0,
+          };
+        }
+      }
+      for (const node of updates) live[node.id] = null;
+      for (const id of removed) live[id] = null;
+      if (Object.keys(live).length > 0) setLiveGeometry(live);
       if (updates.length > 0 || removed.length > 0) {
         void commitChanges(boardId, { upsertNodes: updates, removeNodeIds: removed });
       }
@@ -162,6 +181,7 @@ function Canvas({ boardId, state, setState }: { boardId: string } & Pick<EditorP
       className={styles['flow']}
       style={{ background: snapshot.board.backgroundColor }}
     >
+      <SelectionGuard />
       {grid ? <Grid board={snapshot.board} /> : null}
       {minimap ? <MiniMap pannable zoomable className={styles['minimap']} /> : null}
     </ReactFlow>

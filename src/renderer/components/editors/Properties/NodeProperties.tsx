@@ -1,13 +1,14 @@
 import { useState, type ComponentType } from 'react';
 import { MIN_NOTE_SIZE, noteDataSchema, type Board, type BoardNode, type BoardNodeType } from '@shared/board';
-import { commitChanges, fromUnits, toUnits } from '@renderer/lib/board';
+import { commitChanges, fromUnits, toUnits, useLiveNode } from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Field, TextArea } from '@renderer/ui';
 import { NumberField } from './NumberField';
 import styles from './PropertiesEditor.module.scss';
 
-function TransformSection({ board, node }: { board: Board; node: BoardNode }) {
+function TransformSection({ board, node: stored }: { board: Board; node: BoardNode }) {
   const { t } = useTranslation('editors');
+  const node = useLiveNode(stored);
   const patch = (changes: Partial<Pick<BoardNode, 'x' | 'y' | 'width' | 'height'>>) =>
     void commitChanges(node.boardId, { upsertNodes: [{ ...node, ...changes }] });
   const label = (key: 'x' | 'y' | 'width' | 'height') => `${t(`properties.${key}`)} (${board.unit})`;

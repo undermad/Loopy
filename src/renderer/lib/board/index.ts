@@ -7,7 +7,18 @@ export {
   resetBoardStore,
   setActiveBoard,
   setBoardSelection,
+  setLiveGeometry,
   updateBoard,
 } from './store';
-export { useActiveBoardId, useBoardSelection, useBoardSnapshot, useBoards } from './hooks';
-export { BOARD_UNITS, formatLength, fromUnits, gridLevels, gridStep, snapToStep, toUnits } from './units';
+export type { LiveGeometry } from './store';
+export { useActiveBoardId, useBoardSelection, useBoardSnapshot, useBoards, useLiveNode } from './hooks';
+export {
+  BOARD_UNITS,
+  formatLength,
+  fromUnits,
+  gridLevels,
+  gridStep,
+  snapToStep,
+  toUnits,
+  unitInPixels,
+} from './units';

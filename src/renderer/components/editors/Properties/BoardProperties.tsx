@@ -56,10 +56,7 @@ export function BoardProperties({ board }: { board: Board }) {
           value={board.unit}
           aria-label={t('properties.unit')}
           options={BOARD_UNITS.map((unit) => ({ value: unit, label: t(`properties.units.${unit}`) }))}
-          onValueChange={(value) => {
-            const unit = value as BoardUnit;
-            void updateBoard(board.id, unit === 'px' ? { unit, unitScale: 1 } : { unit });
-          }}
+          onValueChange={(unit) => void updateBoard(board.id, { unit: unit as BoardUnit })}
         />
       </Field>
       <NumberField
@@ -67,7 +64,6 @@ export function BoardProperties({ board }: { board: Board }) {
         value={board.unitScale}
         min={0.001}
         step={1}
-        disabled={board.unit === 'px'}
         onCommit={(unitScale) => void updateBoard(board.id, { unitScale })}
       />
     </section>

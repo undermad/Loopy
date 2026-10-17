@@ -17,7 +17,7 @@
 .selected {
   box-shadow: var(--shadow-md);
   outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 .dragging {

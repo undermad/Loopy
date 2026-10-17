@@ -8,6 +8,7 @@ import {
   loadBoard,
   setActiveBoard,
   setBoardSelection,
+  setLiveGeometry,
 } from '@renderer/lib/board';
 import { ToastProvider, TooltipProvider } from '@renderer/ui';
 import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
@@ -55,7 +56,7 @@ describe('PropertiesEditor', () => {
     await user.type(name, 'Level 1{Enter}');
     expect(api.updateBoard).toHaveBeenCalledWith(board.id, { name: 'Level 1' });
 
-    const scale = screen.getByLabelText(/Pixels per unit/);
+    const scale = screen.getByLabelText(/Pixels per metre/);
     expect(scale).toHaveValue(100);
     await user.clear(scale);
     await user.type(scale, '50{Enter}');
@@ -67,8 +68,8 @@ describe('PropertiesEditor', () => {
 
     await user.click(screen.getByRole('combobox', { name: 'Unit' }));
     await user.click(await screen.findByRole('option', { name: 'Pixels' }));
-    expect(api.updateBoard).toHaveBeenCalledWith(board.id, { unit: 'px', unitScale: 1 });
-    expect(await screen.findByLabelText(/Pixels per unit/)).toBeDisabled();
+    expect(api.updateBoard).toHaveBeenCalledWith(board.id, { unit: 'px' });
+    expect(await screen.findByLabelText(/Pixels per metre/)).toBeEnabled();
 
     await user.click(screen.getByRole('button', { name: 'Grid colour' }));
     const hex = await screen.findByRole('textbox', { name: 'Grid colour' });
@@ -109,6 +110,15 @@ describe('PropertiesEditor', () => {
     expect(api.applyBoardChanges).toHaveBeenLastCalledWith(board.id, {
       upsertNodes: [expect.objectContaining({ id: 'n1', width: 50 }) as object],
     });
+
+    act(() => {
+      setLiveGeometry({ n1: { x: 775, y: 0, width: 200, height: 120 } });
+    });
+    expect(screen.getByLabelText('X (m)')).toHaveValue(7.75);
+    act(() => {
+      setLiveGeometry({ n1: null });
+    });
+    expect(screen.getByLabelText('X (m)')).toHaveValue(4);
 
     const y = screen.getByLabelText('Y (m)');
     await user.clear(y);

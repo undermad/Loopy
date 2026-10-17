@@ -1,5 +1,5 @@
 import { useStore } from 'zustand';
-import type { Board, BoardSnapshot } from '@shared/board';
+import type { Board, BoardNode, BoardSnapshot } from '@shared/board';
 import { boardStore, type BoardSelection } from './store';
 
 export function useBoards(): Board[] | null {
@@ -16,4 +16,9 @@ export function useActiveBoardId(): string | null {
 
 export function useBoardSelection(): BoardSelection | null {
   return useStore(boardStore, (state) => state.selection);
+}
+
+export function useLiveNode(node: BoardNode): BoardNode {
+  const live = useStore(boardStore, (state) => state.live[node.id]);
+  return live ? { ...node, ...live } : node;
 }

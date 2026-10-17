@@ -20,7 +20,7 @@
     "name": "Name",
     "background": "Background colour",
     "unit": "Unit",
-    "unitScale": "Pixels per unit",
+    "unitScale": "Pixels per metre",
     "position": "Position",
     "size": "Size",
     "x": "X",
