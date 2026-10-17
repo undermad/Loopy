@@ -1,0 +1,16 @@
+@use '../styles/control' as *;
+
+.input {
+  @include field-base;
+
+  padding: 0 var(--space-2);
+}
+
+.sm {
+  height: var(--control-height-sm);
+  font-size: var(--font-size-xs);
+}
+
+.md {
+  height: var(--control-height-md);
+}

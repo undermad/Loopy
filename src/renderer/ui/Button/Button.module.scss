@@ -1,0 +1,61 @@
+@use '../styles/control' as *;
+
+.button {
+  @include control-base;
+
+  justify-content: center;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--color-hover);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--color-pressed);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.sm {
+  @include control-size-sm;
+}
+
+.md {
+  @include control-size-md;
+}
+
+.primary {
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    background: var(--color-accent-hover);
+  }
+}
+
+.secondary {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  border-color: var(--color-border);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--color-fg);
+}
+
+.danger {
+  background: var(--color-danger);
+  color: var(--color-accent-fg);
+
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    background: var(--color-danger-hover);
+  }
+}

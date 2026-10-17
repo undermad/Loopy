@@ -1,0 +1,56 @@
+{
+  "title": "Preferences",
+  "open": "Open preferences",
+  "tabs": {
+    "appearance": "Appearance",
+    "themes": "Themes",
+    "language": "Language"
+  },
+  "appearance": {
+    "mode": "Mode",
+    "modes": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "lightTheme": "Light theme",
+    "darkTheme": "Dark theme",
+    "fontSize": "Font size",
+    "fontSizeHint": "Between 10 and 24 pixels."
+  },
+  "themes": {
+    "builtIn": "Built in",
+    "custom": "Custom",
+    "newFromCurrent": "New theme from current",
+    "name": "Theme name",
+    "base": "Base",
+    "import": "Import theme…",
+    "export": "Export theme…",
+    "delete": "Delete theme",
+    "deleteConfirm": "Delete the theme \"{{name}}\"? This cannot be undone.",
+    "imported": "Imported theme \"{{name}}\".",
+    "exported": "Theme exported.",
+    "invalid": "That file is not a Loopy theme.",
+    "colors": {
+      "bg": "Background",
+      "surface": "Surface",
+      "surfaceRaised": "Raised surface",
+      "surfaceSunken": "Sunken surface",
+      "fg": "Text",
+      "fgMuted": "Muted text",
+      "border": "Border",
+      "accent": "Accent",
+      "accentFg": "Text on accent",
+      "focus": "Focus ring",
+      "danger": "Danger",
+      "warning": "Warning",
+      "success": "Success",
+      "selection": "Selection"
+    }
+  },
+  "language": {
+    "label": "Language",
+    "system": "Follow system ({{locale}})",
+    "en": "English"
+  }
+}

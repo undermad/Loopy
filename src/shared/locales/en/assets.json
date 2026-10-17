@@ -1,0 +1,89 @@
+{
+  "title": "Assets",
+  "loading": "Loading assets…",
+  "view": {
+    "label": "View",
+    "folders": "Folders",
+    "types": "File types"
+  },
+  "layout": {
+    "label": "Layout",
+    "grid": "Grid",
+    "list": "List"
+  },
+  "search": "Search files",
+  "import": "Import files…",
+  "newFolder": "New folder",
+  "newSubfolder": "New subfolder",
+  "folderName": "Folder name",
+  "options": "Asset options",
+  "details": "Details panel",
+  "allFiles": "All files",
+  "topLevel": "Top level",
+  "tree": "Folders",
+  "kindList": "File types",
+  "files": "Files",
+  "kinds": {
+    "image": "Images",
+    "audio": "Audio",
+    "video": "Video",
+    "document": "Documents",
+    "font": "Fonts",
+    "model": "3D models",
+    "archive": "Archives",
+    "other": "Other"
+  },
+  "folder": {
+    "rename": "Rename folder",
+    "moveTo": "Move to…",
+    "delete": "Delete folder",
+    "deleteConfirm": "Delete the folder \"{{name}}\"? Its files and subfolders move to {{parent}}.",
+    "options": "{{name}}: folder options"
+  },
+  "asset": {
+    "rename": "Rename file",
+    "fileName": "File name",
+    "moveTo": "Move to…",
+    "export": "Export…",
+    "delete": "Delete file",
+    "deleteMany": "Delete {{count}} files",
+    "deleteConfirm": "Delete \"{{name}}\"? This cannot be undone.",
+    "deleteManyConfirm": "Delete {{count}} files? This cannot be undone.",
+    "options": "{{name}}: file options",
+    "dragging": "{{count}} files"
+  },
+  "empty": {
+    "folder": "No files here",
+    "folderHint": "Drop files here or use Import files.",
+    "search": "No files match",
+    "searchHint": "Try a different search or clear it.",
+    "selection": "No file selected",
+    "selectionHint": "Select a file to see its details."
+  },
+  "drop": {
+    "into": "Drop to import into {{name}}",
+    "auto": "Drop to import into the folders for each file type"
+  },
+  "fields": {
+    "name": "Name",
+    "kind": "Kind",
+    "mime": "Type",
+    "size": "Size",
+    "dimensions": "Dimensions",
+    "created": "Created",
+    "updated": "Updated",
+    "folder": "Folder",
+    "tags": "Tags",
+    "addTag": "Add a tag…",
+    "removeTag": "Remove tag {{tag}}",
+    "preview": "Preview of {{name}}"
+  },
+  "settings": {
+    "dropTarget": "Where dropped files go",
+    "dropTargetHint": "Applies to files dropped into other workspaces and to imports in the File types view.",
+    "byKind": "Folder matching the file type",
+    "root": "Top level",
+    "kindFolders": "Folder per file type",
+    "kindFolder": "Folder for {{kind}}"
+  }
+}

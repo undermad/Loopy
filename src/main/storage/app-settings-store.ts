@@ -2,7 +2,13 @@ import { APP_SETTINGS_SCHEMA_VERSION, appSettingsSchema, type AppSettings } from
 import { createJsonStore, type JsonStore } from './json-store';
 import type { MigrationMap } from './migrations';
 
-const appSettingsMigrations: MigrationMap = {};
+const appSettingsMigrations: MigrationMap = {
+  1: (data) => {
+    const { theme, ...rest } = data;
+    const mode = theme === 'light' || theme === 'dark' ? theme : 'system';
+    return { ...rest, theme: { mode, light: 'light', dark: 'dark' } };
+  },
+};
 
 export function createAppSettingsStore(path: string): JsonStore<AppSettings> {
   return createJsonStore({

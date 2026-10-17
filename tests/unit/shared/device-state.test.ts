@@ -8,6 +8,7 @@ describe('device state schema', () => {
     expect(deviceStateSchema.parse({ schemaVersion: DEVICE_STATE_SCHEMA_VERSION })).toEqual({
       schemaVersion: DEVICE_STATE_SCHEMA_VERSION,
       recentProjects: [],
+      statusBar: true,
     });
   });
 
@@ -17,6 +18,7 @@ describe('device state schema', () => {
       windowBounds: { x: -8, y: 0, width: 1280, height: 800 },
       lastProjectId: id,
       recentProjects: [{ id, name: 'Demo', openedAt: '2026-10-17T09:00:00.000Z' }],
+      statusBar: false,
     };
     expect(deviceStateSchema.parse(state)).toEqual(state);
   });

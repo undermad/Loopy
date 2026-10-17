@@ -1,0 +1,70 @@
+@use '../../styles/mixins' as *;
+@use '../styles/menu' as *;
+
+.content {
+  @include menu-content;
+}
+
+.item {
+  @include menu-item;
+}
+
+.subTrigger {
+  @include menu-item;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    margin-left: auto;
+  }
+}
+
+.indicator {
+  @include menu-indicator;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.label {
+  @include menu-label;
+}
+
+.separator {
+  @include menu-separator;
+}
+
+.shortcut {
+  @include menu-shortcut;
+}
+
+.menubar {
+  @include row(0);
+}
+
+.menubarTrigger {
+  height: var(--control-height-sm);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-fg);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: default;
+  user-select: none;
+
+  &:hover,
+  &[data-highlighted],
+  &[data-state='open'] {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+
+    outline-offset: -2px;
+  }
+}

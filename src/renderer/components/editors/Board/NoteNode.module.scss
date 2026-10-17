@@ -1,0 +1,61 @@
+@use '../../../styles/mixins' as *;
+
+.note {
+  width: 100%;
+  height: 100%;
+  border: 1px solid color-mix(in srgb, var(--color-warning) 40%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-warning) 18%, var(--color-surface-raised));
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.selected {
+  box-shadow: var(--shadow-md);
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.dragging {
+  cursor: grabbing;
+}
+
+.editing {
+  cursor: text;
+}
+
+.text {
+  width: 100%;
+  height: 100%;
+  padding: var(--space-2);
+  border: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  resize: none;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.display {
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: none;
+}
+
+.placeholder {
+  color: var(--color-fg-muted);
+}
+
+.resizeLine {
+  border-color: var(--color-accent) !important;
+}

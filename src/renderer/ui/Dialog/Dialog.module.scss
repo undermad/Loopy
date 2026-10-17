@@ -1,0 +1,72 @@
+@use '../../styles/mixins' as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 40%);
+  z-index: 40;
+}
+
+.content {
+  @include stack(var(--space-3));
+
+  position: fixed;
+  width: min(var(--dialog-width), calc(100vw - var(--space-8)));
+  max-height: calc(100vh - var(--space-8));
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-fg);
+  box-shadow: var(--shadow-md);
+  top: 50%;
+  left: 50%;
+  z-index: 41;
+  transform: translate(-50%, -50%);
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.sm {
+  --dialog-width: 360px;
+}
+
+.md {
+  --dialog-width: 520px;
+}
+
+.lg {
+  --dialog-width: 760px;
+}
+
+.header {
+  @include row(var(--space-2));
+
+  justify-content: space-between;
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.description {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+}
+
+.body {
+  @include stack(var(--space-3));
+
+  min-height: 0;
+  overflow: auto;
+}
+
+.footer {
+  @include row(var(--space-2));
+
+  justify-content: flex-end;
+  padding-top: var(--space-2);
+}

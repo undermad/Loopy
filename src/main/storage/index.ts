@@ -1,6 +1,8 @@
 export { storagePaths } from './paths';
 export { createAppSettingsStore } from './app-settings-store';
 export { createDeviceStateStore } from './device-state-store';
+export { createThemesStore } from './themes-store';
+export { createLayoutsStore } from './layouts-store';
 export { JsonStoreError } from './json-store';
 export {
   createProject,

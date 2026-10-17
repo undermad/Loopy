@@ -1,0 +1,10 @@
+@use '../styles/control' as *;
+
+.textarea {
+  @include field-base;
+
+  min-height: var(--control-height-md);
+  padding: var(--space-2);
+  line-height: 1.5;
+  resize: vertical;
+}

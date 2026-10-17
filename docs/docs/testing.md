@@ -47,3 +47,13 @@ Use a snapshot only for a presentational component whose markup is stable and re
 ## Electron and Playwright
 
 The E2E suite launches the built app from `out/`, so run `npm run build` first. The preload must stay CommonJS and bundle its dependencies, because the sandboxed renderer cannot load ES modules or `node_modules`; `electron.vite.config.ts` sets this. axe-core is injected with `page.evaluate` because the Content Security Policy blocks injected script tags.
+
+Drag and drop in the tickets editor is pointer-driven, so a test drags with `mouse.move`, `mouse.down`, a few more moves and `mouse.up`, as `dragWithMouse` in `tests/e2e/app.spec.ts` does. Playwright's `dragTo` dispatches native HTML5 drag events, which the Electron driver does not deliver.
+
+## jsdom stubs
+
+`tests/setup/renderer.ts` stubs `ResizeObserver`, pointer capture, `scrollIntoView` and `getClientRects`, which jsdom lacks, and moves every `react-resizable-panels` separator away from the origin. Without that, every element sits at 0,0 in jsdom, the library takes each click for a divider drag and Radix menus never open. TipTap editors cannot be typed into with `userEvent`: a test sets the text of a paragraph inside the content-editable element and waits a tick for ProseMirror's mutation observer, then fires `blur` or clicks a toolbar button.
+
+## E2E user data
+
+The Electron fixture in `tests/e2e/fixtures/electron.ts` starts every test with an empty temporary directory passed as `LOOPY_USER_DATA`, which main applies with `app.setPath` before anything is read. A run never touches the settings, projects or themes of the machine it runs on.

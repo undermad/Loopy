@@ -36,7 +36,11 @@ describe('app settings store', () => {
 
   it('saves and loads settings without changing them', async () => {
     const store = createAppSettingsStore(join(directory, 'nested', 'settings.json'));
-    const settings = { ...store.defaults(), theme: 'dark' as const, fontSize: 16 };
+    const settings = {
+      ...store.defaults(),
+      theme: { mode: 'dark' as const, light: 'light', dark: 'dark' },
+      fontSize: 16,
+    };
 
     await store.save(settings);
 
@@ -48,15 +52,17 @@ describe('app settings store', () => {
     const path = join(directory, 'settings.json');
     await writeFile(
       path,
-      JSON.stringify({ schemaVersion: APP_SETTINGS_SCHEMA_VERSION, theme: 'light' }),
+      JSON.stringify({ schemaVersion: APP_SETTINGS_SCHEMA_VERSION, theme: { mode: 'light' } }),
       'utf8',
     );
 
     await expect(createAppSettingsStore(path).load()).resolves.toEqual({
       schemaVersion: APP_SETTINGS_SCHEMA_VERSION,
-      theme: 'light',
+      theme: { mode: 'light', light: 'light', dark: 'dark' },
+      language: 'system',
       uiFont: 'Inter',
       fontSize: 14,
+      defaultLayoutId: 'default',
     });
   });
 
@@ -96,6 +102,7 @@ describe('device state store', () => {
       windowBounds: { x: 10, y: 20, width: 1280, height: 800 },
       lastProjectId: id,
       recentProjects: [{ id, name: 'Demo', openedAt: '2026-10-17T09:00:00.000Z' }],
+      statusBar: true,
     };
 
     await store.save(state);

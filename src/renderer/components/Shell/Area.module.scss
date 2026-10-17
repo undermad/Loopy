@@ -1,0 +1,41 @@
+.area {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  flex: 1;
+  overflow: hidden;
+}
+
+.body {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.previewRemove {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+
+.previewLabel {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: var(--font-size-xs);
+}

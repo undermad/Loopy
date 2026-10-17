@@ -1,0 +1,50 @@
+@use '../styles/control' as *;
+
+.button {
+  @include control-base;
+
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: var(--color-hover);
+  }
+
+  &:active:not(:disabled),
+  &[aria-pressed='true'] {
+    background: var(--color-pressed);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.sm {
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.md {
+  width: var(--control-height-md);
+  height: var(--control-height-md);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--color-fg);
+}
+
+.secondary {
+  background: var(--color-surface);
+  color: var(--color-fg);
+  border-color: var(--color-border);
+}

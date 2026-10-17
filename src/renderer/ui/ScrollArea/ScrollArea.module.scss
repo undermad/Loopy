@@ -1,0 +1,36 @@
+.root {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.viewport {
+  width: 100%;
+  height: 100%;
+}
+
+.scrollbar {
+  display: flex;
+  padding: 2px;
+  user-select: none;
+  touch-action: none;
+
+  &[data-orientation='vertical'] {
+    width: 10px;
+  }
+
+  &[data-orientation='horizontal'] {
+    flex-direction: column;
+    height: 10px;
+  }
+}
+
+.thumb {
+  position: relative;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-fg) 25%, transparent);
+  flex: 1;
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-fg) 40%, transparent);
+  }
+}

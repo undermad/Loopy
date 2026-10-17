@@ -17,16 +17,3 @@
     @include focus-ring;
   }
 }
-
-.tooltip {
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  background: var(--color-fg);
-  color: var(--color-bg);
-  font-size: var(--font-size-sm);
-  box-shadow: var(--shadow-md);
-}
-
-.arrow {
-  fill: var(--color-fg);
-}
