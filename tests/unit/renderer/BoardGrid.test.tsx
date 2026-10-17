@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
-import { ReactFlowProvider, useStoreApi } from '@xyflow/react';
+import { ReactFlow, ReactFlowProvider, useStoreApi } from '@xyflow/react';
 import { describe, expect, it } from 'vitest';
-import { Grid, crisp, linePositions } from '@renderer/components/editors/Board/Grid';
+import { Grid, linePositions } from '@renderer/components/editors/Board/Grid';
 
 let api: ReturnType<typeof useStoreApi> | null = null;
 
@@ -11,38 +11,38 @@ function Probe() {
 }
 
 describe('Grid', () => {
-  it('draws the fine level as a pattern and the wider levels as pixel-aligned lines', () => {
+  it('draws every level as lines in flow coordinates above the nodes', () => {
     render(
       <ReactFlowProvider>
-        <Probe />
-        <Grid board={{ unit: 'm', unitScale: 100, gridColor: '#123456' }} />
+        <ReactFlow nodes={[]} edges={[]}>
+          <Probe />
+          <Grid board={{ unit: 'm', unitScale: 100, gridColor: '#123456' }} />
+        </ReactFlow>
       </ReactFlowProvider>,
     );
-    const svg = screen.getByTestId('board-grid');
-    expect(svg.querySelectorAll('pattern')).toHaveLength(1);
-    expect(svg.querySelector('pattern')?.getAttribute('width')).toBe('100');
-    expect(svg.querySelector('path')?.getAttribute('stroke')).toBe('#123456');
-    expect(svg.querySelectorAll('line')).toHaveLength(2);
-
     act(() => {
-      api?.setState({ width: 500, height: 300, transform: [10.4, 20.6, 1] });
+      api?.setState({ width: 500, height: 300, transform: [-50, -20, 1] });
     });
-    const lines = Array.from(svg.querySelectorAll('g[data-level="lines"] line'));
-    expect(lines.length).toBeGreaterThan(2);
-    for (const line of lines) {
-      const x = Number(line.getAttribute('x1'));
-      const y = Number(line.getAttribute('y1'));
-      expect(((x * 2) % 1) + ((y * 2) % 1)).toBe(0);
-    }
-    expect(lines.every((line) => line.parentElement?.getAttribute('stroke') === '#123456')).toBe(true);
+    const svg = screen.getByTestId('board-grid');
+    expect(svg.closest('.react-flow__viewport-portal')).not.toBeNull();
+    expect(svg.getAttribute('viewBox')).toBe('50 20 500 300');
+    const groups = Array.from(svg.querySelectorAll('g[data-level]')).map((group) =>
+      group.getAttribute('data-level'),
+    );
+    expect(groups).toEqual(['100', '1000', '10000', 'axes']);
+    const fine = svg.querySelectorAll('g[data-level="100"] line');
+    expect(fine.length).toBeGreaterThan(8);
+    expect(
+      Array.from(fine).every((line) => line.getAttribute('vector-effect') === 'non-scaling-stroke'),
+    ).toBe(true);
+    expect(svg.querySelector('g[data-level="100"]')?.getAttribute('stroke')).toBe('#123456');
+    expect(Number(fine[0]?.getAttribute('x1')) % 100).toBe(0);
   });
 
-  it('positions lines across the viewport and snaps them to device pixels', () => {
-    expect(linePositions(10, 100, 250)).toEqual([-90, 10, 110, 210, 310]);
-    expect(linePositions(10, 0, 250)).toEqual([]);
-    expect(linePositions(10, 100, 0)).toEqual([]);
-    expect(crisp(10.4, 1)).toBe(9.5);
-    expect(crisp(10.6, 2)).toBe(11);
-    expect(crisp(-0.4, 3)).toBe(-0.5);
+  it('lists the multiples of a gap that cover a range', () => {
+    expect(linePositions(100, 10, 250)).toEqual([0, 100, 200, 300]);
+    expect(linePositions(100, -150, -10)).toEqual([-200, -100, 0]);
+    expect(linePositions(0, 10, 250)).toEqual([]);
+    expect(linePositions(100, 250, 10)).toEqual([]);
   });
 });
