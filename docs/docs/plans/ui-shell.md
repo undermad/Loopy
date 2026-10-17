@@ -65,6 +65,7 @@ Considered and not chosen:
 | `src/renderer/lib/workspaces`                                     | Workspace list, active workspace, presets, persistence to `state.json`                  |
 | `src/renderer/lib/editors`                                        | Editor registry. Editor components live in `components/editors/<Name>`                  |
 | `src/renderer/lib/shortcuts`                                      | Key map definitions and the `useShortcuts` hook                                         |
+| `src/renderer/ui`                                                 | The visual component library, see the [component library plan](./components.md)         |
 | `src/renderer/components/Shell`                                   | `MenuBar`, `WorkspaceTabs`, `StatusBar`, `AreaTree`, `Area`, `AreaHeader`, `AreaCorner` |
 
 Each `src/renderer/lib` entry is an internal library with one `index.ts`, no components inside and no deep imports from outside, as set out in ADR 0016 and `.claude/skills/internal-libraries/SKILL.md`. Components under `Shell` and `editors` only compose them.
@@ -176,16 +177,16 @@ The corner hit target is a 10 px triangle on each corner of every area, with the
 
 ### Editors
 
-Editors ship as placeholders in the first phase so the shell can be tested with real switching:
+Editors ship as placeholders in the first phase so the shell can be tested with real switching. The [editors plan](./editors.md) specifies the welcome screen, the board and the tickets editors in full, and the [component library plan](./components.md) the widgets they are built from.
 
 | Editor     | Workspace it anchors | First version                                  |
 | ---------- | -------------------- | ---------------------------------------------- |
-| Tickets    | Planning             | Empty board frame                              |
-| Progress   | Planning             | Empty timeline frame                           |
-| Board      | Design               | Empty infinite canvas with pan and zoom        |
+| Tickets    | Planning             | Board and Backlog modes, states and cards      |
+| Ticket     | Planning             | The selected ticket, follows the selection     |
+| Board      | Design               | Infinite canvas with pan, zoom and background  |
 | Colours    | Palette              | Project colour schemes, reads from the project |
 | Properties | Any                  | Context panel for the active selection         |
-| Welcome    | Default              | Recent projects, links to docs                 |
+| Welcome    | No project open      | New, open, projects list and recent projects   |
 
 ## Workspaces
 
