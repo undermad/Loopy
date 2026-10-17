@@ -17,3 +17,7 @@
 .subtitle {
   color: var(--color-fg-muted);
 }
+
+.actions {
+  @include row(var(--space-2));
+}

@@ -44,9 +44,9 @@ The boundary is a convention checked in review, not a lint rule. A deep import s
 
 | Library      | Owns                                                            | Status  |
 | ------------ | --------------------------------------------------------------- | ------- |
-| `theme`      | Active theme, applying colour tokens, following the system mode | planned |
-| `i18n`       | i18next setup, language switching, `Intl` formatting            | planned |
-| `settings`   | Settings store synced with main                                 | planned |
+| `theme`      | Active theme, applying colour tokens, following the system mode | shipped |
+| `i18n`       | i18next setup, language switching, `Intl` formatting            | shipped |
+| `settings`   | Settings store synced with main                                 | shipped |
 | `layout`     | Area tree model, split, join, resize, swap, maximise            | planned |
 | `workspaces` | Workspace list, active workspace, layout presets                | planned |
 | `editors`    | Editor registry: component, icon, title key, default state      | planned |
@@ -60,7 +60,7 @@ The boundary is a convention checked in review, not a lint rule. A deep import s
 4. The renderer calls `window.loopy.<method>()` and treats the result as trusted.
 5. Every channel has a test in `tests/integration/ipc`.
 
-The scaffold ships one channel, `app:getVersion`, which shows the pattern end to end.
+`app:getVersion` shows the pattern end to end. Settings use `settings:get`, `settings:set` and a `settings:changed` push from main; the preload wraps pushes in subscribe functions that return an unsubscribe, so the renderer never sees `ipcRenderer`. Theme and locale channels are listed on the theming page.
 
 ## Storage
 
@@ -71,6 +71,7 @@ Everything lives under Electron's user data directory. `storagePaths` in `src/ma
 | `settings.json`       | App preferences: theme, UI font, font size               | JSON with `schemaVersion`  |
 | `state.json`          | Device state: window bounds, last project, recent list   | JSON with `schemaVersion`  |
 | `projects/<id>.loopy` | One project: metadata, settings and later boards, assets | SQLite with `user_version` |
+| `themes/<id>.json`    | One custom theme per file, see the theming page          | JSON with `schemaVersion`  |
 
 The user never sees these paths. The project picker lists the `projects` directory, and sharing goes through export and import.
 

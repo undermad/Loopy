@@ -1,9 +1,13 @@
 import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '@renderer/App';
+import { bootTestApp, type FakeApi } from './helpers/api';
 
-beforeEach(() => {
-  window.loopy = { getAppVersion: vi.fn(() => Promise.resolve({ app: '0.1.0', electron: '44.8.0' })) };
+let api: FakeApi;
+
+beforeEach(async () => {
+  api = await bootTestApp();
 });
 
 describe('App', () => {
@@ -14,10 +18,24 @@ describe('App', () => {
     expect(await screen.findByRole('button', { name: 'Loopy v0.1.0' })).toBeInTheDocument();
   });
 
-  it('matches the stable layout snapshot', async () => {
-    const { container } = render(<App />);
-    await screen.findByRole('button', { name: 'Loopy v0.1.0' });
+  it('opens preferences and applies a mode change to the document', async () => {
+    const user = userEvent.setup();
+    render(<App />);
 
-    expect(container.firstChild).toMatchSnapshot();
+    await user.click(screen.getByRole('button', { name: 'Preferences' }));
+    await user.click(await screen.findByRole('radio', { name: 'Dark' }));
+
+    expect(api.setSettings).toHaveBeenCalledWith({ theme: { mode: 'dark', light: 'light', dark: 'dark' } });
+    expect(document.documentElement.dataset['theme']).toBe('dark');
+  });
+
+  it('follows the system scheme while in system mode', async () => {
+    render(<App />);
+    expect(document.documentElement.dataset['theme']).toBe('light');
+
+    api.emitNativeTheme('dark');
+
+    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
+    expect(document.documentElement.dataset['theme']).toBe('dark');
   });
 });

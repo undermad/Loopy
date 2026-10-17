@@ -1,0 +1,22 @@
+{
+  "types": {
+    "welcome": "Welcome",
+    "board": "Board",
+    "tickets": "Tickets",
+    "ticket": "Ticket",
+    "properties": "Properties",
+    "colours": "Colours",
+    "gallery": "Component gallery",
+    "empty": "Empty"
+  },
+  "empty": {
+    "title": "Empty area",
+    "hint": "Pick an editor from the header."
+  },
+  "properties": {
+    "nothing": "Nothing selected"
+  },
+  "colours": {
+    "soon": "Project colour schemes arrive with a later release."
+  }
+}

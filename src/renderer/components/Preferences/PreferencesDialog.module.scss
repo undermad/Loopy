@@ -1,0 +1,15 @@
+@use '../../styles/mixins' as *;
+
+.tabs {
+  min-height: 320px;
+}
+
+.panel {
+  @include stack(var(--space-4));
+
+  padding-top: var(--space-2);
+}
+
+.number {
+  width: 96px;
+}

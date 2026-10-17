@@ -1,0 +1,35 @@
+{
+  "app": {
+    "name": "Loopy",
+    "tagline": "Game design and project management, on your desktop."
+  },
+  "actions": {
+    "add": "Add",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "create": "Create",
+    "delete": "Delete",
+    "dismiss": "Dismiss",
+    "duplicate": "Duplicate",
+    "export": "Export",
+    "import": "Import",
+    "open": "Open",
+    "remove": "Remove",
+    "rename": "Rename",
+    "reset": "Reset",
+    "save": "Save",
+    "search": "Search"
+  },
+  "labels": {
+    "loading": "Loading…",
+    "notifications": "Notifications",
+    "version": "Loopy v{{version}}",
+    "electron": "Electron {{version}}",
+    "untitled": "Untitled"
+  },
+  "errors": {
+    "generic": "Something went wrong.",
+    "invalidFile": "The file is not a valid {{kind}} file."
+  }
+}
