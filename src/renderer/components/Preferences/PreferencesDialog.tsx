@@ -5,6 +5,7 @@ import { useThemes } from '@renderer/lib/theme';
 import { Dialog, Field, Input, Select, Tabs, ToggleGroup } from '@renderer/ui';
 import type { LanguageSetting, ThemeMode } from '@shared/app-settings';
 import { SUPPORTED_LANGUAGES } from '@shared/i18n';
+import { ThemesTab } from './ThemesTab';
 import styles from './PreferencesDialog.module.scss';
 
 export interface PreferencesDialogProps {
@@ -52,10 +53,11 @@ export function PreferencesDialog({ open, onOpenChange }: PreferencesDialogProps
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Content title={t('title')} closeLabel={tc('actions.close')} size="md">
+      <Dialog.Content title={t('title')} closeLabel={tc('actions.close')} size="lg">
         <Tabs.Root defaultValue="appearance" className={styles['tabs']}>
           <Tabs.List aria-label={t('title')}>
             <Tabs.Trigger value="appearance">{t('tabs.appearance')}</Tabs.Trigger>
+            <Tabs.Trigger value="themes">{t('tabs.themes')}</Tabs.Trigger>
             <Tabs.Trigger value="language">{t('tabs.language')}</Tabs.Trigger>
           </Tabs.List>
           <Tabs.Content value="appearance" className={styles['panel']}>
@@ -84,6 +86,9 @@ export function PreferencesDialog({ open, onOpenChange }: PreferencesDialogProps
               />
             </Field>
             <FontSizeField key={settings.fontSize} value={settings.fontSize} />
+          </Tabs.Content>
+          <Tabs.Content value="themes" className={styles['panel']}>
+            <ThemesTab />
           </Tabs.Content>
           <Tabs.Content value="language" className={styles['panel']}>
             <Field label={t('language.label')}>

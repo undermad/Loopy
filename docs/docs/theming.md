@@ -15,6 +15,10 @@ A theme is a JSON document validated by `themeSchema` in `src/shared/theme.ts`: 
 
 Export writes the theme inside the exchange envelope from `src/shared/exchange.ts`, with a `.loopy-theme.json` name. Import validates the envelope and the theme, gives it a new id if one already exists, and copies it into the themes directory.
 
+## Theme editor
+
+Preferences, Themes tab. Pick any theme to inspect its colours. New theme from current copies it under a new id, makes it the active theme for its base and unlocks editing: the name field and one colour picker per token, applied live. Built-in themes stay read only. Import and Export use the file dialogs in main; Delete removes the file and falls back to the built-in theme of the same base.
+
 ## How colours reach the screen
 
 `tokens.scss` holds the light colours on `:root` and the dark ones on `[data-theme='dark']` for the first paint. After boot, `applyTheme` in `src/renderer/lib/theme` writes each colour as a custom property on `<html>`, sets `data-theme` to the base and sets `color-scheme`. Hover, pressed and other shades derive with `color-mix()`, so a theme only names base colours.
