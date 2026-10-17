@@ -84,6 +84,34 @@ export const projectMigrations: SqlMigrations = [
     bytes BLOB NOT NULL,
     created_at TEXT NOT NULL
   );`,
+  `CREATE TABLE ticket_labels_v4 AS SELECT ticket_id, label_id FROM ticket_labels;
+  DROP TABLE ticket_labels;
+  CREATE TABLE tickets_v4 (
+    id TEXT PRIMARY KEY,
+    number INTEGER NOT NULL UNIQUE,
+    title TEXT NOT NULL CHECK (length(title) > 0),
+    description TEXT NOT NULL DEFAULT '',
+    type TEXT NOT NULL CHECK (type IN ('task', 'spike', 'bug')),
+    priority TEXT NOT NULL CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+    state_id TEXT REFERENCES ticket_states(id) ON DELETE SET NULL,
+    position TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    resolved_at TEXT
+  );
+  INSERT INTO tickets_v4 (id, number, title, description, type, priority, state_id, position, created_at, updated_at, resolved_at)
+    SELECT id, number, title, description, CASE WHEN type = 'idea' THEN 'task' ELSE type END, priority, state_id, position,
+      created_at, updated_at, resolved_at FROM tickets;
+  DROP TABLE tickets;
+  ALTER TABLE tickets_v4 RENAME TO tickets;
+  CREATE INDEX tickets_by_state ON tickets(state_id, position);
+  CREATE TABLE ticket_labels (
+    ticket_id TEXT NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+    label_id TEXT NOT NULL REFERENCES labels(id) ON DELETE CASCADE,
+    PRIMARY KEY (ticket_id, label_id)
+  ) WITHOUT ROWID;
+  INSERT INTO ticket_labels (ticket_id, label_id) SELECT ticket_id, label_id FROM ticket_labels_v4;
+  DROP TABLE ticket_labels_v4;`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

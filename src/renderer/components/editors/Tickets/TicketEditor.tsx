@@ -9,7 +9,7 @@ import { Button, ConfirmDialog, EmptyState, Field, Input, Select, TextArea } fro
 import { LabelPicker } from './LabelPicker';
 import styles from './TicketEditor.module.scss';
 
-const TYPES: TicketType[] = ['task', 'bug', 'idea'];
+const TYPES: TicketType[] = ['task', 'spike', 'bug'];
 const PRIORITIES: TicketPriority[] = ['low', 'medium', 'high', 'urgent'];
 
 function DraftField({

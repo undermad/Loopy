@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { hexColorSchema } from './theme';
 
 export const stateCategorySchema = z.enum(['todo', 'doing', 'done']);
-export const ticketTypeSchema = z.enum(['task', 'bug', 'idea']);
+export const ticketTypeSchema = z.enum(['task', 'spike', 'bug']);
 export const ticketPrioritySchema = z.enum(['low', 'medium', 'high', 'urgent']);
 
 export const ticketStateSchema = z.object({

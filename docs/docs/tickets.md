@@ -11,12 +11,12 @@ The Tickets editor is a Jira-style board with far less of Jira: columns for stat
 
 Project migration 2 adds four tables.
 
-| Table           | Holds                                                                                          |
-| --------------- | ---------------------------------------------------------------------------------------------- |
-| `ticket_states` | Columns: name, position key, category `todo`, `doing` or `done`, colour. Three ship by default |
-| `tickets`       | Number, title, description, type, priority, nullable `state_id`, position key, timestamps      |
-| `labels`        | Name and colour, unique by name                                                                |
-| `ticket_labels` | Ticket to label links, removed with either side                                                |
+| Table           | Holds                                                                                                                |
+| --------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `ticket_states` | Columns: name, position key, category `todo`, `doing` or `done`, colour. Three ship by default                       |
+| `tickets`       | Number, title, description, type (`task`, `spike` or `bug`), priority, nullable `state_id`, position key, timestamps |
+| `labels`        | Name and colour, unique by name                                                                                      |
+| `ticket_labels` | Ticket to label links, removed with either side                                                                      |
 
 A ticket with no state is in the backlog. Its key is the first three letters of the project name plus its number, so `SPA-12` in a project called Space Game. Moving a ticket into a `done` state sets `resolved_at`; moving it out clears it.
 
@@ -38,4 +38,4 @@ Order inside a column is a string key from `src/shared/ordering.ts`: `keyBetween
 
 `src/renderer/lib/tickets` keeps the snapshot and the selected ticket, reloads when the project changes, and exposes `ticketActions`, `stateActions` and `labelActions`. `ticketActions.moveTo(id, stateId, index)` turns an index into a position key between the neighbours.
 
-The editor components live in `src/renderer/components/editors/Tickets`. The Tickets editor has Board and Backlog modes in its header and a search box, both kept in area state. Drag and drop uses `@atlaskit/pragmatic-drag-and-drop` with closest-edge hit testing; backlogs over 100 rows are virtualised with `@tanstack/react-virtual`. Column menus rename, recolour, recategorise, reorder and delete states. The Ticket editor edits title, state, type, priority, labels and description, and deletes behind a confirmation.
+The editor components live in `src/renderer/components/editors/Tickets`. The Tickets editor has Board and Backlog modes in its header and a search box, both kept in area state. Drag and drop uses `@atlaskit/pragmatic-drag-and-drop` with closest-edge hit testing; backlogs over 100 rows are virtualised with `@tanstack/react-virtual`. Cards drag between and within columns with an animated placeholder at the drop position, and the grip in a column header drags the whole column, with a bar showing where it lands. Column menus rename, recolour, recategorise, reorder and delete states. Migration 4 narrows ticket types to task, spike and bug and maps the earlier idea type to task. The Ticket editor edits title, state, type, priority, labels and description, and deletes behind a confirmation.

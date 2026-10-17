@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { AlertTriangle, ArrowDown, ArrowUp, Bug, CheckSquare, Lightbulb, Minus } from 'lucide-react';
+import { attachClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { AlertTriangle, ArrowDown, ArrowUp, Bug, CheckSquare, FlaskConical, Minus } from 'lucide-react';
 import type { Label, Ticket, TicketPriority, TicketType } from '@shared/tickets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Tag, cx } from '@renderer/ui';
-import type { CardDropData, Edge, TicketDragData } from './dnd';
+import type { CardDropData, TicketDragData } from './dnd';
 import styles from './TicketCard.module.scss';
 
-export const TYPE_ICONS: Record<TicketType, typeof Bug> = { task: CheckSquare, bug: Bug, idea: Lightbulb };
+export const TYPE_ICONS: Record<TicketType, typeof Bug> = {
+  task: CheckSquare,
+  spike: FlaskConical,
+  bug: Bug,
+};
 export const PRIORITY_ICONS: Record<TicketPriority, typeof Bug> = {
   low: ArrowDown,
   medium: Minus,
@@ -37,7 +41,6 @@ export function TicketCard({
   const { t } = useTranslation('editors');
   const ref = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
-  const [edge, setEdge] = useState<Edge | null>(null);
   const TypeIcon = TYPE_ICONS[ticket.type];
   const PriorityIcon = PRIORITY_ICONS[ticket.priority];
 
@@ -62,16 +65,6 @@ export function TicketCard({
         canDrop: ({ source }) => source.data['type'] === 'ticket' && source.data['id'] !== ticket.id,
         getData: ({ input, element: target }) =>
           attachClosestEdge({ ...drop }, { input, element: target, allowedEdges: ['top', 'bottom'] }),
-        onDrag: ({ self }) => {
-          const closest = extractClosestEdge(self.data);
-          setEdge(closest === 'top' || closest === 'bottom' ? closest : null);
-        },
-        onDragLeave: () => {
-          setEdge(null);
-        },
-        onDrop: () => {
-          setEdge(null);
-        },
       }),
     );
   }, [ticket.id, ticket.stateId]);
@@ -97,12 +90,6 @@ export function TicketCard({
         }
       }}
     >
-      {edge ? (
-        <span
-          className={cx(styles['indicator'], edge === 'top' ? styles['edgeTop'] : styles['edgeBottom'])}
-          aria-hidden="true"
-        />
-      ) : null}
       <div className={styles['head']}>
         <TypeIcon aria-label={t(`tickets.types.${ticket.type}`)} className={styles['type']} />
         <span className={styles['key']}>{ticketKey}</span>

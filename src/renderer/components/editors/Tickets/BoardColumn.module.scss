@@ -15,6 +15,44 @@
   border-color: var(--color-accent);
 }
 
+.draggingColumn {
+  opacity: 0.5;
+}
+
+.handle {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-fg-muted);
+  cursor: grab;
+  flex-shrink: 0;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.placeholder {
+  height: 56px;
+  border: 2px dashed var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  animation: grow 150ms ease-out;
+}
+
+@keyframes grow {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+}
+
 .header {
   @include row(var(--space-2));
 

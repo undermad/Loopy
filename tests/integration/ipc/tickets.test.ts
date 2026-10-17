@@ -156,3 +156,29 @@ describe('tickets repository branches', () => {
     );
   });
 });
+
+describe('migration 4', () => {
+  it('maps idea tickets to tasks and keeps labels attached', async () => {
+    const { DatabaseSync } = await import('node:sqlite');
+    const { migrateDatabase } = await import('../../../src/main/storage/sql-migrations');
+    const { projectMigrations } = await import('../../../src/main/storage/project-migrations');
+    const path = join(directory, 'legacy.loopy');
+    const db = new DatabaseSync(path);
+    db.exec('PRAGMA foreign_keys = ON');
+    migrateDatabase(db, projectMigrations.slice(0, 3));
+    db.prepare(
+      `INSERT INTO tickets (id, number, title, description, type, priority, state_id, position, created_at, updated_at, resolved_at)
+       VALUES ('t1', 1, 'Old idea', '', 'idea', 'low', 'todo', 'a', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', NULL)`,
+    ).run();
+    db.prepare("INSERT INTO labels (id, name, color) VALUES ('l1', 'Art', '#ff0000')").run();
+    db.prepare("INSERT INTO ticket_labels (ticket_id, label_id) VALUES ('t1', 'l1')").run();
+
+    migrateDatabase(db, projectMigrations);
+    const ticket = db.prepare('SELECT type FROM tickets WHERE id = ?').get('t1') as { type: string };
+    const links = db.prepare('SELECT COUNT(*) AS count FROM ticket_labels').get() as { count: number };
+    expect(ticket.type).toBe('task');
+    expect(links.count).toBe(1);
+    expect(() => db.prepare("UPDATE tickets SET type = 'idea' WHERE id = 't1'").run()).toThrow();
+    db.close();
+  });
+});

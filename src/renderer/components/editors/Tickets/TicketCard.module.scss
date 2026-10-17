@@ -10,6 +10,10 @@
   background: var(--color-surface-raised);
   cursor: grab;
   user-select: none;
+  transition:
+    transform 150ms ease,
+    opacity 150ms ease,
+    box-shadow 150ms ease;
 
   &:hover {
     border-color: color-mix(in srgb, var(--color-border) 40%, var(--color-fg-muted));
@@ -40,25 +44,8 @@
 }
 
 .dragging {
-  opacity: 0.4;
-}
-
-.indicator {
-  position: absolute;
-  height: 2px;
-  background: var(--color-accent);
-  right: 0;
-  left: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.edgeTop {
-  top: -2px;
-}
-
-.edgeBottom {
-  bottom: -2px;
+  opacity: 0.35;
+  transform: scale(0.98);
 }
 
 .head {

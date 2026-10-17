@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NodeResizer, type NodeProps } from '@xyflow/react';
 import { noteDataSchema } from '@shared/board';
 import { useTranslation } from '@renderer/lib/i18n';
+import { cx } from '@renderer/ui';
 import styles from './NoteNode.module.scss';
 
 export interface NoteNodeData extends Record<string, unknown> {
@@ -12,28 +13,69 @@ export interface NoteNodeData extends Record<string, unknown> {
 export function NoteNode({ data, selected }: NodeProps & { data: NoteNodeData }) {
   const { t } = useTranslation('editors');
   const parsed = noteDataSchema.safeParse(data);
-  const [draft, setDraft] = useState(parsed.success ? parsed.data.text : '');
+  const text = parsed.success ? parsed.data.text : '';
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(text);
+  const area = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (editing) area.current?.focus();
+  }, [editing]);
+
+  function commit() {
+    setEditing(false);
+    if (draft !== text) data.onChange(draft);
+  }
 
   return (
-    <div className={styles['note']}>
+    <div
+      className={cx(styles['note'], selected && styles['selected'], editing && styles['editing'])}
+      tabIndex={0}
+      onDoubleClick={() => {
+        setDraft(text);
+        setEditing(true);
+      }}
+      onKeyDown={(event) => {
+        if (!editing && event.key === 'Enter' && event.target === event.currentTarget) {
+          event.preventDefault();
+          setDraft(text);
+          setEditing(true);
+        }
+      }}
+    >
       <NodeResizer
         isVisible={selected}
         minWidth={120}
         minHeight={80}
         lineClassName={styles['resizeLine'] ?? ''}
       />
-      <textarea
-        className={`nodrag ${styles['text'] ?? ''}`}
-        value={draft}
-        placeholder={t('board.notePlaceholder')}
-        aria-label={t('board.addNote')}
-        onChange={(event) => {
-          setDraft(event.target.value);
-        }}
-        onBlur={() => {
-          if (draft !== data.text) data.onChange(draft);
-        }}
-      />
+      {editing ? (
+        <textarea
+          ref={area}
+          className={`nodrag nowheel nopan ${styles['text'] ?? ''}`}
+          value={draft}
+          placeholder={t('board.notePlaceholder')}
+          aria-label={t('board.addNote')}
+          onChange={(event) => {
+            setDraft(event.target.value);
+          }}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              commit();
+            }
+            event.stopPropagation();
+          }}
+        />
+      ) : (
+        <div
+          className={cx(styles['text'], styles['display'], !text && styles['placeholder'])}
+          title={t('board.editHint')}
+        >
+          {text || t('board.notePlaceholder')}
+        </div>
+      )}
     </div>
   );
 }

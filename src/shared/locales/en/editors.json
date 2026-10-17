@@ -60,8 +60,8 @@
     "dragHandle": "Drag to move",
     "types": {
       "task": "Task",
-      "bug": "Bug",
-      "idea": "Idea"
+      "spike": "Spike",
+      "bug": "Bug"
     },
     "priorities": {
       "low": "Low",
@@ -70,7 +70,8 @@
       "urgent": "Urgent"
     },
     "backlog": "Backlog",
-    "loading": "Loading tickets…"
+    "loading": "Loading tickets…",
+    "dragState": "Drag to reorder states"
   },
   "ticket": {
     "none": "No ticket selected",
@@ -114,6 +115,7 @@
     "hint": "Double-click the canvas to add a note. Drag with the middle mouse button or hold Space to pan.",
     "empty": "No boards yet",
     "emptyHint": "Create a board to start sketching ideas.",
-    "loading": "Loading board…"
+    "loading": "Loading board…",
+    "editHint": "Double-click a note to edit it. Drag it to move, select it to resize."
   }
 }

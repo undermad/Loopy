@@ -9,15 +9,17 @@ The Board editor is an infinite canvas built on React Flow. It anchors the Desig
 
 ## Using it
 
-| Action            | How                                                                       |
-| ----------------- | ------------------------------------------------------------------------- |
-| Pan               | Middle or right mouse drag, or scroll; left drag selects                  |
-| Zoom              | Ctrl and wheel, or the zoom buttons in the header                         |
-| Add a note        | Double-click the canvas                                                   |
-| Connect two notes | Drag from a note's handle to another note                                 |
-| Delete            | Select and press Delete or Backspace                                      |
-| Switch board      | The board dropdown in the header, which also creates, renames and deletes |
-| Background colour | The swatch in the header                                                  |
+| Action            | How                                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| Pan               | Middle or right mouse drag, or scroll; left drag selects                                  |
+| Zoom              | Ctrl and wheel, or the zoom buttons in the header                                         |
+| Add a note        | Double-click the canvas                                                                   |
+| Edit a note       | Double-click the note, or press Enter while it is selected; Escape or clicking away saves |
+| Move or resize    | Drag the note; select it and pull a corner to resize                                      |
+| Connect two notes | Drag from a note's handle to another note                                                 |
+| Delete            | Select and press Delete or Backspace                                                      |
+| Switch board      | The board dropdown in the header, which also creates, renames and deletes                 |
+| Background colour | The swatch in the header                                                                  |
 
 The viewport, grid and minimap toggles are area state, so two areas can show one board at different zoom levels and the choice survives a workspace switch. The board's content and colour live in the project.
 

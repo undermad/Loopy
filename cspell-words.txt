@@ -24,6 +24,8 @@ lycheeverse
 markdownlint
 minimap
 nodrag
+nopan
+nowheel
 nsis
 nvmrc
 pannable

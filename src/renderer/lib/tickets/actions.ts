@@ -28,6 +28,7 @@ export const ticketActions = {
 };
 
 export const stateActions = {
+  reorder: (id: string, index: number) => stateReorder.reorder(id, index),
   create: (input: StateInput) => mutate((api) => api.createState(input)),
   update: (id: string, patch: StatePatch) => mutate((api) => api.updateState(id, patch)),
   remove: (id: string, moveTo: string | null) => mutate((api) => api.deleteState(id, moveTo)),
@@ -40,6 +41,17 @@ export const stateActions = {
     if (index < 0 || target < 0 || target >= states.length) return Promise.resolve(snapshot);
     const others = states.filter((state) => state.id !== id);
     const position = keyBetween(others[target - 1]?.position ?? null, others[target]?.position ?? null);
+    return mutate((api) => api.moveState(id, position));
+  },
+};
+
+export const stateReorder = {
+  reorder(id: string, index: number) {
+    const snapshot = ticketsStore.getState().snapshot;
+    if (!snapshot) return Promise.resolve(snapshot);
+    const others = snapshot.states.filter((state) => state.id !== id);
+    const clamped = Math.max(0, Math.min(index, others.length));
+    const position = keyBetween(others[clamped - 1]?.position ?? null, others[clamped]?.position ?? null);
     return mutate((api) => api.moveState(id, position));
   },
 };

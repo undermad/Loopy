@@ -16,7 +16,7 @@ import {
   useSelectedTicketId,
   useTicketsSnapshot,
 } from '@renderer/lib/tickets';
-import { EmptyState, IconButton, cx } from '@renderer/ui';
+import { Button, EmptyState, cx } from '@renderer/ui';
 import { asDropData, isTicketDrag, targetIndex } from './dnd';
 import { QuickAdd } from './QuickAdd';
 import { TicketCard } from './TicketCard';
@@ -102,17 +102,18 @@ export function BacklogView({ search }: { search: string }) {
                       selectTicket(ticket.id);
                     }}
                   />
-                  <IconButton
-                    label={t('tickets.moveToBoard')}
+                  <Button
                     size="sm"
+                    variant="ghost"
+                    icon={<ArrowRight aria-hidden="true" />}
                     disabled={board === null}
                     className={styles['move']}
                     onClick={() => {
                       if (board) void ticketActions.update(ticket.id, { stateId: board });
                     }}
                   >
-                    <ArrowRight aria-hidden="true" />
-                  </IconButton>
+                    {t('tickets.moveToBoard')}
+                  </Button>
                 </div>
               );
             })}

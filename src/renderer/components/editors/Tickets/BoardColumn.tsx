@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
-import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { MoreHorizontal } from 'lucide-react';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { attachClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { GripVertical, MoreHorizontal } from 'lucide-react';
 import type { StateCategory, Ticket, TicketState, TicketsSnapshot } from '@shared/tickets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { labelsOf, selectTicket, stateActions, useSelectedTicketId } from '@renderer/lib/tickets';
 import { ColorPicker, ConfirmDialog, DropdownMenu, IconButton, ScrollArea, cx } from '@renderer/ui';
 import { PromptDialog } from '../../Shell/PromptDialog';
-import type { ColumnDropData } from './dnd';
+import type { ColumnDropData, StateDragData } from './dnd';
 import { QuickAdd } from './QuickAdd';
 import { TicketCard } from './TicketCard';
 import styles from './BoardColumn.module.scss';
@@ -18,41 +20,87 @@ export interface BoardColumnProps {
   keyFor: (ticket: Ticket) => string;
   index: number;
   total: number;
+  placeholderIndex: number | null;
 }
 
 const CATEGORIES: StateCategory[] = ['todo', 'doing', 'done'];
 
-export function BoardColumn({ state, tickets, snapshot, keyFor, index, total }: BoardColumnProps) {
+export function BoardColumn({
+  state,
+  tickets,
+  snapshot,
+  keyFor,
+  index,
+  total,
+  placeholderIndex,
+}: BoardColumnProps) {
   const { t } = useTranslation('editors');
   const { t: tc } = useTranslation('common');
   const selectedId = useSelectedTicketId();
   const bodyRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const handleRef = useRef<HTMLButtonElement>(null);
   const [over, setOver] = useState(false);
+  const [draggingColumn, setDraggingColumn] = useState(false);
   const [dialog, setDialog] = useState<'rename' | 'delete' | null>(null);
 
   useEffect(() => {
-    const element = bodyRef.current;
-    if (!element) return;
+    const body = bodyRef.current;
+    const section = sectionRef.current;
+    const handle = handleRef.current;
+    if (!body || !section || !handle) return;
     const data: ColumnDropData = { type: 'column', stateId: state.id };
-    return dropTargetForElements({
-      element,
-      canDrop: ({ source }) => source.data['type'] === 'ticket',
-      getData: () => ({ ...data }),
-      onDragEnter: () => {
-        setOver(true);
-      },
-      onDragLeave: () => {
-        setOver(false);
-      },
-      onDrop: () => {
-        setOver(false);
-      },
-    });
+    const drag: StateDragData = { type: 'state', id: state.id };
+    return combine(
+      dropTargetForElements({
+        element: body,
+        canDrop: ({ source }) => source.data['type'] === 'ticket',
+        getData: () => ({ ...data }),
+        onDragEnter: () => {
+          setOver(true);
+        },
+        onDragLeave: () => {
+          setOver(false);
+        },
+        onDrop: () => {
+          setOver(false);
+        },
+      }),
+      dropTargetForElements({
+        element: section,
+        canDrop: ({ source }) => source.data['type'] === 'state' && source.data['id'] !== state.id,
+        getData: ({ input, element }) =>
+          attachClosestEdge({ ...data }, { input, element, allowedEdges: ['left', 'right'] }),
+      }),
+      draggable({
+        element: section,
+        dragHandle: handle,
+        getInitialData: () => ({ ...drag }),
+        onDragStart: () => {
+          setDraggingColumn(true);
+        },
+        onDrop: () => {
+          setDraggingColumn(false);
+        },
+      }),
+    );
   }, [state.id]);
 
   return (
-    <section className={cx(styles['column'], over && styles['over'])} aria-label={state.name}>
+    <section
+      ref={sectionRef}
+      className={cx(styles['column'], over && styles['over'], draggingColumn && styles['draggingColumn'])}
+      aria-label={state.name}
+    >
       <header className={styles['header']}>
+        <button
+          ref={handleRef}
+          type="button"
+          className={styles['handle']}
+          aria-label={t('tickets.dragState')}
+        >
+          <GripVertical aria-hidden="true" />
+        </button>
         <ColorPicker
           size="sm"
           value={state.color}
@@ -113,18 +161,25 @@ export function BoardColumn({ state, tickets, snapshot, keyFor, index, total }: 
       <ScrollArea className={styles['scroll']} viewportClassName={styles['viewport']}>
         <div ref={bodyRef} className={styles['body']}>
           {tickets.length === 0 ? <p className={styles['empty']}>{t('tickets.emptyColumn')}</p> : null}
-          {tickets.map((ticket) => (
-            <TicketCard
-              key={ticket.id}
-              ticket={ticket}
-              ticketKey={keyFor(ticket)}
-              labels={labelsOf(snapshot, ticket.id)}
-              selected={ticket.id === selectedId}
-              onSelect={() => {
-                selectTicket(ticket.id);
-              }}
-            />
+          {tickets.map((ticket, position) => (
+            <Fragment key={ticket.id}>
+              {placeholderIndex === position ? (
+                <div className={styles['placeholder']} aria-hidden="true" />
+              ) : null}
+              <TicketCard
+                ticket={ticket}
+                ticketKey={keyFor(ticket)}
+                labels={labelsOf(snapshot, ticket.id)}
+                selected={ticket.id === selectedId}
+                onSelect={() => {
+                  selectTicket(ticket.id);
+                }}
+              />
+            </Fragment>
           ))}
+          {placeholderIndex !== null && placeholderIndex >= tickets.length ? (
+            <div className={styles['placeholder']} aria-hidden="true" />
+          ) : null}
         </div>
       </ScrollArea>
       <footer className={styles['footer']}>
