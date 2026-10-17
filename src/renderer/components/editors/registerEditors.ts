@@ -3,7 +3,7 @@ import { registerEditor } from '@renderer/lib/editors';
 import { BoardEditor } from './Board/BoardEditor';
 import { ColoursEditor } from './ColoursEditor';
 import { EmptyEditor } from './EmptyEditor';
-import { PropertiesEditor } from './PropertiesEditor';
+import { PropertiesEditor } from './Properties/PropertiesEditor';
 import { TicketEditor } from './Tickets/TicketEditor';
 import { TicketsEditor } from './Tickets/TicketsEditor';
 

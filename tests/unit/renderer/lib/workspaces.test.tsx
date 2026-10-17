@@ -88,6 +88,18 @@ describe('workspaces library', () => {
     const ids = areaIds(result.current);
     expect(ids).toHaveLength(3);
     const added = must(ids.find((id) => id !== first && id !== second));
+    let propertiesId = '';
+    act(() => {
+      propertiesId = areaActions.split(first, 'row', 0.75, 'properties');
+    });
+    expect(collectAreas(must(result.current).root).find((area) => area.id === propertiesId)).toMatchObject({
+      editor: 'properties',
+      state: {},
+    });
+    act(() => {
+      areaActions.close(propertiesId);
+    });
+    expect(areaIds(result.current)).toHaveLength(3);
 
     act(() => {
       areaActions.setEditor(first, 'board', { zoom: 1 });

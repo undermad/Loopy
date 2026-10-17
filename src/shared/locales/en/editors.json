@@ -14,7 +14,29 @@
     "hint": "Pick an editor from the header."
   },
   "properties": {
-    "nothing": "Nothing selected"
+    "nothing": "Nothing selected",
+    "board": "Board",
+    "note": "Note",
+    "name": "Name",
+    "background": "Background colour",
+    "unit": "Unit",
+    "unitScale": "Unit scale",
+    "position": "Position",
+    "size": "Size",
+    "x": "X",
+    "y": "Y",
+    "width": "Width",
+    "height": "Height",
+    "text": "Text",
+    "multiple": "{{count}} items selected",
+    "selectHint": "Select an item on the board to edit it.",
+    "units": {
+      "px": "Pixels",
+      "mm": "Millimetres",
+      "cm": "Centimetres",
+      "m": "Metres",
+      "km": "Kilometres"
+    }
   },
   "colours": {
     "soon": "Project colour schemes arrive with a later release."
@@ -104,7 +126,7 @@
     "defaultName": "Board {{number}}",
     "background": "Background colour",
     "view": "View",
-    "grid": "Dot grid",
+    "grid": "Grid",
     "minimap": "Minimap",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
@@ -116,6 +138,9 @@
     "empty": "No boards yet",
     "emptyHint": "Create a board to start sketching ideas.",
     "loading": "Loading board…",
-    "editHint": "Double-click a note to edit it. Drag it to move, select it to resize."
+    "editHint": "Double-click a note to edit it. Drag it to move, select it to resize.",
+    "snap": "Snap to grid",
+    "properties": "Properties panel",
+    "unitScaleHint": "Canvas pixels per unit"
   }
 }

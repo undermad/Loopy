@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import {
   DEFAULT_BOARD_BACKGROUND,
+  DEFAULT_BOARD_UNIT,
+  DEFAULT_BOARD_UNIT_SCALE,
   boardChangesSchema,
   boardInputSchema,
   boardListSchema,
@@ -29,7 +31,7 @@ function transaction<T>(db: DatabaseSync, work: () => T): T {
 }
 
 const BOARD_COLUMNS =
-  'id, name, background_color AS backgroundColor, created_at AS createdAt, updated_at AS updatedAt';
+  'id, name, background_color AS backgroundColor, unit, unit_scale AS unitScale, created_at AS createdAt, updated_at AS updatedAt';
 
 function parseJson(value: unknown): unknown {
   return typeof value === 'string' ? JSON.parse(value) : {};
@@ -44,8 +46,16 @@ export function createBoard(db: DatabaseSync, raw: unknown): Board {
   const stamp = now();
   const id = randomUUID();
   db.prepare(
-    'INSERT INTO boards (id, name, background_color, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-  ).run(id, input.name, input.backgroundColor ?? DEFAULT_BOARD_BACKGROUND, stamp, stamp);
+    'INSERT INTO boards (id, name, background_color, unit, unit_scale, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+  ).run(
+    id,
+    input.name,
+    input.backgroundColor ?? DEFAULT_BOARD_BACKGROUND,
+    input.unit ?? DEFAULT_BOARD_UNIT,
+    input.unitScale ?? DEFAULT_BOARD_UNIT_SCALE,
+    stamp,
+    stamp,
+  );
   return readBoardRow(db, id);
 }
 
@@ -58,7 +68,7 @@ function readBoardRow(db: DatabaseSync, id: string): Board {
 export function updateBoard(db: DatabaseSync, id: string, raw: unknown): Board {
   const patch = boardPatchSchema.parse(raw);
   const sets = ['updated_at = ?'];
-  const values: string[] = [now()];
+  const values: (string | number)[] = [now()];
   if (patch.name !== undefined) {
     sets.push('name = ?');
     values.push(patch.name);
@@ -66,6 +76,14 @@ export function updateBoard(db: DatabaseSync, id: string, raw: unknown): Board {
   if (patch.backgroundColor !== undefined) {
     sets.push('background_color = ?');
     values.push(patch.backgroundColor);
+  }
+  if (patch.unit !== undefined) {
+    sets.push('unit = ?');
+    values.push(patch.unit);
+  }
+  if (patch.unitScale !== undefined) {
+    sets.push('unit_scale = ?');
+    values.push(patch.unitScale);
   }
   db.prepare(`UPDATE boards SET ${sets.join(', ')} WHERE id = ?`).run(...values, id);
   return readBoardRow(db, id);

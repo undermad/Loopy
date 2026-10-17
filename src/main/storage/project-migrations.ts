@@ -112,6 +112,8 @@ export const projectMigrations: SqlMigrations = [
   ) WITHOUT ROWID;
   INSERT INTO ticket_labels (ticket_id, label_id) SELECT ticket_id, label_id FROM ticket_labels_v4;
   DROP TABLE ticket_labels_v4;`,
+  `ALTER TABLE boards ADD COLUMN unit TEXT NOT NULL DEFAULT 'm' CHECK (unit IN ('px', 'mm', 'cm', 'm', 'km'));
+  ALTER TABLE boards ADD COLUMN unit_scale REAL NOT NULL DEFAULT 100 CHECK (unit_scale > 0);`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

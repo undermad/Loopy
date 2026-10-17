@@ -88,6 +88,8 @@ describe('preload API coverage', () => {
     id: 'b',
     name: 'Board',
     backgroundColor: '#ffffff',
+    unit: 'm',
+    unitScale: 100,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
   };

@@ -35,13 +35,17 @@ describe('boards IPC handlers', () => {
     const call = setup();
     await expect(call(IpcChannel.boardsList)).resolves.toEqual([]);
     const board = await call<Board>(IpcChannel.boardsCreate, { name: 'Ideas' });
-    expect(board).toMatchObject({ name: 'Ideas', backgroundColor: '#f4f4f5' });
+    expect(board).toMatchObject({ name: 'Ideas', backgroundColor: '#f4f4f5', unit: 'm', unitScale: 100 });
 
     const renamed = await call<Board>(IpcChannel.boardsUpdate, board.id, {
       name: 'Level 1',
       backgroundColor: '#112233',
     });
     expect(renamed).toMatchObject({ name: 'Level 1', backgroundColor: '#112233' });
+    const metric = await call<Board>(IpcChannel.boardsUpdate, board.id, { unit: 'cm', unitScale: 12.5 });
+    expect(metric).toMatchObject({ unit: 'cm', unitScale: 12.5 });
+    await expect(call(IpcChannel.boardsUpdate, board.id, { unit: 'inch' })).rejects.toThrow();
+    await expect(call(IpcChannel.boardsUpdate, board.id, { unitScale: 0 })).rejects.toThrow();
     await expect(call(IpcChannel.boardsUpdate, board.id, { backgroundColor: 'red' })).rejects.toThrow();
 
     await expect(call(IpcChannel.boardsDelete, board.id)).resolves.toEqual([]);

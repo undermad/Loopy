@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -8,6 +8,7 @@ import {
   applyEdgeChanges,
   applyNodeChanges,
   useReactFlow,
+  useStore as useFlowStore,
   type Connection,
   type EdgeChange,
   type Node,
@@ -15,9 +16,20 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { PenTool } from 'lucide-react';
-import { commitChanges, loadBoard, useBoardSnapshot, useBoards } from '@renderer/lib/board';
+import {
+  commitChanges,
+  gridStep,
+  loadBoard,
+  setActiveBoard,
+  setBoardSelection,
+  snapToStep,
+  useBoardSnapshot,
+  useBoards,
+} from '@renderer/lib/board';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
+import { collectAreas } from '@renderer/lib/layout';
+import { areaActions, useActiveWorkspace } from '@renderer/lib/workspaces';
 import { EmptyState, Spinner } from '@renderer/ui';
 import { AreaHeaderContent } from '../../Shell/AreaHeaderContent';
 import { BoardHeader } from './BoardHeader';
@@ -26,18 +38,32 @@ import { newEdge, newNote, readViewport, settleNodeChanges, toFlowEdges, toFlowN
 import styles from './BoardEditor.module.scss';
 
 const nodeTypes = { note: NoteNode };
+export const PROPERTIES_WIDTH = 320;
+
+interface Draft {
+  base: unknown;
+  nodes: Node[];
+}
 
 function Canvas({ boardId, state, setState }: { boardId: string } & Pick<EditorProps, 'state' | 'setState'>) {
   const { t } = useTranslation('editors');
   const snapshot = useBoardSnapshot(boardId);
   const flow = useReactFlow();
+  const zoom = useFlowStore((store) => store.transform[2]);
   const grid = state['grid'] !== false;
   const minimap = state['minimap'] === true;
+  const snap = state['snap'] === true;
   const pending = useRef(new Map<string, Node>());
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!snapshot) void loadBoard(boardId);
   }, [boardId, snapshot]);
+
+  useEffect(() => {
+    setActiveBoard(boardId);
+  }, [boardId]);
 
   const onNoteChange = useCallback(
     (id: string, text: string) => {
@@ -47,21 +73,25 @@ function Canvas({ boardId, state, setState }: { boardId: string } & Pick<EditorP
     [boardId, snapshot],
   );
 
-  const nodes = useMemo(
-    () => (snapshot ? toFlowNodes(snapshot, onNoteChange) : []),
-    [snapshot, onNoteChange],
-  );
+  const nodes = useMemo<Node[]>(() => {
+    if (draft?.base === snapshot) return draft.nodes;
+    if (!snapshot) return [];
+    return toFlowNodes(snapshot, onNoteChange).map((node) =>
+      selectedIds.includes(node.id) ? { ...node, selected: true } : node,
+    );
+  }, [draft, snapshot, onNoteChange, selectedIds]);
   const edges = useMemo(() => (snapshot ? toFlowEdges(snapshot) : []), [snapshot]);
+  const step = snapshot ? gridStep(snapshot.board, zoom) : 24;
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       if (!snapshot) return;
-      const { updates, removed } = settleNodeChanges(
-        changes,
-        applyNodeChanges(changes, nodes),
-        snapshot.nodes,
-        pending.current,
-      );
+      const next = applyNodeChanges(changes, nodes);
+      setDraft({ base: snapshot, nodes: next });
+      const selected = next.filter((node) => node.selected).map((node) => node.id);
+      setSelectedIds(selected);
+      setBoardSelection(boardId, selected);
+      const { updates, removed } = settleNodeChanges(changes, next, snapshot.nodes, pending.current);
       if (updates.length > 0 || removed.length > 0) {
         void commitChanges(boardId, { upsertNodes: updates, removeNodeIds: removed });
       }
@@ -89,9 +119,11 @@ function Canvas({ boardId, state, setState }: { boardId: string } & Pick<EditorP
     (clientX: number, clientY: number) => {
       const position = flow.screenToFlowPosition({ x: clientX, y: clientY });
       const z = (snapshot?.nodes.reduce((max, node) => Math.max(max, node.z), 0) ?? 0) + 1;
-      void commitChanges(boardId, { upsertNodes: [newNote(boardId, position.x - 100, position.y - 60, z)] });
+      const x = snap ? snapToStep(position.x - 100, step) : position.x - 100;
+      const y = snap ? snapToStep(position.y - 60, step) : position.y - 60;
+      void commitChanges(boardId, { upsertNodes: [newNote(boardId, x, y, z)] });
     },
-    [boardId, flow, snapshot],
+    [boardId, flow, snapshot, snap, step],
   );
 
   if (!snapshot) {
@@ -118,29 +150,51 @@ function Canvas({ boardId, state, setState }: { boardId: string } & Pick<EditorP
       onMoveEnd={(_event, viewport) => {
         setState({ viewport });
       }}
+      snapToGrid={snap}
+      snapGrid={[step, step]}
       panOnScroll
       selectionOnDrag
       panOnDrag={[1, 2]}
       zoomOnDoubleClick={false}
-      minZoom={0.1}
-      maxZoom={4}
+      minZoom={0.05}
+      maxZoom={8}
       deleteKeyCode={['Backspace', 'Delete']}
       proOptions={{ hideAttribution: true }}
       className={styles['flow']}
       style={{ background: snapshot.board.backgroundColor }}
     >
-      {grid ? <Background variant={BackgroundVariant.Dots} gap={24} size={1.5} /> : null}
+      {grid ? (
+        <>
+          <Background id="minor" variant={BackgroundVariant.Dots} gap={step} size={1.5} />
+          <Background id="major" variant={BackgroundVariant.Lines} gap={step * 10} lineWidth={1} />
+        </>
+      ) : null}
       {minimap ? <MiniMap pannable zoomable className={styles['minimap']} /> : null}
     </ReactFlow>
   );
 }
 
-function BoardArea({ state, setState }: EditorProps) {
+function BoardArea({ areaId, state, setState }: EditorProps) {
   const { t } = useTranslation('editors');
   const boards = useBoards();
   const flow = useReactFlow();
+  const workspace = useActiveWorkspace();
+  const editorRef = useRef<HTMLDivElement>(null);
   const requested = typeof state['boardId'] === 'string' ? state['boardId'] : null;
   const board = boards?.find((item) => item.id === requested) ?? boards?.[0] ?? null;
+  const propertiesAreas = workspace
+    ? collectAreas(workspace.root).filter((area) => area.editor === 'properties')
+    : [];
+
+  function toggleProperties() {
+    if (propertiesAreas.length > 0) {
+      for (const area of propertiesAreas) areaActions.close(area.id);
+      return;
+    }
+    const width = editorRef.current?.getBoundingClientRect().width ?? 0;
+    const ratio = width > PROPERTIES_WIDTH * 2 ? 1 - PROPERTIES_WIDTH / width : 0.7;
+    areaActions.split(areaId, 'row', ratio, 'properties');
+  }
 
   if (boards === null) {
     return (
@@ -151,19 +205,22 @@ function BoardArea({ state, setState }: EditorProps) {
   }
 
   return (
-    <div className={styles['editor']}>
+    <div ref={editorRef} className={styles['editor']}>
       <AreaHeaderContent>
         <BoardHeader
           boards={boards}
           board={board}
           grid={state['grid'] !== false}
           minimap={state['minimap'] === true}
+          snap={state['snap'] === true}
+          properties={propertiesAreas.length > 0}
           onSelect={(boardId) => {
             setState({ boardId });
           }}
           onToggle={(key, value) => {
             setState({ [key]: value });
           }}
+          onToggleProperties={toggleProperties}
           onZoom={(action) => {
             if (action === 'in') void flow.zoomIn();
             if (action === 'out') void flow.zoomOut();

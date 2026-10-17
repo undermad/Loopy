@@ -8,13 +8,35 @@ export type BoardApi = Pick<
   'listBoards' | 'createBoard' | 'updateBoard' | 'deleteBoard' | 'readBoard' | 'applyBoardChanges'
 >;
 
+export interface BoardSelection {
+  boardId: string;
+  nodeIds: string[];
+}
+
 export interface BoardState {
   boards: Board[] | null;
   snapshots: Record<string, BoardSnapshot>;
   api: BoardApi | null;
+  activeBoardId: string | null;
+  selection: BoardSelection | null;
 }
 
-export const boardStore = createStore<BoardState>(() => ({ boards: null, snapshots: {}, api: null }));
+const EMPTY: Omit<BoardState, 'api'> = { boards: null, snapshots: {}, activeBoardId: null, selection: null };
+
+export const boardStore = createStore<BoardState>(() => ({ ...EMPTY, api: null }));
+
+export function setActiveBoard(boardId: string | null): void {
+  if (boardStore.getState().activeBoardId !== boardId) boardStore.setState({ activeBoardId: boardId });
+}
+
+export function setBoardSelection(boardId: string, nodeIds: string[]): void {
+  const current = boardStore.getState().selection;
+  const same =
+    current?.boardId === boardId &&
+    current.nodeIds.length === nodeIds.length &&
+    current.nodeIds.every((id, index) => id === nodeIds[index]);
+  if (!same) boardStore.setState({ selection: nodeIds.length > 0 ? { boardId, nodeIds } : null });
+}
 
 function requireApi(): BoardApi {
   const { api } = boardStore.getState();
@@ -36,7 +58,7 @@ export async function bootBoards(api: BoardApi, hasProject: boolean): Promise<vo
   boardStore.setState({ api });
   if (hasProject) await loadBoards();
   subscribeCurrentProject((project) => {
-    boardStore.setState({ boards: null, snapshots: {} });
+    boardStore.setState({ ...EMPTY });
     if (project) void loadBoards();
   });
 }
@@ -76,7 +98,13 @@ export async function deleteBoard(id: string): Promise<Board[]> {
   loadToken += 1;
   const { snapshots } = boardStore.getState();
   const { [id]: _removed, ...rest } = snapshots;
-  boardStore.setState({ boards, snapshots: rest });
+  const { activeBoardId, selection } = boardStore.getState();
+  boardStore.setState({
+    boards,
+    snapshots: rest,
+    activeBoardId: activeBoardId === id ? null : activeBoardId,
+    selection: selection?.boardId === id ? null : selection,
+  });
   return boards;
 }
 
@@ -110,5 +138,5 @@ export async function commitChanges(boardId: string, changes: BoardChanges): Pro
 }
 
 export function resetBoardStore(): void {
-  boardStore.setState({ boards: null, snapshots: {}, api: null });
+  boardStore.setState({ ...EMPTY, api: null });
 }

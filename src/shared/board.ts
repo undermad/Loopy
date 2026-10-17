@@ -1,10 +1,14 @@
 import { z } from 'zod';
 import { hexColorSchema } from './theme';
 
+export const boardUnitSchema = z.enum(['px', 'mm', 'cm', 'm', 'km']);
+
 export const boardSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1).max(80),
   backgroundColor: hexColorSchema,
+  unit: boardUnitSchema,
+  unitScale: z.number().positive().max(1_000_000),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
@@ -44,10 +48,17 @@ export const boardListSchema = z.array(boardSchema);
 export const boardInputSchema = z.object({
   name: boardSchema.shape.name,
   backgroundColor: hexColorSchema.optional(),
+  unit: boardUnitSchema.optional(),
+  unitScale: boardSchema.shape.unitScale.optional(),
 });
 
 export const boardPatchSchema = z
-  .object({ name: boardSchema.shape.name, backgroundColor: hexColorSchema })
+  .object({
+    name: boardSchema.shape.name,
+    backgroundColor: hexColorSchema,
+    unit: boardUnitSchema,
+    unitScale: boardSchema.shape.unitScale,
+  })
   .partial();
 
 export const boardChangesSchema = z.object({
@@ -59,7 +70,11 @@ export const boardChangesSchema = z.object({
 
 export const DEFAULT_BOARD_BACKGROUND = '#f4f4f5';
 export const DEFAULT_NOTE_SIZE = { width: 200, height: 120 };
+export const DEFAULT_BOARD_UNIT: BoardUnit = 'm';
+export const DEFAULT_BOARD_UNIT_SCALE = 100;
 
+export type BoardNodeType = z.infer<typeof boardNodeTypeSchema>;
+export type BoardUnit = z.infer<typeof boardUnitSchema>;
 export type Board = z.infer<typeof boardSchema>;
 export type BoardNode = z.infer<typeof boardNodeSchema>;
 export type BoardEdge = z.infer<typeof boardEdgeSchema>;

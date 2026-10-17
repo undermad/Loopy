@@ -104,17 +104,24 @@ export function overTicket(orders: Orders, ticketId: string, target: DragData | 
   return moveAcross(orders, ticketId, targetKey, target.type === 'ticket' ? target.id : null);
 }
 
+export interface TicketDrop {
+  orders: Orders;
+  stateId: string | null;
+  index: number;
+}
+
 export function dropTicket(
   orders: Orders,
   ticketId: string,
   target: DragData | null,
   fromKey: ColumnKey,
-): { stateId: string | null; index: number } | null {
+): TicketDrop | null {
   const settled =
     target?.type === 'ticket' &&
     findColumn(orders, ticketId) === fromKey &&
     findColumn(orders, target.id) === fromKey
       ? moveWithin(orders, ticketId, target.id)
       : orders;
-  return resolveDrop(settled, ticketId);
+  const drop = resolveDrop(settled, ticketId);
+  return drop ? { orders: settled, ...drop } : null;
 }

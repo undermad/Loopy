@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardEditor } from '@renderer/components/editors/Board/BoardEditor';
 import { AreaContext } from '@renderer/components/Shell/AreaContext';
 import { createBoard } from '@renderer/lib/board';
+import { areaActions } from '@renderer/lib/workspaces';
 import { ToastProvider, TooltipProvider } from '@renderer/ui';
 import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
 
@@ -47,8 +48,13 @@ describe('BoardHeader', () => {
 
     await user.click(screen.getByRole('button', { name: 'Minimap' }));
     expect(setState).toHaveBeenCalledWith({ minimap: true });
-    await user.click(screen.getByRole('button', { name: 'Dot grid' }));
+    await user.click(screen.getByRole('button', { name: 'Grid' }));
     expect(setState).toHaveBeenCalledWith({ grid: false });
+    await user.click(screen.getByRole('button', { name: 'Snap to grid' }));
+    expect(setState).toHaveBeenCalledWith({ snap: true });
+    const split = vi.spyOn(areaActions, 'split');
+    await user.click(screen.getByRole('button', { name: 'Properties panel' }));
+    expect(split).toHaveBeenCalledWith('a', 'row', 0.7, 'properties');
     await user.click(screen.getByRole('button', { name: 'Zoom in' }));
     await user.click(screen.getByRole('button', { name: 'Zoom out' }));
     await user.click(screen.getByRole('button', { name: 'Fit to content' }));

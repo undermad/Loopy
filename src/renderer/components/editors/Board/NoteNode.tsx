@@ -10,7 +10,7 @@ export interface NoteNodeData extends Record<string, unknown> {
   onChange: (text: string) => void;
 }
 
-export function NoteNode({ data, selected }: NodeProps & { data: NoteNodeData }) {
+export function NoteNode({ data, selected, dragging }: NodeProps & { data: NoteNodeData }) {
   const { t } = useTranslation('editors');
   const parsed = noteDataSchema.safeParse(data);
   const text = parsed.success ? parsed.data.text : '';
@@ -29,7 +29,12 @@ export function NoteNode({ data, selected }: NodeProps & { data: NoteNodeData })
 
   return (
     <div
-      className={cx(styles['note'], selected && styles['selected'], editing && styles['editing'])}
+      className={cx(
+        styles['note'],
+        selected && styles['selected'],
+        dragging && styles['dragging'],
+        editing && styles['editing'],
+      )}
       tabIndex={0}
       onDoubleClick={() => {
         setDraft(text);

@@ -136,11 +136,11 @@ Sprints, assignees, comments, workflow rules, sub-tasks and time tracking. Local
 
 ## Area state
 
-| Editor    | State                                    |
-| --------- | ---------------------------------------- |
-| `board`   | `boardId`, `viewport`, `grid`, `minimap` |
-| `tickets` | `mode`, `search`                         |
-| `ticket`  | none, it follows the selection           |
+| Editor    | State                                            |
+| --------- | ------------------------------------------------ |
+| `board`   | `boardId`, `viewport`, `grid`, `snap`, `minimap` |
+| `tickets` | `mode`, `search`                                 |
+| `ticket`  | none, it follows the selection                   |
 
 ## Phases
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Grid3x3, Map, Maximize, Plus, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronDown, Grid3x3, Magnet, Map, Maximize, PanelRight, Plus, ZoomIn, ZoomOut } from 'lucide-react';
 import type { Board } from '@shared/board';
 import { createBoard, deleteBoard, updateBoard } from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
@@ -12,12 +12,26 @@ export interface BoardHeaderProps {
   board: Board | null;
   grid: boolean;
   minimap: boolean;
+  snap: boolean;
+  properties: boolean;
   onSelect: (id: string) => void;
-  onToggle: (key: 'grid' | 'minimap', value: boolean) => void;
+  onToggle: (key: 'grid' | 'minimap' | 'snap', value: boolean) => void;
+  onToggleProperties: () => void;
   onZoom: (action: 'in' | 'out' | 'fit' | 'reset') => void;
 }
 
-export function BoardHeader({ boards, board, grid, minimap, onSelect, onToggle, onZoom }: BoardHeaderProps) {
+export function BoardHeader({
+  boards,
+  board,
+  grid,
+  minimap,
+  snap,
+  properties,
+  onSelect,
+  onToggle,
+  onToggleProperties,
+  onZoom,
+}: BoardHeaderProps) {
   const { t } = useTranslation('editors');
   const { t: tc } = useTranslation('common');
   const [dialog, setDialog] = useState<'new' | 'rename' | 'delete' | null>(null);
@@ -116,6 +130,16 @@ export function BoardHeader({ boards, board, grid, minimap, onSelect, onToggle, 
             <Grid3x3 aria-hidden="true" />
           </IconButton>
           <IconButton
+            label={t('board.snap')}
+            size="sm"
+            active={snap}
+            onClick={() => {
+              onToggle('snap', !snap);
+            }}
+          >
+            <Magnet aria-hidden="true" />
+          </IconButton>
+          <IconButton
             label={t('board.minimap')}
             size="sm"
             active={minimap}
@@ -124,6 +148,14 @@ export function BoardHeader({ boards, board, grid, minimap, onSelect, onToggle, 
             }}
           >
             <Map aria-hidden="true" />
+          </IconButton>
+          <IconButton
+            label={t('board.properties')}
+            size="sm"
+            active={properties}
+            onClick={onToggleProperties}
+          >
+            <PanelRight aria-hidden="true" />
           </IconButton>
         </>
       ) : (

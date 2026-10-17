@@ -1,6 +1,8 @@
 import { vi } from 'vitest';
 import {
   DEFAULT_BOARD_BACKGROUND,
+  DEFAULT_BOARD_UNIT,
+  DEFAULT_BOARD_UNIT_SCALE,
   boardChangesSchema,
   boardInputSchema,
   type Board,
@@ -30,6 +32,8 @@ export function createBoardsFake() {
         id: `board-${String(data.boards.length + 1)}`,
         name: input.name,
         backgroundColor: input.backgroundColor ?? DEFAULT_BOARD_BACKGROUND,
+        unit: input.unit ?? DEFAULT_BOARD_UNIT,
+        unitScale: input.unitScale ?? DEFAULT_BOARD_UNIT_SCALE,
         createdAt: stamp,
         updatedAt: stamp,
       };
@@ -43,6 +47,8 @@ export function createBoardsFake() {
         ...snapshot.board,
         name: patch.name ?? snapshot.board.name,
         backgroundColor: patch.backgroundColor ?? snapshot.board.backgroundColor,
+        unit: patch.unit ?? snapshot.board.unit,
+        unitScale: patch.unitScale ?? snapshot.board.unitScale,
       };
       data.snapshots.set(id, { ...snapshot, board });
       data.boards = data.boards.map((item) => (item.id === id ? board : item));

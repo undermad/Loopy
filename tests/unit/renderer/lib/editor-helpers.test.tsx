@@ -26,7 +26,15 @@ describe('board flow helpers', () => {
     const note = newNote('board', 10, 20, 3);
     const edge = newEdge('board', note.id, 'other');
     const snapshot = {
-      board: { id: 'board', name: 'B', backgroundColor: '#ffffff', createdAt: '', updatedAt: '' },
+      board: {
+        id: 'board',
+        name: 'B',
+        backgroundColor: '#ffffff',
+        unit: 'm' as const,
+        unitScale: 100,
+        createdAt: '',
+        updatedAt: '',
+      },
       nodes: [note],
       edges: [edge],
     };

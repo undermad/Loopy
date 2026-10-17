@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -59,6 +59,7 @@ export function BoardView({ search }: { search: string }) {
   const [active, setActive] = useState<Active | null>(null);
   const [orders, setOrders] = useState<Orders | null>(null);
   const [stateOrder, setStateOrder] = useState<string[] | null>(null);
+  const settling = useRef(0);
   const projectName = project?.name ?? '';
   const keyFor = (ticket: { number: number }) => ticketKey(projectName, ticket.number);
   const baseOrders = useMemo(
@@ -100,11 +101,26 @@ export function BoardView({ search }: { search: string }) {
     if (data?.type === 'ticket' && orders) setOrders(overTicket(orders, data.id, dataOf(over)));
   }
 
+  function settle(work: Promise<unknown>, clear: () => void) {
+    const token = (settling.current += 1);
+    void work.finally(() => {
+      if (token === settling.current) clear();
+    });
+  }
+
   function onDragEnd({ over }: DragEndEvent) {
     const target = dataOf(over);
+    setActive(null);
     if (active?.kind === 'ticket' && orders) {
       const drop = dropTicket(orders, active.id, target, active.fromKey);
-      if (drop) void ticketActions.moveTo(active.id, drop.stateId, drop.index);
+      if (!drop) {
+        setOrders(null);
+        return;
+      }
+      setOrders(drop.orders);
+      settle(ticketActions.moveTo(active.id, drop.stateId, drop.index), () => {
+        setOrders(null);
+      });
     } else if (
       active?.kind === 'state' &&
       stateOrder &&
@@ -112,9 +128,14 @@ export function BoardView({ search }: { search: string }) {
       target.id !== active.id
     ) {
       const next = arrayMove(stateOrder, stateOrder.indexOf(active.id), stateOrder.indexOf(target.id));
-      void stateActions.reorder(active.id, next.indexOf(active.id));
+      setStateOrder(next);
+      settle(stateActions.reorder(active.id, next.indexOf(active.id)), () => {
+        setStateOrder(null);
+      });
+    } else {
+      setOrders(null);
+      setStateOrder(null);
     }
-    reset();
   }
 
   const activeTicket =

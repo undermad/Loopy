@@ -69,14 +69,14 @@ describe('board drag orders', () => {
     expect(overTicket(orders, 'a', { type: 'column', stateId: 'doing' })['doing']).toEqual(['a']);
     expect(overTicket(orders, 'c', overB)['todo']).toEqual(['a', 'c', 'b']);
 
-    expect(dropTicket(orders, 'a', overB, 'todo')).toEqual({ stateId: 'todo', index: 1 });
+    expect(dropTicket(orders, 'a', overB, 'todo')).toMatchObject({ stateId: 'todo', index: 1 });
     const crossed = overTicket(orders, 'c', overB);
-    expect(dropTicket(crossed, 'c', overB, 'backlog')).toEqual({ stateId: 'todo', index: 1 });
-    expect(dropTicket(orders, 'a', { type: 'column', stateId: 'todo' }, 'todo')).toEqual({
+    expect(dropTicket(crossed, 'c', overB, 'backlog')).toMatchObject({ stateId: 'todo', index: 1 });
+    expect(dropTicket(orders, 'a', { type: 'column', stateId: 'todo' }, 'todo')).toMatchObject({
       stateId: 'todo',
       index: 0,
     });
-    expect(dropTicket(orders, 'a', null, 'todo')).toEqual({ stateId: 'todo', index: 0 });
+    expect(dropTicket(orders, 'a', null, 'todo')).toMatchObject({ stateId: 'todo', index: 0 });
     expect(dropTicket(orders, 'missing', null, 'todo')).toBeNull();
   });
 

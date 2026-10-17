@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -24,6 +24,7 @@ import {
   useTicketsSnapshot,
 } from '@renderer/lib/tickets';
 import { Button, EmptyState, cx } from '@renderer/ui';
+import { arrayMove } from './dnd';
 import { QuickAdd } from './QuickAdd';
 import { TicketCard } from './TicketCard';
 import styles from './BacklogView.module.scss';
@@ -50,12 +51,25 @@ export function BacklogView({ search }: { search: string }) {
 
   const board = firstTodoState(snapshot);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-  const ids = tickets.map((ticket) => ticket.id);
+  const [settledOrder, setSettledOrder] = useState<string[] | null>(null);
+  const byId = new Map(tickets.map((ticket) => [ticket.id, ticket]));
+  const rowsSource = settledOrder
+    ? settledOrder.flatMap((id) => {
+        const ticket = byId.get(id);
+        return ticket ? [ticket] : [];
+      })
+    : tickets;
+  const ids = rowsSource.map((ticket) => ticket.id);
 
   function onDragEnd({ active, over }: DragEndEvent) {
     if (!over || active.id === over.id) return;
+    const from = ids.indexOf(String(active.id));
     const to = ids.indexOf(String(over.id));
-    if (to >= 0) void ticketActions.moveTo(String(active.id), null, to);
+    if (from < 0 || to < 0) return;
+    setSettledOrder(arrayMove(ids, from, to));
+    void ticketActions.moveTo(String(active.id), null, to).finally(() => {
+      setSettledOrder(null);
+    });
   }
   const virtual = tickets.length > VIRTUAL_THRESHOLD;
   const rows = virtual
@@ -79,7 +93,7 @@ export function BacklogView({ search }: { search: string }) {
             <SortableContext items={ids} strategy={verticalListSortingStrategy}>
               <div style={virtual ? { height: virtualizer.getTotalSize(), position: 'relative' } : undefined}>
                 {rows.map((item) => {
-                  const ticket = tickets[item.index];
+                  const ticket = rowsSource[item.index];
                   if (!ticket) return null;
                   return (
                     <div
