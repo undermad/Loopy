@@ -11,6 +11,7 @@ export {
   updateBoard,
 } from './store';
 export type { LiveGeometry } from './store';
+export type { GridLevel } from './units';
 export { useActiveBoardId, useBoardSelection, useBoardSnapshot, useBoards, useLiveNode } from './hooks';
 export {
   BOARD_UNITS,
