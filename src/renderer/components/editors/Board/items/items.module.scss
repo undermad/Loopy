@@ -1,0 +1,115 @@
+.text {
+  white-space: pre-wrap;
+  user-select: none;
+}
+
+.placeholder {
+  opacity: 0.55;
+}
+
+.textEdit {
+  width: 100%;
+  max-height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  resize: none;
+  field-sizing: content;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.imageMissing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  width: 100%;
+  height: 100%;
+  background: var(--color-surface-sunken);
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.container {
+  cursor: default;
+}
+
+.title {
+  font-size: var(--font-size-sm);
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titleEdit {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--font-size-sm);
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.accent {
+  position: absolute;
+  height: 6px;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+.cardBody {
+  height: 100%;
+  overflow: auto;
+  margin-top: 4px;
+}
+
+.cardMissing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  height: 100%;
+  font-size: var(--font-size-xs);
+  opacity: 0.7;
+  text-align: center;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.cardValue {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

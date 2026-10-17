@@ -1,0 +1,84 @@
+@use '../../../../styles/mixins' as *;
+
+.frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:hover .handle,
+  &.selected .handle {
+    opacity: 1;
+  }
+}
+
+.selected {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.dragging {
+  cursor: grabbing;
+}
+
+.locked {
+  cursor: default;
+}
+
+.shape {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.shadow {
+  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 22%));
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  inset: 0;
+  line-height: 1.35;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.handle {
+  width: 10px !important;
+  height: 10px !important;
+  border: 2px solid var(--color-surface) !important;
+  background: var(--color-accent) !important;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.lock {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-fg-muted);
+  right: -6px;
+  top: -6px;
+}
+
+.resizeLine {
+  border-color: var(--color-accent) !important;
+}
+
+.resizeHandle {
+  width: 8px !important;
+  height: 8px !important;
+  border: 1px solid var(--color-accent) !important;
+  border-radius: 2px !important;
+  background: var(--color-surface) !important;
+}

@@ -42,3 +42,21 @@
   overflow: visible;
   pointer-events: none;
 }
+
+.surface {
+  display: flex;
+  position: relative;
+  min-height: 0;
+  flex: 1;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.menuArea {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+}

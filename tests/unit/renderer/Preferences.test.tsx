@@ -17,7 +17,7 @@ describe('PreferencesDialog', () => {
 
     const fontSize = screen.getByLabelText('Font size');
     await user.clear(fontSize);
-    await user.type(fontSize, '18');
+    await user.type(fontSize, '18{Enter}');
     expect(api.setSettings).toHaveBeenLastCalledWith({ fontSize: 18 });
 
     await user.click(screen.getByRole('tab', { name: 'Language' }));

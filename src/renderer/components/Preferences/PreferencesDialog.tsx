@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { getSystemLocale, useTranslation } from '@renderer/lib/i18n';
 import { updateSettings, useSettings } from '@renderer/lib/settings';
 import { useThemes } from '@renderer/lib/theme';
-import { Dialog, Field, Input, Select, Tabs, ToggleGroup } from '@renderer/ui';
+import { Dialog, Field, NumberInput, Select, Tabs, ToggleGroup } from '@renderer/ui';
 import type { LanguageSetting, ThemeMode } from '@shared/app-settings';
 import { SUPPORTED_LANGUAGES } from '@shared/i18n';
 import { ThemesTab } from './ThemesTab';
@@ -17,19 +16,16 @@ const MODES: ThemeMode[] = ['system', 'light', 'dark'];
 
 function FontSizeField({ value }: { value: number }) {
   const { t } = useTranslation('settings');
-  const [draft, setDraft] = useState(String(value));
   return (
     <Field label={t('appearance.fontSize')} hint={t('appearance.fontSizeHint')}>
-      <Input
-        type="number"
+      <NumberInput
         min={10}
         max={24}
-        value={draft}
-        onChange={(event) => {
-          setDraft(event.target.value);
-          const fontSize = Number(event.target.value);
-          if (Number.isInteger(fontSize) && fontSize >= 10 && fontSize <= 24)
-            void updateSettings({ fontSize });
+        digits={0}
+        pixelsPerStep={8}
+        value={value}
+        onValueChange={(next) => {
+          if (next !== null) void updateSettings({ fontSize: Math.round(next) });
         }}
         className={styles['number']}
       />

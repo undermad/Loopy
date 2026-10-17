@@ -19,6 +19,7 @@ import {
   EmptyState,
   Field,
   Input,
+  NumberInput,
   RichText,
   ScrollArea,
   Select,
@@ -64,29 +65,7 @@ function EstimateField({
   value: number | null;
   onCommit: (next: number | null) => void;
 }) {
-  const [draft, setDraft] = useState(value === null ? '' : String(value));
-  return (
-    <Input
-      type="number"
-      min={0}
-      step={0.5}
-      value={draft}
-      onChange={(event) => {
-        setDraft(event.target.value);
-      }}
-      onBlur={() => {
-        const parsed = draft.trim() === '' ? null : Number(draft);
-        if (parsed !== null && (!Number.isFinite(parsed) || parsed < 0)) {
-          setDraft(value === null ? '' : String(value));
-          return;
-        }
-        if (parsed !== value) onCommit(parsed);
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') event.currentTarget.blur();
-      }}
-    />
-  );
+  return <NumberInput value={value} min={0} step={0.5} digits={2} nullable onValueChange={onCommit} />;
 }
 
 export function TicketEditor(_props: EditorProps) {

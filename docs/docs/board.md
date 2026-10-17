@@ -1,66 +1,102 @@
 ---
 sidebar_position: 13
-description: The infinite board editor, its data model and how changes reach the project file.
+description: The infinite board editor, its items, arrows and tools, the data model and how changes reach the project file.
 ---
 
 # Board
 
-The Board editor is an infinite canvas built on React Flow. It anchors the Design workspace. The first version has pan, zoom, a background colour per board, a metric grid with snapping, a minimap, a Properties panel for the selected item and sticky notes that connect with edges; images, shapes and frames come later.
+The Board editor is an infinite canvas built on React Flow. It anchors the Design workspace. Everything on it is an item built on one base, so text, shapes, images, containers and cards share selection, resizing, styling, connecting and the Properties panel.
 
-## Using it
+## Tools
 
-| Action            | How                                                                                                                 |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Pan               | Middle or right mouse drag, or scroll; left drag selects                                                            |
-| Zoom              | Ctrl and wheel, or the zoom buttons in the header                                                                   |
-| Add a note        | Double-click the canvas                                                                                             |
-| Edit a note       | Double-click the note, or press Enter while it is selected; Escape or clicking away saves                           |
-| Move or resize    | Drag the note; it follows the pointer exactly. Select it and pull a corner to resize                                |
-| Select            | Click a note; the outline sits inside its edges and the Properties panel follows it live                            |
-| Snap              | The magnet in the header snaps moves and new notes to the visible grid dots                                         |
-| Grid              | The grid button shows or hides the grid; its spacing follows the zoom, never the user                               |
-| Properties        | The panel button splits the board area and opens a Properties editor beside it                                      |
-| Connect two notes | Drag from a note's handle to another note                                                                           |
-| Delete            | Select and press Delete or Backspace                                                                                |
-| Switch board      | The board dropdown in the header, which also creates, renames and deletes                                           |
-| Colours           | The background and grid swatches in the header, or the Properties panel; both offer palette colours or a custom one |
+The toolbar on the left of the canvas holds every tool. A creation tool places an item on a click at the default size, or at the size of the rectangle you drag, and then returns to Select. Text and containers open for typing straight away.
 
-The viewport, grid, snap and minimap toggles are area state, so two areas can show one board at different zoom levels and the choice survives a workspace switch. The board's content, colour and units live in the project.
+| Tool      | Key   | Does                                                                                              |
+| --------- | ----- | ------------------------------------------------------------------------------------------------- |
+| Select    | V     | Selects, moves and resizes items; a drag on the canvas draws a selection box                      |
+| Hand      | H     | Pans with the left button                                                                         |
+| Text      | T     | Plain text with no fill                                                                           |
+| Sticky    | N     | A yellow note with a shadow; a double-click on the canvas places one too                          |
+| Shape     | R O D | Rectangle, ellipse or diamond with centred text; the menu remembers the last shape                |
+| Image     |       | Places an image from assets, or imports files first. Dropping image files on the canvas does both |
+| Container | F     | A titled frame. Items placed or dropped inside it belong to it and move with it                   |
+| Card      | C     | A card from the chosen card template, see the cards page                                          |
+| Arrow     | A     | Drag from one item to another; the arrow joins the sides that face each other                     |
+
+Escape returns to Select. Every item also has four connection handles that appear on hover, so an arrow can be dragged from any side without the Arrow tool.
+
+## Editing
+
+| Action             | How                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
+| Edit text or title | Double-click the item, or press Enter while it is selected; Escape or clicking away saves               |
+| Label an arrow     | Double-click the arrow                                                                                  |
+| Nest               | Drop an item onto a container; drag it out to release it                                                |
+| Duplicate          | Ctrl+D, or the item's context menu. A container is copied with its children and the arrows between them |
+| Order              | `]` brings to front, `[` sends to back                                                                  |
+| Lock               | Ctrl+L or the context menu; a locked item cannot move, resize, connect or be deleted                    |
+| Delete             | Delete or Backspace; a container takes its children with it                                             |
+| Pan and zoom       | Middle or right drag, scroll to pan, Ctrl and wheel to zoom                                             |
+
+Right-click an item or arrow for its context menu. A right-button drag still pans; the menu opens only when the pointer did not move.
+
+## Items
+
+An item's `data` holds a shared base and its own content. The base is `style`, `name` and `locked`; `resolveItemStyle` in `src/renderer/lib/board` layers the type's defaults, then any template style, then the item's own style.
+
+| Style field                                        | Values                                                             |
+| -------------------------------------------------- | ------------------------------------------------------------------ |
+| `shape`                                            | rectangle, rounded, ellipse, diamond or pill                       |
+| `fill`, `stroke`, `textColour`                     | A colour value with an optional palette reference; null for none   |
+| `strokeWidth`, `strokeStyle`                       | Width in pixels; solid, dashed or dotted                           |
+| `radius`, `padding`, `opacity`, `shadow`           | Corner radius, inner padding, 0 to 1, on or off                    |
+| `fontSize`, `fontWeight`, `align`, `verticalAlign` | Text size and weight; left, centre or right; top, middle or bottom |
+
+| Type        | Content                                                           |
+| ----------- | ----------------------------------------------------------------- |
+| `text`      | `text`. Text, sticky notes and shapes are presets of this type    |
+| `image`     | `assetId`, `fit` (contain by default, cover or stretch) and `alt` |
+| `container` | `title` and `showTitle`. Children point at it through `parent_id` |
+| `card`      | `templateId` and `values`, keyed by field id                      |
+
+`ItemFrame` in `src/renderer/components/editors/Board/items` draws the shape in SVG under the content, clips the content to the shape, and adds the resizer, the handles and the lock badge. A new item type supplies its content component, a data schema in `src/shared/board.ts`, a preset in `items.ts` and a Properties section. Items with no fill take their text colour from the board background, so they stay readable on dark boards.
+
+## Arrows
+
+An arrow is an edge with its style in `data`: `label`, `colour`, `width`, `dash`, `path` (curved, straight, stepped or rounded steps), `startMarker` and `endMarker` (none, arrow, filled arrow or dot), `animated`, and the `sourceHandle` and `targetHandle` sides. `ArrowEdge` draws its own markers in the arrow's colour. The path stops short of each handle by the length of a filled arrowhead, so the head sits flush against the item and points along the handle side. Selecting an arrow shows its properties, with Reverse direction.
 
 ## Units and grid
 
-Every board has one scale, canvas pixels per metre, and a display unit (px, mm, cm, m or km), as Blender has a unit scale and a length unit. Coordinates and sizes are stored in canvas pixels; `unitInPixels` in `src/renderer/lib/board` derives the display unit from the scale (at 100 pixels per metre a centimetre is one pixel and a kilometre a hundred thousand), and `toUnits` and `fromUnits` convert with it. Switching the unit only changes how values read; the scale stays put. The pixel unit always shows canvas pixels, so a 10 px note reads as 10 px whatever the scale. New boards use metres at 100 pixels per metre.
+Every board has one scale, canvas pixels per metre, and a display unit (px, mm, cm, m or km), as Blender has a unit scale and a length unit. Coordinates and sizes are stored in canvas pixels; `unitInPixels` in `src/renderer/lib/board` derives the display unit from the scale, and `toUnits` and `fromUnits` convert with it. New boards use metres at 100 pixels per metre.
 
-The grid is drawn by `Grid` in `src/renderer/components/editors/Board` as three line levels a decade apart, after Blender's world grid. `gridStep` picks the finest power of ten of the display unit whose lines sit at least twelve screen pixels apart; that level fades in as you zoom closer, the next level up is a unit (or ten, or a hundred, depending on zoom) drawn a little wider, and the level above that wider still. When the fine level reaches 120 screen pixels it hands over: the finest lines become the unit lines without a visible jump, because `gridLevels` interpolates width and opacity with the same fade. The scheme has no fixed range, so the zoom runs from 1% to 2000% and the grid stays readable. The grid is drawn inside React Flow's viewport, above the nodes, as lines in flow coordinates with non-scaling strokes. It therefore shares the nodes' transform exactly: a line on the boundary of two touching items overlays both by half its width, and a 1 by 1 unit item at 1, 1 has a line centred on each edge. It takes no pointer events, so items underneath stay clickable.
+The grid is drawn by `Grid` as three line levels a decade apart, after Blender's world grid. `gridStep` picks the finest power of ten of the display unit whose lines sit at least twelve screen pixels apart, and `gridLevels` fades levels in and out as you zoom, so the grid stays readable from 1% to 2000%. It sits above the items in flow coordinates and takes no pointer events. Snapping uses the finest visible step, for moves, new items and drawn sizes.
 
-Each board colour is a hex copy plus an optional reference to a palette colour (`background_ref`, `grid_ref`), resolved live through `src/renderer/lib/palettes`, see the colours page. A note's fill works the same way under `data.fill` and is picked in the Properties panel. The grid colour is stored per board next to the background colour, picked from the header or the Properties panel, and drawn with opacity so one colour works on light and dark boards. Snapping uses the finest visible step, so a snapped note always lands on a line; with snapping off, moves are pixel exact.
+Board colours and item colours are a hex copy plus an optional palette reference, resolved live through `src/renderer/lib/palettes`, see the colours page.
 
 ## Properties
 
-The Properties editor follows the board selection kept in `src/renderer/lib/board`: the canvas records the active board and the selected node ids, and any Properties area in the workspace shows the matching panel. With nothing selected it edits the board itself: name, background colour, unit and unit scale. With one note selected it shows position and size in board units and the note text; every node type shares the transform section and adds its own section from a type map, so a new node type registers one component. Several selected items show a count until multi-editing exists.
+The Properties editor follows the board selection kept in `src/renderer/lib/board`: the canvas records the active board, the selected item ids and the selected arrow ids. With nothing selected it edits the board itself. With one item it shows the item's name and lock, its type section, position and size in board units, then the style. With one arrow it shows the arrow's style. Several selected items show a count.
 
-A pointer-down on the canvas within a few pixels of an area divider is taken over by the divider, so React Flow never sees the pointer-up and would start a selection box on the next move. `SelectionGuard` watches for pointer moves with no button held and clears that box.
-
-The header's panel button opens a Properties editor by splitting the board area to the right at a default width of 320 pixels, or closes every Properties area in the workspace if one is already open.
+The header's panel button opens a Properties editor by splitting the board area to the right at a default width of 320 pixels.
 
 ## Model
 
-Project migration 3 adds `boards`, `board_nodes`, `board_edges` and an `assets` table reserved for images. Migration 5 adds `unit` and `unit_scale` to `boards`; migration 6 adds `grid_color`.
+Project migration 3 adds `boards`, `board_nodes` and `board_edges`; migrations 5 and 6 add units and the grid colour. Migration 10 adds `board_nodes.parent_id`, which cascades a container's deletion to its children, turns every old note into a `text` item with the sticky style and its fill, and adds `card_templates`.
 
-| Table         | Columns                                                                             |
-| ------------- | ----------------------------------------------------------------------------------- |
-| `boards`      | `id`, `name`, `background_color`, `grid_color`, `unit`, `unit_scale`, timestamps    |
-| `board_nodes` | `id`, `board_id`, `type`, `x`, `y`, `width`, `height`, `z`, `data` JSON, timestamps |
-| `board_edges` | `id`, `board_id`, `source_id`, `target_id`, `data` JSON                             |
+| Table         | Columns                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| `boards`      | `id`, `name`, `background_color`, `grid_color`, refs, `unit`, `unit_scale`, timestamps           |
+| `board_nodes` | `id`, `board_id`, `parent_id`, `type`, `x`, `y`, `width`, `height`, `z`, `data` JSON, timestamps |
+| `board_edges` | `id`, `board_id`, `source_id`, `target_id`, `data` JSON                                          |
 
-Node `data` is validated per type by a zod schema in `src/shared/board.ts`; the only type today is `note` with a `text` field.
+A child's position is relative to its container. `applyChanges` in `src/main/storage/boards-repository.ts` stores parents before children and refuses a parent on another board or one that would contain itself.
 
 ## Channels and library
 
-| Channel                                                          | Does                                                           |
-| ---------------------------------------------------------------- | -------------------------------------------------------------- |
-| `boards:list`, `boards:create`, `boards:update`, `boards:delete` | Board lifecycle                                                |
-| `boards:read`                                                    | A board with its nodes and edges                               |
-| `boards:applyChanges`                                            | One transaction of node and edge inserts, updates and removals |
+| Channel                                                          | Does                                                            |
+| ---------------------------------------------------------------- | --------------------------------------------------------------- |
+| `boards:list`, `boards:create`, `boards:update`, `boards:delete` | Board lifecycle                                                 |
+| `boards:read`                                                    | A board with its items and arrows                               |
+| `boards:applyChanges`                                            | One transaction of item and arrow inserts, updates and removals |
 
-`src/renderer/lib/board` keeps the board list, one snapshot per open board, the active board and the selection. The canvas keeps React Flow's nodes in local state and applies every change to it, so a dragged note follows the pointer frame by frame and publishes its live geometry for the Properties panel; `commitChanges` applies the result to the store first and then sends it when the gesture ends, not on every frame. The editor components live in `src/renderer/components/editors/Board` and the panels in `src/renderer/components/editors/Properties`.
+`src/renderer/lib/board` keeps the board list, one snapshot per open board, the active board and the selection, and `items.ts` holds the pure item maths: presets, style resolution, nesting and reparenting, duplication, z-order, hit testing and connection sides. The canvas keeps React Flow's nodes in local state so a drag follows the pointer, and `commitChanges` applies the result to the store first and sends it when the gesture ends. The editor components live in `src/renderer/components/editors/Board` and the panels in `src/renderer/components/editors/Properties`.

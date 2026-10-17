@@ -84,7 +84,8 @@ describe('PropertiesEditor', () => {
     const note = {
       id: 'n1',
       boardId: board.id,
-      type: 'note' as const,
+      parentId: null,
+      type: 'text' as const,
       x: 250,
       y: 0,
       width: 200,
@@ -125,7 +126,7 @@ describe('PropertiesEditor', () => {
     await user.type(y, 'abc{Escape}');
     expect(y).toHaveValue(0);
 
-    const text = screen.getByLabelText('Text');
+    const text = screen.getByLabelText('Content');
     await user.clear(text);
     await user.type(text, 'changed');
     await user.tab();

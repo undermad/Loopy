@@ -1,0 +1,235 @@
+@use '../../../../styles/mixins' as *;
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+}
+
+.top {
+  @include row(var(--space-3));
+
+  align-items: flex-end;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.unsaved {
+  color: var(--color-warning);
+  font-size: var(--font-size-xs);
+}
+
+.layout {
+  display: grid;
+  gap: var(--space-3);
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: 260px minmax(0, 1fr) 300px;
+}
+
+.fields,
+.settings {
+  @include stack(var(--space-2));
+
+  min-height: 0;
+  overflow: auto;
+}
+
+.fieldsHeader {
+  @include row(var(--space-2));
+
+  justify-content: space-between;
+}
+
+.heading {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+}
+
+.fieldList {
+  @include stack(2px);
+
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.fieldRow {
+  @include row(2px);
+
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+
+  &:hover {
+    background: var(--color-hover);
+  }
+}
+
+.fieldRowSelected {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
+.dragging {
+  opacity: 0.6;
+}
+
+.grip {
+  display: inline-flex;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--color-fg-muted);
+  cursor: grab;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.fieldSelect {
+  @include stack(0);
+
+  min-width: 0;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--color-fg);
+  font: inherit;
+  cursor: pointer;
+  flex: 1;
+  text-align: left;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.fieldName {
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fieldKind {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+}
+
+.cardButton {
+  justify-content: flex-start;
+}
+
+.cardButtonActive {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
+.stage {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 0;
+  padding: var(--space-6);
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--color-fg) 12%, transparent) 1px, transparent 1px) 0 0 /
+      16px 16px,
+    var(--color-surface-sunken);
+  overflow: auto;
+}
+
+.previewCard {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  line-height: 1.35;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.accent {
+  position: absolute;
+  height: 6px;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+.previewBody {
+  overflow: auto;
+  margin-top: 4px;
+  flex: 1;
+}
+
+.settingsBody {
+  @include stack(var(--space-3));
+}
+
+.pair {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: 1fr 1fr;
+}
+
+.colourRow {
+  @include row(var(--space-2));
+
+  font-size: var(--font-size-sm);
+}
+
+.starters {
+  @include stack(var(--space-3));
+
+  flex: 1;
+}
+
+.starterGrid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+.starter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--color-accent);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  svg {
+    width: 28px;
+    height: 28px;
+    color: var(--color-accent);
+  }
+}

@@ -10,6 +10,7 @@ export * from './IconButton';
 export * from './Input';
 export * from './Kbd';
 export * from './Menubar';
+export * from './NumberInput';
 export * from './Popover';
 export * from './RichText';
 export * from './ScrollArea';

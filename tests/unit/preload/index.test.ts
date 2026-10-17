@@ -117,6 +117,18 @@ describe('preload API coverage', () => {
     updatedAt: project.updatedAt,
   };
   const cluster = { id: 'k', name: 'Magic', createdAt: project.createdAt, updatedAt: project.updatedAt };
+  const template = {
+    id: 't',
+    name: 'Hero',
+    width: 320,
+    height: 360,
+    style: {},
+    accent: null,
+    gap: 8,
+    fields: [],
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
+  };
   const assets = {
     folders: [
       { id: 'f', parentId: null, name: 'Images', createdAt: project.createdAt, updatedAt: project.updatedAt },
@@ -188,6 +200,10 @@ describe('preload API coverage', () => {
     ],
     ['updatePaletteCluster', ['k', { name: 'Spells' }], cluster],
     ['deletePaletteCluster', ['k', false], { palettes: [palette], clusters: [] }],
+    ['listCardTemplates', [], [template]],
+    ['createCardTemplate', [{ name: 'Hero' }], template],
+    ['updateCardTemplate', ['t', { name: 'Villain' }], template],
+    ['deleteCardTemplate', ['t'], []],
     ['getAssets', [], assets],
     ['createAssetFolder', [{ name: 'F' }], assets],
     ['updateAssetFolder', ['f', { name: 'F2' }], assets],

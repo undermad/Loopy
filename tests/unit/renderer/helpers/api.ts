@@ -23,11 +23,13 @@ import { resetBoardStore } from '@renderer/lib/board';
 import { resetTicketsStore } from '@renderer/lib/tickets';
 import { resetWorkspacesStore } from '@renderer/lib/workspaces';
 import { resetAssetsStore } from '@renderer/lib/assets';
+import { resetCardTemplatesStore } from '@renderer/lib/cards';
 import { resetPalettesStore } from '@renderer/lib/palettes';
 import { resetSettingsStore } from '@renderer/lib/settings';
 import { resetThemeStore } from '@renderer/lib/theme';
 import { createAssetsFake } from './assets-fake';
 import { createBoardsFake } from './boards-fake';
+import { createCardsFake } from './cards-fake';
 import { createPalettesFake } from './palettes-fake';
 import { createTicketsFake } from './tickets-fake';
 
@@ -41,6 +43,7 @@ export interface FakeApi extends LoopyApi {
   layouts: LayoutPreset[];
   tickets: ReturnType<typeof createTicketsFake>['data'];
   palettesData: ReturnType<typeof createPalettesFake>['data'];
+  cardsData: ReturnType<typeof createCardsFake>['data'];
   assetsData: ReturnType<typeof createAssetsFake>['data'];
   emitSettings: (settings: AppSettings) => void;
   emitNativeTheme: (scheme: ColorScheme) => void;
@@ -60,6 +63,7 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
   const ticketsFake = createTicketsFake();
   const boardsFake = createBoardsFake();
   const palettesFake = createPalettesFake();
+  const cardsFake = createCardsFake();
   const assetsFake = createAssetsFake();
   const api: FakeApi = {
     settings: appSettingsSchema.parse({ schemaVersion: APP_SETTINGS_SCHEMA_VERSION, ...overrides }),
@@ -71,10 +75,12 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     layouts: [],
     tickets: ticketsFake.data,
     palettesData: palettesFake.data,
+    cardsData: cardsFake.data,
     assetsData: assetsFake.data,
     ...ticketsFake.api,
     ...boardsFake.api,
     ...palettesFake.api,
+    ...cardsFake.api,
     ...assetsFake.api,
     getAppVersion: vi.fn(() => Promise.resolve({ app: '0.1.0', electron: '44.8.0' })),
     getSettings: vi.fn(() => Promise.resolve(api.settings)),
@@ -192,6 +198,7 @@ export async function bootTestApp(
   resetTicketsStore();
   resetBoardStore();
   resetPalettesStore();
+  resetCardTemplatesStore();
   resetAssetsStore();
   const api = createFakeApi(overrides, scheme);
   prepare?.(api);

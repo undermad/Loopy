@@ -78,9 +78,14 @@ export function createBoardsFake() {
         else nodes.push(node);
       }
       const removedEdges = new Set(changes.removeEdgeIds);
+      const updatedEdges = new Set(changes.upsertEdges.map((edge) => edge.id));
       const edges = [
         ...snapshot.edges.filter(
-          (edge) => !removedEdges.has(edge.id) && !removed.has(edge.sourceId) && !removed.has(edge.targetId),
+          (edge) =>
+            !removedEdges.has(edge.id) &&
+            !updatedEdges.has(edge.id) &&
+            !removed.has(edge.sourceId) &&
+            !removed.has(edge.targetId),
         ),
         ...changes.upsertEdges,
       ];

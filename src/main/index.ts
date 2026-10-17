@@ -19,6 +19,7 @@ import { registerAssetsHandlers } from './ipc/assets';
 import { registerBoardsHandlers } from './ipc/boards';
 import { registerColourHandlers } from './ipc/colour';
 import { registerLayoutsHandlers } from './ipc/layouts';
+import { registerCardTemplatesHandlers } from './ipc/card-templates';
 import { registerPalettesHandlers } from './ipc/palettes';
 import { registerProjectHandlers } from './ipc/project';
 import { registerSettingsHandlers } from './ipc/settings';
@@ -119,6 +120,7 @@ async function start(): Promise<void> {
   registerTicketsHandlers(ipcMain, { project: () => projects.current() });
   registerBoardsHandlers(ipcMain, { project: () => projects.current() });
   registerPalettesHandlers(ipcMain, { project: () => projects.current() });
+  registerCardTemplatesHandlers(ipcMain, { project: () => projects.current() });
   registerAssetsHandlers(ipcMain, { project: () => projects.current(), dialogs: dialog });
   protocol.handle(ASSET_PROTOCOL, (request) => handleAssetRequest(() => projects.current(), request));
   protocol.handle(PICKER_PROTOCOL, handlePickerRequest);

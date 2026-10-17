@@ -11,6 +11,7 @@ export type BoardApi = Pick<
 export interface BoardSelection {
   boardId: string;
   nodeIds: string[];
+  edgeIds: string[];
 }
 
 export type LiveGeometry = Pick<BoardNode, 'x' | 'y' | 'width' | 'height'>;
@@ -46,13 +47,17 @@ export function setActiveBoard(boardId: string | null): void {
   if (boardStore.getState().activeBoardId !== boardId) boardStore.setState({ activeBoardId: boardId });
 }
 
-export function setBoardSelection(boardId: string, nodeIds: string[]): void {
+function sameIds(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((id, index) => id === b[index]);
+}
+
+export function setBoardSelection(boardId: string, nodeIds: string[], edgeIds: string[] = []): void {
   const current = boardStore.getState().selection;
   const same =
-    current?.boardId === boardId &&
-    current.nodeIds.length === nodeIds.length &&
-    current.nodeIds.every((id, index) => id === nodeIds[index]);
-  if (!same) boardStore.setState({ selection: nodeIds.length > 0 ? { boardId, nodeIds } : null });
+    current?.boardId === boardId && sameIds(current.nodeIds, nodeIds) && sameIds(current.edgeIds, edgeIds);
+  if (same) return;
+  const empty = nodeIds.length === 0 && edgeIds.length === 0;
+  boardStore.setState({ selection: empty ? null : { boardId, nodeIds, edgeIds } });
 }
 
 function requireApi(): BoardApi {

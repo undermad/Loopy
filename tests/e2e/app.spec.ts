@@ -87,10 +87,44 @@ test('adds a note on the board by double-clicking and edits it', async ({ window
   const pane = window.locator('.react-flow__pane');
   await expect(pane).toBeVisible();
   await pane.dblclick({ position: { x: 300, y: 200 } });
-  const note = window.getByText('Write something…');
-  await expect(note).toBeVisible();
-  await note.dblclick();
-  await window.getByRole('textbox', { name: 'Add note' }).fill('Boss fight');
+  const editor = window.getByRole('textbox', { name: 'Text' });
+  await expect(editor).toBeFocused();
+  await editor.fill('Boss fight');
   await pane.click({ position: { x: 50, y: 50 } });
-  await expect(window.getByText('Boss fight')).toBeVisible();
+  await expect(window.getByRole('group', { name: 'Boss fight' })).toBeVisible();
+});
+
+test('places items from the toolbar and connects them with an arrow', async ({ window }) => {
+  await window.getByRole('button', { name: 'New project' }).click();
+  await window.getByLabel(/Project name/).fill('Toolbox');
+  await window.getByRole('button', { name: 'Create' }).click();
+  await window.getByRole('tab', { name: 'Design' }).click();
+  await window.getByRole('button', { name: 'New board' }).first().click();
+  await window.getByRole('button', { name: 'Create' }).click();
+
+  const pane = window.locator('.react-flow__pane');
+  await expect(pane).toBeVisible();
+  const box = await pane.boundingBox();
+  if (!box) throw new Error('missing pane');
+
+  for (const [x, name] of [
+    [200, 'Door'],
+    [600, 'Key'],
+  ] as const) {
+    await window.getByRole('button', { name: 'Sticky note (N)' }).click();
+    await window.mouse.click(box.x + x, box.y + 250);
+    await window.getByRole('textbox', { name: 'Text' }).fill(name);
+    await window.mouse.click(box.x + 900, box.y + 700);
+    await expect(window.getByRole('group', { name })).toBeVisible();
+  }
+
+  const door = await window.getByRole('group', { name: 'Door' }).boundingBox();
+  const key = await window.getByRole('group', { name: 'Key' }).boundingBox();
+  if (!door || !key) throw new Error('missing items');
+  await window.getByRole('button', { name: 'Arrow (A)' }).click();
+  await window.mouse.move(door.x + door.width / 2, door.y + door.height / 2);
+  await window.mouse.down();
+  await window.mouse.move(key.x + key.width / 2, key.y + key.height / 2, { steps: 8 });
+  await window.mouse.up();
+  await expect(window.locator('.react-flow__edge')).toHaveCount(1);
 });

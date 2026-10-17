@@ -18,7 +18,17 @@ import {
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
 import { createCluster, createPalette, usePaletteClusters, usePalettes } from '@renderer/lib/palettes';
-import { Button, EmptyState, Field, IconButton, Input, Select, Switch, useToast } from '@renderer/ui';
+import {
+  Button,
+  EmptyState,
+  Field,
+  IconButton,
+  Input,
+  NumberInput,
+  Select,
+  Switch,
+  useToast,
+} from '@renderer/ui';
 import { ColourWheel } from './ColourWheel';
 import editorStyles from './ColoursEditor.module.scss';
 import styles from './ClusterTab.module.scss';
@@ -240,17 +250,15 @@ function ClusterPlanner({ seed, rules, onRules, onCreated }: PlannerProps) {
             </Field>
           )}
           <Field label={t('cluster.count')}>
-            <Input
+            <NumberInput
               size="sm"
-              type="number"
               min={1}
               max={PALETTE_CLUSTER_MAX_NEW}
+              digits={0}
+              pixelsPerStep={12}
               value={rules.count}
-              onChange={(event) => {
-                const count = Number(event.target.value);
-                if (Number.isFinite(count) && count >= 1) {
-                  onRules({ count: Math.min(PALETTE_CLUSTER_MAX_NEW, Math.round(count)) });
-                }
+              onValueChange={(count) => {
+                if (count !== null) onRules({ count: Math.round(count) });
               }}
             />
           </Field>

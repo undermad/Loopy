@@ -18,6 +18,7 @@ gitleaks
 gltf
 godot
 hitbox
+ignis
 knip
 konva
 lingui
@@ -36,13 +37,17 @@ nowheel
 nsis
 nvmrc
 pannable
+pickable
 playtest
 prefault
 quicktime
 radix
+reparent
+reparenting
 secretlint
 servernum
 sightlines
+smoothstep
 stylelint
 tinykeys
 tldraw

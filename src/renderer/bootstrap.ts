@@ -5,6 +5,7 @@ import { builtInLayoutPresets } from '@shared/layout-presets';
 import { bootAssets } from '@renderer/lib/assets';
 import { bootBoards } from '@renderer/lib/board';
 import { applyLanguage, initI18n } from '@renderer/lib/i18n';
+import { bootCardTemplates } from '@renderer/lib/cards';
 import { bootPalettes } from '@renderer/lib/palettes';
 import { bootProject, currentProject } from '@renderer/lib/project';
 import { bootSettings, useSettings } from '@renderer/lib/settings';
@@ -25,6 +26,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
   await bootTickets(api, currentProject() !== null);
   await bootBoards(api, currentProject() !== null);
   await bootPalettes(api, currentProject() !== null);
+  await bootCardTemplates(api, currentProject() !== null);
   await bootAssets(api, currentProject() !== null);
   await bootWorkspaces(api, () => {
     const names = {

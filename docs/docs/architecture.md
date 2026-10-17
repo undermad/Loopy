@@ -53,7 +53,8 @@ The boundary is a convention checked in review, not a lint rule. A deep import s
 | `shortcuts`  | Key map and the `useShortcuts` hook                                                | shipped |
 | `project`    | Current project, project list, recent projects                                     | shipped |
 | `tickets`    | Tickets snapshot, selection, ticket, state and label actions                       | shipped |
-| `board`      | Board list, open board snapshots, change commits                                   | shipped |
+| `board`      | Board list, open board snapshots, change commits, item and arrow maths             | shipped |
+| `cards`      | Card templates, field kinds and starter templates                                  | shipped |
 | `colour`     | Colour maths: conversions, contrast, harmonies, palette clusters, image extraction | shipped |
 | `palettes`   | Palette and cluster lists and live resolution of colour references                 | shipped |
 | `assets`     | Asset folders, files, import, drop settings                                        | shipped |
@@ -105,4 +106,4 @@ The export is the same format as the working file, so there is nothing to transl
 
 Databases open in WAL mode. While a project is open, SQLite keeps `-wal` and `-shm` files next to it and removes them on close. Schema changes are SQL strings in `src/main/storage/project-migrations.ts`, applied in order inside one transaction by `migrateDatabase`. A file with a `user_version` above the current one is refused rather than guessed at. The renderer never receives a database handle; features will expose what they need through IPC.
 
-Version 1 holds the `project` row and a key-value `settings` table. Version 2 adds the tickets tables, see the tickets page. Version 3 adds boards, nodes, edges and an assets table, see the board page. Version 4 narrows ticket types. Version 5 adds board units, version 6 the grid colour and version 7 sprints, comments, templates and the ticket estimate, due date and sprint columns, see the tickets page. Version 8 adds palettes, asset folders, the asset metadata columns and the board colour references, see the colours and assets pages. Version 9 adds palette clusters, see the colours page.
+Version 1 holds the `project` row and a key-value `settings` table. Version 2 adds the tickets tables, see the tickets page. Version 3 adds boards, nodes, edges and an assets table, see the board page. Version 4 narrows ticket types. Version 5 adds board units, version 6 the grid colour and version 7 sprints, comments, templates and the ticket estimate, due date and sprint columns, see the tickets page. Version 8 adds palettes, asset folders, the asset metadata columns and the board colour references, see the colours and assets pages. Version 9 adds palette clusters, see the colours page. Version 10 adds item nesting, converts notes to text items and adds card templates, see the board and cards pages.

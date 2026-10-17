@@ -91,7 +91,9 @@ describe('palette clusters', () => {
     expect(nameField(2)).toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: 'Name of palette 3' })).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'New palettes' }), { target: { value: '3' } });
+    const count = screen.getByRole('spinbutton', { name: 'New palettes' });
+    fireEvent.change(count, { target: { value: '3' } });
+    fireEvent.blur(count);
     expect(nameField(3)).toBeInTheDocument();
     expect(
       screen.getByText('Complementary for one, triad for two, square for three, then evenly spaced.'),
