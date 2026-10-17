@@ -9,21 +9,21 @@ The Board editor is an infinite canvas built on React Flow. It anchors the Desig
 
 ## Using it
 
-| Action            | How                                                                                       |
-| ----------------- | ----------------------------------------------------------------------------------------- |
-| Pan               | Middle or right mouse drag, or scroll; left drag selects                                  |
-| Zoom              | Ctrl and wheel, or the zoom buttons in the header                                         |
-| Add a note        | Double-click the canvas                                                                   |
-| Edit a note       | Double-click the note, or press Enter while it is selected; Escape or clicking away saves |
-| Move or resize    | Drag the note; it follows the pointer exactly. Select it and pull a corner to resize      |
-| Select            | Click a note; the outline sits inside its edges and the Properties panel follows it live  |
-| Snap              | The magnet in the header snaps moves and new notes to the visible grid dots               |
-| Grid              | The grid button shows or hides the grid; its spacing follows the zoom, never the user     |
-| Properties        | The panel button splits the board area and opens a Properties editor beside it            |
-| Connect two notes | Drag from a note's handle to another note                                                 |
-| Delete            | Select and press Delete or Backspace                                                      |
-| Switch board      | The board dropdown in the header, which also creates, renames and deletes                 |
-| Colours           | The background and grid swatches in the header, or the Properties panel                   |
+| Action            | How                                                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Pan               | Middle or right mouse drag, or scroll; left drag selects                                                            |
+| Zoom              | Ctrl and wheel, or the zoom buttons in the header                                                                   |
+| Add a note        | Double-click the canvas                                                                                             |
+| Edit a note       | Double-click the note, or press Enter while it is selected; Escape or clicking away saves                           |
+| Move or resize    | Drag the note; it follows the pointer exactly. Select it and pull a corner to resize                                |
+| Select            | Click a note; the outline sits inside its edges and the Properties panel follows it live                            |
+| Snap              | The magnet in the header snaps moves and new notes to the visible grid dots                                         |
+| Grid              | The grid button shows or hides the grid; its spacing follows the zoom, never the user                               |
+| Properties        | The panel button splits the board area and opens a Properties editor beside it                                      |
+| Connect two notes | Drag from a note's handle to another note                                                                           |
+| Delete            | Select and press Delete or Backspace                                                                                |
+| Switch board      | The board dropdown in the header, which also creates, renames and deletes                                           |
+| Colours           | The background and grid swatches in the header, or the Properties panel; both offer palette colours or a custom one |
 
 The viewport, grid, snap and minimap toggles are area state, so two areas can show one board at different zoom levels and the choice survives a workspace switch. The board's content, colour and units live in the project.
 
@@ -33,7 +33,7 @@ Every board has one scale, canvas pixels per metre, and a display unit (px, mm, 
 
 The grid is drawn by `Grid` in `src/renderer/components/editors/Board` as three line levels a decade apart, after Blender's world grid. `gridStep` picks the finest power of ten of the display unit whose lines sit at least twelve screen pixels apart; that level fades in as you zoom closer, the next level up is a unit (or ten, or a hundred, depending on zoom) drawn a little wider, and the level above that wider still. When the fine level reaches 120 screen pixels it hands over: the finest lines become the unit lines without a visible jump, because `gridLevels` interpolates width and opacity with the same fade. The scheme has no fixed range, so the zoom runs from 1% to 2000% and the grid stays readable. The grid is drawn inside React Flow's viewport, above the nodes, as lines in flow coordinates with non-scaling strokes. It therefore shares the nodes' transform exactly: a line on the boundary of two touching items overlays both by half its width, and a 1 by 1 unit item at 1, 1 has a line centred on each edge. It takes no pointer events, so items underneath stay clickable.
 
-The grid colour is stored per board next to the background colour, picked from the header or the Properties panel, and drawn with opacity so one colour works on light and dark boards. Snapping uses the finest visible step, so a snapped note always lands on a line; with snapping off, moves are pixel exact.
+Each board colour is a hex copy plus an optional reference to a palette colour (`background_ref`, `grid_ref`), resolved live through `src/renderer/lib/palettes`, see the colours page. A note's fill works the same way under `data.fill` and is picked in the Properties panel. The grid colour is stored per board next to the background colour, picked from the header or the Properties panel, and drawn with opacity so one colour works on light and dark boards. Snapping uses the finest visible step, so a snapped note always lands on a line; with snapping off, moves are pixel exact.
 
 ## Properties
 

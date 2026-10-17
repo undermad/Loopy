@@ -28,6 +28,7 @@ import {
 import type { LiveGeometry } from '@renderer/lib/board';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
+import { useColourFromRef } from '@renderer/lib/palettes';
 import { panelActions, usePanelOpen } from '@renderer/lib/workspaces';
 import { EmptyState, Spinner } from '@renderer/ui';
 import { AreaHeaderContent } from '../../Shell/AreaHeaderContent';
@@ -57,6 +58,8 @@ function Canvas({ boardId, state, setState }: { boardId: string } & Pick<EditorP
   const pending = useRef(new Map<string, Node>());
   const [draft, setDraft] = useState<Draft | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const background = useColourFromRef(snapshot?.board.backgroundColor ?? '', snapshot?.board.backgroundRef);
+  const gridColor = useColourFromRef(snapshot?.board.gridColor ?? '', snapshot?.board.gridRef);
 
   useEffect(() => {
     if (!snapshot) void loadBoard(boardId);
@@ -178,10 +181,10 @@ function Canvas({ boardId, state, setState }: { boardId: string } & Pick<EditorP
       deleteKeyCode={['Backspace', 'Delete']}
       proOptions={{ hideAttribution: true }}
       className={styles['flow']}
-      style={{ background: snapshot.board.backgroundColor }}
+      style={{ background }}
     >
       <SelectionGuard />
-      {grid ? <Grid board={snapshot.board} /> : null}
+      {grid ? <Grid board={{ ...snapshot.board, gridColor }} /> : null}
       {minimap ? <MiniMap pannable zoomable className={styles['minimap']} /> : null}
     </ReactFlow>
   );

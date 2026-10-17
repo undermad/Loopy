@@ -3,7 +3,8 @@ import { ChevronDown, Grid3x3, Magnet, Map, Maximize, PanelRight, Plus, ZoomIn, 
 import type { Board } from '@shared/board';
 import { createBoard, deleteBoard, updateBoard } from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
-import { Button, ColorPicker, ConfirmDialog, DropdownMenu, IconButton } from '@renderer/ui';
+import { Button, ConfirmDialog, DropdownMenu, IconButton } from '@renderer/ui';
+import { ProjectColourPicker } from '../../ProjectColourPicker/ProjectColourPicker';
 import { PromptDialog } from '../../Shell/PromptDialog';
 import styles from './BoardEditor.module.scss';
 
@@ -86,17 +87,19 @@ export function BoardHeader({
       </DropdownMenu.Root>
       {board ? (
         <>
-          <ColorPicker
+          <ProjectColourPicker
             size="sm"
-            value={board.backgroundColor}
+            value={{ hex: board.backgroundColor, ref: board.backgroundRef }}
             label={t('board.background')}
-            onChange={(backgroundColor) => void updateBoard(board.id, { backgroundColor })}
+            onChange={(value) =>
+              void updateBoard(board.id, { backgroundColor: value.hex, backgroundRef: value.ref })
+            }
           />
-          <ColorPicker
+          <ProjectColourPicker
             size="sm"
-            value={board.gridColor}
+            value={{ hex: board.gridColor, ref: board.gridRef }}
             label={t('board.gridColor')}
-            onChange={(gridColor) => void updateBoard(board.id, { gridColor })}
+            onChange={(value) => void updateBoard(board.id, { gridColor: value.hex, gridRef: value.ref })}
           />
           <IconButton
             label={t('board.zoomOut')}

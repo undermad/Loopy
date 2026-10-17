@@ -6,6 +6,7 @@
     "ticket": "Ticket",
     "properties": "Properties",
     "colours": "Colours",
+    "assets": "Assets",
     "gallery": "Component gallery",
     "empty": "Empty"
   },
@@ -28,6 +29,8 @@
     "width": "Width",
     "height": "Height",
     "text": "Text",
+    "fill": "Fill colour",
+    "resetFill": "Default",
     "multiple": "{{count}} items selected",
     "selectHint": "Select an item on the board to edit it.",
     "units": {
@@ -38,9 +41,6 @@
       "km": "Kilometres"
     },
     "gridColor": "Grid colour"
-  },
-  "colours": {
-    "soon": "Project colour schemes arrive with a later release."
   },
   "placeholder": {
     "title": "{{editor}} arrives soon",

@@ -75,7 +75,7 @@ describe('PropertiesEditor', () => {
     const hex = await screen.findByRole('textbox', { name: 'Grid colour' });
     await user.clear(hex);
     await user.type(hex, '336699');
-    expect(api.updateBoard).toHaveBeenLastCalledWith(board.id, { gridColor: '#336699' });
+    expect(api.updateBoard).toHaveBeenLastCalledWith(board.id, { gridColor: '#336699', gridRef: null });
   });
 
   it('shows a selected note in board units and writes edits back in pixels', async () => {

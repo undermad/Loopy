@@ -32,14 +32,33 @@ function transaction<T>(db: DatabaseSync, work: () => T): T {
 }
 
 const BOARD_COLUMNS =
-  'id, name, background_color AS backgroundColor, grid_color AS gridColor, unit, unit_scale AS unitScale, created_at AS createdAt, updated_at AS updatedAt';
+  'id, name, background_color AS backgroundColor, grid_color AS gridColor, background_ref AS backgroundRef, grid_ref AS gridRef, unit, unit_scale AS unitScale, created_at AS createdAt, updated_at AS updatedAt';
 
 function parseJson(value: unknown): unknown {
   return typeof value === 'string' ? JSON.parse(value) : {};
 }
 
+function parseRef(value: unknown): unknown {
+  return typeof value === 'string' && value.length > 0 ? JSON.parse(value) : null;
+}
+
+function boardRow(row: unknown): unknown {
+  const record = row as Record<string, unknown>;
+  return {
+    ...record,
+    backgroundRef: parseRef(record['backgroundRef']),
+    gridRef: parseRef(record['gridRef']),
+  };
+}
+
+function serialiseRef(ref: unknown): string | null {
+  return ref ? JSON.stringify(ref) : null;
+}
+
 export function listBoards(db: DatabaseSync): Board[] {
-  return boardListSchema.parse(db.prepare(`SELECT ${BOARD_COLUMNS} FROM boards ORDER BY created_at`).all());
+  return boardListSchema.parse(
+    db.prepare(`SELECT ${BOARD_COLUMNS} FROM boards ORDER BY created_at`).all().map(boardRow),
+  );
 }
 
 export function createBoard(db: DatabaseSync, raw: unknown): Board {
@@ -47,12 +66,14 @@ export function createBoard(db: DatabaseSync, raw: unknown): Board {
   const stamp = now();
   const id = randomUUID();
   db.prepare(
-    'INSERT INTO boards (id, name, background_color, grid_color, unit, unit_scale, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO boards (id, name, background_color, grid_color, background_ref, grid_ref, unit, unit_scale, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     id,
     input.name,
     input.backgroundColor ?? DEFAULT_BOARD_BACKGROUND,
     input.gridColor ?? DEFAULT_BOARD_GRID,
+    serialiseRef(input.backgroundRef),
+    serialiseRef(input.gridRef),
     input.unit ?? DEFAULT_BOARD_UNIT,
     input.unitScale ?? DEFAULT_BOARD_UNIT_SCALE,
     stamp,
@@ -64,13 +85,13 @@ export function createBoard(db: DatabaseSync, raw: unknown): Board {
 function readBoardRow(db: DatabaseSync, id: string): Board {
   const row = db.prepare(`SELECT ${BOARD_COLUMNS} FROM boards WHERE id = ?`).get(id);
   if (!row) throw new Error(`Unknown board ${id}`);
-  return boardSchema.parse(row);
+  return boardSchema.parse(boardRow(row));
 }
 
 export function updateBoard(db: DatabaseSync, id: string, raw: unknown): Board {
   const patch = boardPatchSchema.parse(raw);
   const sets = ['updated_at = ?'];
-  const values: (string | number)[] = [now()];
+  const values: (string | number | null)[] = [now()];
   if (patch.name !== undefined) {
     sets.push('name = ?');
     values.push(patch.name);
@@ -82,6 +103,14 @@ export function updateBoard(db: DatabaseSync, id: string, raw: unknown): Board {
   if (patch.gridColor !== undefined) {
     sets.push('grid_color = ?');
     values.push(patch.gridColor);
+  }
+  if (patch.backgroundRef !== undefined) {
+    sets.push('background_ref = ?');
+    values.push(serialiseRef(patch.backgroundRef));
+  }
+  if (patch.gridRef !== undefined) {
+    sets.push('grid_ref = ?');
+    values.push(serialiseRef(patch.gridRef));
   }
   if (patch.unit !== undefined) {
     sets.push('unit = ?');

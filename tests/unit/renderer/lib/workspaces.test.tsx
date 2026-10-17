@@ -33,7 +33,12 @@ describe('workspaces library', () => {
   it('boots the default preset and manages the workspace list', async () => {
     const api = await bootTestApp();
     const { result } = renderHook(() => ({ all: useWorkspaces(), active: useActiveWorkspace() }));
-    expect(result.current.all.map((workspace) => workspace.name)).toEqual(['Planning', 'Design', 'Palette']);
+    expect(result.current.all.map((workspace) => workspace.name)).toEqual([
+      'Planning',
+      'Design',
+      'Palette',
+      'Assets',
+    ]);
     expect(result.current.active?.name).toBe('Planning');
 
     act(() => {
@@ -45,7 +50,7 @@ describe('workspaces library', () => {
       addWorkspace('empty', 'Scratch');
     });
     expect(result.current.active?.name).toBe('Scratch');
-    expect(result.current.all).toHaveLength(4);
+    expect(result.current.all).toHaveLength(5);
 
     const scratchId = must(result.current.active).id;
     act(() => {
@@ -56,6 +61,7 @@ describe('workspaces library', () => {
       'Planning',
       'Design',
       'Palette',
+      'Assets',
       'Notes',
       'Notes copy',
     ]);
@@ -65,14 +71,14 @@ describe('workspaces library', () => {
       moveWorkspace(copyId, -3);
       deleteWorkspace(copyId);
     });
-    expect(result.current.all).toHaveLength(4);
+    expect(result.current.all).toHaveLength(5);
     expect(result.current.all[1]?.name).toBe('Design');
 
     await act(async () => {
       await flushWorkspaces();
     });
     const lastCall = vi.mocked(api.setShellState).mock.calls.at(-1)?.[0];
-    expect(lastCall?.workspaces?.items).toHaveLength(4);
+    expect(lastCall?.workspaces?.items).toHaveLength(5);
   });
 
   it('applies area actions to the active workspace', async () => {
@@ -132,20 +138,20 @@ describe('workspaces library', () => {
     const { result } = renderHook(() => useWorkspaces());
 
     const saved = await saveCurrentLayout('Mine');
-    expect(saved.workspaces).toHaveLength(3);
+    expect(saved.workspaces).toHaveLength(4);
     expect(api.saveLayout).toHaveBeenCalledTimes(1);
 
     act(() => {
       setActiveWorkspace(must(result.current[2]).id);
       deleteWorkspace(must(result.current[0]).id);
     });
-    expect(result.current).toHaveLength(2);
+    expect(result.current).toHaveLength(3);
 
     act(() => {
       applyLayout(saved);
     });
-    expect(result.current).toHaveLength(3);
+    expect(result.current).toHaveLength(4);
     expect(result.current[0]?.id).not.toBe(saved.workspaces[0]?.id);
-    expect(currentLayout('Now').workspaces).toHaveLength(3);
+    expect(currentLayout('Now').workspaces).toHaveLength(4);
   });
 });

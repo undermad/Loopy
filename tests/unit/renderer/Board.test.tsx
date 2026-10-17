@@ -57,6 +57,9 @@ describe('BoardEditor', () => {
     const hex = await screen.findByRole('textbox', { name: 'Background colour' });
     await user.clear(hex);
     await user.type(hex, 'abcdef');
-    expect(api.updateBoard).toHaveBeenLastCalledWith(expect.any(String), { backgroundColor: '#abcdef' });
+    expect(api.updateBoard).toHaveBeenLastCalledWith(expect.any(String), {
+      backgroundColor: '#abcdef',
+      backgroundRef: null,
+    });
   });
 });

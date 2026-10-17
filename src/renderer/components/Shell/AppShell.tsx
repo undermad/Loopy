@@ -20,6 +20,7 @@ import { NewProjectDialog } from '../Welcome/NewProjectDialog';
 import { WelcomeScreen } from '../Welcome/WelcomeScreen';
 import { AboutDialog } from './AboutDialog';
 import { AreaTree } from './AreaTree';
+import { FileDropCatcher } from './FileDropCatcher';
 import { MenuBar, type ShellDialog } from './MenuBar';
 import { PromptDialog } from './PromptDialog';
 import { ShortcutsDialog } from './ShortcutsDialog';
@@ -72,6 +73,7 @@ export function AppShell({ editCommand }: { editCommand: (command: EditCommand) 
   return (
     <div className={styles['shell']}>
       <MenuBar onDialog={setDialog} editCommand={editCommand} />
+      <FileDropCatcher />
       <div className={styles['body']}>{project ? <WorkspaceView /> : <WelcomeScreen />}</div>
       {statusBar ? <StatusBar /> : null}
       <PreferencesDialog open={dialog === 'preferences'} onOpenChange={close} />

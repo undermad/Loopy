@@ -34,6 +34,8 @@ export function createBoardsFake() {
         name: input.name,
         backgroundColor: input.backgroundColor ?? DEFAULT_BOARD_BACKGROUND,
         gridColor: input.gridColor ?? DEFAULT_BOARD_GRID,
+        backgroundRef: input.backgroundRef ?? null,
+        gridRef: input.gridRef ?? null,
         unit: input.unit ?? DEFAULT_BOARD_UNIT,
         unitScale: input.unitScale ?? DEFAULT_BOARD_UNIT_SCALE,
         createdAt: stamp,
@@ -50,6 +52,8 @@ export function createBoardsFake() {
         name: patch.name ?? snapshot.board.name,
         backgroundColor: patch.backgroundColor ?? snapshot.board.backgroundColor,
         gridColor: patch.gridColor ?? snapshot.board.gridColor,
+        backgroundRef: patch.backgroundRef === undefined ? snapshot.board.backgroundRef : patch.backgroundRef,
+        gridRef: patch.gridRef === undefined ? snapshot.board.gridRef : patch.gridRef,
         unit: patch.unit ?? snapshot.board.unit,
         unitScale: patch.unitScale ?? snapshot.board.unitScale,
       };

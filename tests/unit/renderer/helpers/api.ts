@@ -22,10 +22,14 @@ import { resetProjectStore } from '@renderer/lib/project';
 import { resetBoardStore } from '@renderer/lib/board';
 import { resetTicketsStore } from '@renderer/lib/tickets';
 import { resetWorkspacesStore } from '@renderer/lib/workspaces';
-import { createBoardsFake } from './boards-fake';
-import { createTicketsFake } from './tickets-fake';
+import { resetAssetsStore } from '@renderer/lib/assets';
+import { resetPalettesStore } from '@renderer/lib/palettes';
 import { resetSettingsStore } from '@renderer/lib/settings';
 import { resetThemeStore } from '@renderer/lib/theme';
+import { createAssetsFake } from './assets-fake';
+import { createBoardsFake } from './boards-fake';
+import { createPalettesFake } from './palettes-fake';
+import { createTicketsFake } from './tickets-fake';
 
 export interface FakeApi extends LoopyApi {
   settings: AppSettings;
@@ -36,6 +40,8 @@ export interface FakeApi extends LoopyApi {
   shell: ShellState;
   layouts: LayoutPreset[];
   tickets: ReturnType<typeof createTicketsFake>['data'];
+  palettesData: ReturnType<typeof createPalettesFake>['data'];
+  assetsData: ReturnType<typeof createAssetsFake>['data'];
   emitSettings: (settings: AppSettings) => void;
   emitNativeTheme: (scheme: ColorScheme) => void;
   emitProject: () => void;
@@ -53,6 +59,8 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
   const projectState = (): ProjectState => ({ current: api.current, recent: api.recent });
   const ticketsFake = createTicketsFake();
   const boardsFake = createBoardsFake();
+  const palettesFake = createPalettesFake();
+  const assetsFake = createAssetsFake();
   const api: FakeApi = {
     settings: appSettingsSchema.parse({ schemaVersion: APP_SETTINGS_SCHEMA_VERSION, ...overrides }),
     themes: [...builtInThemes],
@@ -62,8 +70,12 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     shell: { workspaces: null, statusBar: true },
     layouts: [],
     tickets: ticketsFake.data,
+    palettesData: palettesFake.data,
+    assetsData: assetsFake.data,
     ...ticketsFake.api,
     ...boardsFake.api,
+    ...palettesFake.api,
+    ...assetsFake.api,
     getAppVersion: vi.fn(() => Promise.resolve({ app: '0.1.0', electron: '44.8.0' })),
     getSettings: vi.fn(() => Promise.resolve(api.settings)),
     setSettings: vi.fn((patch: AppSettingsPatch) => {
@@ -147,6 +159,7 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     exportLayout: vi.fn(() => Promise.resolve({ status: 'exported' as const })),
     importLayout: vi.fn(() => Promise.resolve({ status: 'cancelled' as const })),
     toggleFullscreen: vi.fn(() => Promise.resolve(true)),
+    pickScreenColour: vi.fn(() => Promise.resolve(null)),
     editCommand: vi.fn(() => Promise.resolve()),
     emitSettings: (settings) => {
       settingsListeners.forEach((listener) => {
@@ -178,6 +191,8 @@ export async function bootTestApp(
   resetWorkspacesStore();
   resetTicketsStore();
   resetBoardStore();
+  resetPalettesStore();
+  resetAssetsStore();
   const api = createFakeApi(overrides, scheme);
   prepare?.(api);
   window.loopy = api;

@@ -51,6 +51,7 @@
       "planning": "Planning",
       "design": "Design",
       "palette": "Palette",
+      "assets": "Assets",
       "empty": "Empty"
     }
   },
@@ -92,7 +93,8 @@
       "default": "Default",
       "planning": "Planning",
       "design": "Design",
-      "palette": "Palette"
+      "palette": "Palette",
+      "assets": "Assets"
     },
     "current": "Current layout",
     "builtIn": "Built in",
@@ -103,7 +105,9 @@
     "ready": "Ready",
     "project": "Project: {{name}}",
     "noProject": "No project open",
-    "hint": "Ctrl+Space maximises the area under the pointer. Drag an area corner to split or join."
+    "hint": "Ctrl+Space maximises the area under the pointer. Drag an area corner to split or join.",
+    "filesImported": "{{count}} files added to assets.",
+    "filesFailed": "The files could not be added to assets."
   },
   "about": {
     "title": "About Loopy",

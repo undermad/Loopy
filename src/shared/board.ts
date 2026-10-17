@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { colourRefSchema, colourValueSchema } from './colours';
 import { hexColorSchema } from './theme';
 
 export const boardUnitSchema = z.enum(['px', 'mm', 'cm', 'm', 'km']);
@@ -8,6 +9,8 @@ export const boardSchema = z.object({
   name: z.string().trim().min(1).max(80),
   backgroundColor: hexColorSchema,
   gridColor: hexColorSchema,
+  backgroundRef: colourRefSchema.nullable().default(null),
+  gridRef: colourRefSchema.nullable().default(null),
   unit: boardUnitSchema,
   unitScale: z.number().positive().max(1_000_000),
   createdAt: z.iso.datetime(),
@@ -16,7 +19,10 @@ export const boardSchema = z.object({
 
 export const boardNodeTypeSchema = z.enum(['note']);
 
-export const noteDataSchema = z.object({ text: z.string().max(5000).default('') });
+export const noteDataSchema = z.object({
+  text: z.string().max(5000).default(''),
+  fill: colourValueSchema.nullable().default(null),
+});
 
 export const boardNodeSchema = z.object({
   id: z.string().min(1),
@@ -50,6 +56,8 @@ export const boardInputSchema = z.object({
   name: boardSchema.shape.name,
   backgroundColor: hexColorSchema.optional(),
   gridColor: hexColorSchema.optional(),
+  backgroundRef: colourRefSchema.nullable().optional(),
+  gridRef: colourRefSchema.nullable().optional(),
   unit: boardUnitSchema.optional(),
   unitScale: boardSchema.shape.unitScale.optional(),
 });
@@ -59,6 +67,8 @@ export const boardPatchSchema = z
     name: boardSchema.shape.name,
     backgroundColor: hexColorSchema,
     gridColor: hexColorSchema,
+    backgroundRef: colourRefSchema.nullable(),
+    gridRef: colourRefSchema.nullable(),
     unit: boardUnitSchema,
     unitScale: boardSchema.shape.unitScale,
   })
@@ -73,6 +83,7 @@ export const boardChangesSchema = z.object({
 
 export const DEFAULT_BOARD_BACKGROUND = '#f4f4f5';
 export const DEFAULT_BOARD_GRID = '#808080';
+export const DEFAULT_NOTE_FILL = '#fde68a';
 export const DEFAULT_NOTE_SIZE = { width: 200, height: 120 };
 export const MIN_NOTE_SIZE = { width: 20, height: 20 };
 export const DEFAULT_BOARD_UNIT: BoardUnit = 'm';

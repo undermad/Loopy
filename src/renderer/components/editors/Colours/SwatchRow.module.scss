@@ -1,0 +1,107 @@
+@use '../../../styles/mixins' as *;
+
+.row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+  overflow-x: auto;
+}
+
+.swatch {
+  @include stack(var(--space-1));
+
+  position: relative;
+  min-width: 96px;
+  padding: var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  flex: 1;
+
+  &.selected {
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    border-color: var(--color-accent);
+  }
+}
+
+.block {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  position: relative;
+  height: 96px;
+  padding: var(--space-1);
+  border: 1px solid color-mix(in srgb, var(--color-fg) 15%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.baseTag {
+  padding: 1px var(--space-1);
+  border-radius: var(--radius-sm);
+  background: rgb(0 0 0 / 35%);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.copy {
+  position: absolute;
+  background: rgb(255 255 255 / 80%);
+  color: #1a1a1a;
+  top: calc(var(--space-1) + 2px);
+  right: calc(var(--space-1) + 2px);
+}
+
+.hex {
+  font-family: var(--font-family-mono);
+  text-transform: lowercase;
+}
+
+.base {
+  @include row(var(--space-1));
+
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.remove {
+  position: absolute;
+  background: rgb(255 255 255 / 80%);
+  color: #1a1a1a;
+  top: calc(var(--space-1) + 2px);
+  left: calc(var(--space-1) + 2px);
+}
+
+.add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  min-height: 96px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-fg-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}

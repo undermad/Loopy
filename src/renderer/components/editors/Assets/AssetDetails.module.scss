@@ -1,0 +1,97 @@
+@use '../../../styles/mixins' as *;
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  min-height: 0;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.scroll {
+  min-height: 0;
+  flex: 1;
+}
+
+.viewport {
+  @include stack(var(--space-3));
+
+  padding: var(--space-3);
+}
+
+.previewBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  color: var(--color-fg-muted);
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+
+.preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+
+  &:is(svg) {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+.media {
+  width: 100%;
+  max-height: 100%;
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: var(--font-size-sm);
+  grid-template-columns: auto 1fr;
+
+  dt {
+    color: var(--color-fg-muted);
+  }
+
+  dd {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.tags {
+  @include row(var(--space-1));
+
+  flex-wrap: wrap;
+}
+
+.tag {
+  padding-right: 0;
+}
+
+.removeTag {
+  width: 18px;
+  min-width: 0;
+  height: 18px;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.actions {
+  @include row(var(--space-2));
+
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}

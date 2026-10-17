@@ -7,7 +7,7 @@ import {
 } from './layout';
 
 export interface WorkspaceTemplate {
-  id: 'planning' | 'design' | 'palette' | 'empty';
+  id: 'planning' | 'design' | 'palette' | 'assets' | 'empty';
   build: () => LayoutNode;
 }
 
@@ -23,12 +23,13 @@ export const workspaceTemplates: readonly WorkspaceTemplate[] = [
   { id: 'planning', build: () => split('row', [area('tickets'), area('ticket')], [0.7, 0.3]) },
   { id: 'design', build: () => split('row', [area('board'), area('properties')], [0.75, 0.25]) },
   { id: 'palette', build: () => area('colours') },
+  { id: 'assets', build: () => area('assets') },
   { id: 'empty', build: () => area('empty') },
 ];
 
 export function buildWorkspace(templateId: WorkspaceTemplate['id'], name: string): Workspace {
   const template =
-    workspaceTemplates.find((candidate) => candidate.id === templateId) ?? workspaceTemplates[3];
+    workspaceTemplates.find((candidate) => candidate.id === templateId) ?? workspaceTemplates[4];
   if (!template) throw new Error('No workspace templates');
   return { id: crypto.randomUUID(), name, root: template.build() };
 }
@@ -47,6 +48,7 @@ export interface PresetNames {
   planning: string;
   design: string;
   palette: string;
+  assets: string;
   default: string;
 }
 
@@ -54,6 +56,7 @@ export function builtInLayoutPresets(names: PresetNames): LayoutPreset[] {
   const planning = () => buildWorkspace('planning', names.planning);
   const design = () => buildWorkspace('design', names.design);
   const palette = () => buildWorkspace('palette', names.palette);
+  const assets = () => buildWorkspace('assets', names.assets);
   const preset = (id: string, name: string, workspaces: Workspace[]): LayoutPreset => ({
     schemaVersion: LAYOUT_SCHEMA_VERSION,
     id,
@@ -61,14 +64,15 @@ export function builtInLayoutPresets(names: PresetNames): LayoutPreset[] {
     workspaces,
   });
   return [
-    preset('default', names.default, [planning(), design(), palette()]),
+    preset('default', names.default, [planning(), design(), palette(), assets()]),
     preset('planning', names.planning, [planning()]),
     preset('design', names.design, [design()]),
     preset('palette', names.palette, [palette()]),
+    preset('assets', names.assets, [assets()]),
   ];
 }
 
-export const BUILT_IN_LAYOUT_IDS = ['default', 'planning', 'design', 'palette'] as const;
+export const BUILT_IN_LAYOUT_IDS = ['default', 'planning', 'design', 'palette', 'assets'] as const;
 
 export function isBuiltInLayoutId(id: string): boolean {
   return (BUILT_IN_LAYOUT_IDS as readonly string[]).includes(id);

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { Board, BoardUnit } from '@shared/board';
 import { BOARD_UNITS, updateBoard } from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
-import { ColorPicker, Field, Input, Select } from '@renderer/ui';
+import { Field, Input, Select } from '@renderer/ui';
+import { ProjectColourPicker } from '../../ProjectColourPicker/ProjectColourPicker';
 import { NumberField } from './NumberField';
 import styles from './PropertiesEditor.module.scss';
 
@@ -33,20 +34,22 @@ export function BoardProperties({ board }: { board: Board }) {
         />
       </Field>
       <div className={styles['swatchRow']}>
-        <ColorPicker
+        <ProjectColourPicker
           size="sm"
-          value={board.backgroundColor}
+          value={{ hex: board.backgroundColor, ref: board.backgroundRef }}
           label={t('properties.background')}
-          onChange={(backgroundColor) => void updateBoard(board.id, { backgroundColor })}
+          onChange={(value) =>
+            void updateBoard(board.id, { backgroundColor: value.hex, backgroundRef: value.ref })
+          }
         />
         <span>{t('properties.background')}</span>
       </div>
       <div className={styles['swatchRow']}>
-        <ColorPicker
+        <ProjectColourPicker
           size="sm"
-          value={board.gridColor}
+          value={{ hex: board.gridColor, ref: board.gridRef }}
           label={t('properties.gridColor')}
-          onChange={(gridColor) => void updateBoard(board.id, { gridColor })}
+          onChange={(value) => void updateBoard(board.id, { gridColor: value.hex, gridRef: value.ref })}
         />
         <span>{t('properties.gridColor')}</span>
       </div>

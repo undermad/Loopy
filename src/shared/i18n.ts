@@ -1,3 +1,5 @@
+import assets from './locales/en/assets.json';
+import colours from './locales/en/colours.json';
 import common from './locales/en/common.json';
 import editors from './locales/en/editors.json';
 import settings from './locales/en/settings.json';
@@ -9,7 +11,7 @@ export type Language = (typeof SUPPORTED_LANGUAGES)[number];
 export const DEFAULT_LANGUAGE: Language = 'en';
 
 export const resources = {
-  en: { common, settings, shell, welcome, editors },
+  en: { common, settings, shell, welcome, editors, colours, assets },
 } as const;
 
 export type Namespace = keyof (typeof resources)['en'];

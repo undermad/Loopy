@@ -1,7 +1,16 @@
-import { KanbanSquare, LayoutTemplate, Palette, PenTool, SlidersHorizontal, Ticket } from 'lucide-react';
+import {
+  FolderOpen,
+  KanbanSquare,
+  LayoutTemplate,
+  Palette,
+  PenTool,
+  SlidersHorizontal,
+  Ticket,
+} from 'lucide-react';
 import { registerEditor } from '@renderer/lib/editors';
+import { AssetsEditor } from './Assets/AssetsEditor';
 import { BoardEditor } from './Board/BoardEditor';
-import { ColoursEditor } from './ColoursEditor';
+import { ColoursEditor } from './Colours/ColoursEditor';
 import { EmptyEditor } from './EmptyEditor';
 import { PropertiesEditor } from './Properties/PropertiesEditor';
 import { TicketEditor } from './Tickets/TicketEditor';
@@ -28,6 +37,15 @@ export function registerEditors(): void {
     icon: Palette,
     component: ColoursEditor,
     category: 'design',
+    defaultState: () => ({ tab: 'wheel' }),
+  });
+  registerEditor({
+    id: 'assets',
+    titleKey: 'types.assets',
+    icon: FolderOpen,
+    component: AssetsEditor,
+    category: 'design',
+    defaultState: () => ({ view: 'folders', search: '' }),
   });
   registerEditor({
     id: 'board',

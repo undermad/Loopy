@@ -97,10 +97,29 @@ describe('preload API coverage', () => {
     name: 'Board',
     backgroundColor: '#ffffff',
     gridColor: '#808080',
+    backgroundRef: null,
+    gridRef: null,
     unit: 'm',
     unitScale: 100,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
+  };
+  const palette = {
+    id: 'p',
+    name: 'Palette',
+    harmony: 'analogous',
+    baseIndex: 2,
+    source: 'wheel',
+    colours: [{ id: 'c', name: '', hex: '#ff0000' }],
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
+  };
+  const assets = {
+    folders: [
+      { id: 'f', parentId: null, name: 'Images', createdAt: project.createdAt, updatedAt: project.updatedAt },
+    ],
+    assets: [],
+    settings: { dropTarget: 'byKind', kindFolders: {} },
   };
   const layout = {
     schemaVersion: 1,
@@ -154,6 +173,22 @@ describe('preload API coverage', () => {
     ['deleteBoard', ['b'], []],
     ['readBoard', ['b'], { board, nodes: [], edges: [] }],
     ['applyBoardChanges', ['b', {}], { board, nodes: [], edges: [] }],
+    ['listPalettes', [], [palette]],
+    ['createPalette', [{ name: 'P', colours: [{ hex: '#ff0000' }] }], palette],
+    ['updatePalette', ['p', { name: 'P2' }], palette],
+    ['deletePalette', ['p'], []],
+    ['getAssets', [], assets],
+    ['createAssetFolder', [{ name: 'F' }], assets],
+    ['updateAssetFolder', ['f', { name: 'F2' }], assets],
+    ['deleteAssetFolder', ['f'], assets],
+    ['importAssets', [{ target: 'auto', files: [] }], { status: 'imported', snapshot: assets, ids: [] }],
+    ['pickAssets', ['auto'], { status: 'cancelled' }],
+    ['updateAsset', ['a', { name: 'A' }], assets],
+    ['moveAssets', [['a'], null], assets],
+    ['deleteAssets', [['a']], assets],
+    ['exportAsset', ['a'], { status: 'exported' }],
+    ['setAssetSettings', [{ dropTarget: 'root' }], assets],
+    ['pickScreenColour', [], '#123456'],
   ];
 
   it.each(cases)('%s forwards its arguments and validates the reply', async (method, args, reply) => {

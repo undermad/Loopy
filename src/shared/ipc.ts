@@ -3,7 +3,26 @@ import { appSettingsSchema, type AppSettings, type AppSettingsPatch } from './ap
 import { recentProjectSchema } from './device-state';
 import { layoutPresetSchema, workspacesSchema, type LayoutPreset } from './layout';
 import { projectInfoSchema, projectNameSchema, type ProjectInfo } from './project';
-import { themeSchema, type Theme } from './theme';
+import { hexColorSchema, themeSchema, type Theme } from './theme';
+import {
+  assetPickResultSchema,
+  assetsSnapshotSchema,
+  type AssetImport,
+  type AssetPatch,
+  type AssetPickResult,
+  type AssetSettingsPatch,
+  type AssetsSnapshot,
+  type AssetTarget,
+  type FolderInput,
+  type FolderPatch,
+} from './assets';
+import {
+  paletteListSchema,
+  paletteSchema,
+  type Palette,
+  type PaletteInput,
+  type PalettePatch,
+} from './colours';
 import {
   boardListSchema,
   boardSchema,
@@ -95,6 +114,24 @@ export const IpcChannel = {
   boardsDelete: 'boards:delete',
   boardsRead: 'boards:read',
   boardsApplyChanges: 'boards:applyChanges',
+  palettesList: 'palettes:list',
+  palettesCreate: 'palettes:create',
+  palettesUpdate: 'palettes:update',
+  palettesDelete: 'palettes:delete',
+  assetsSnapshot: 'assets:snapshot',
+  assetsCreateFolder: 'assets:createFolder',
+  assetsUpdateFolder: 'assets:updateFolder',
+  assetsDeleteFolder: 'assets:deleteFolder',
+  assetsImport: 'assets:import',
+  assetsPick: 'assets:pick',
+  assetsUpdate: 'assets:update',
+  assetsMove: 'assets:move',
+  assetsDelete: 'assets:delete',
+  assetsExport: 'assets:export',
+  assetsSettings: 'assets:settings',
+  colourPickScreen: 'colour:pickScreen',
+  pickerStart: 'picker:start',
+  pickerDone: 'picker:done',
 } as const;
 
 export const appVersionSchema = z.object({ app: z.string().min(1), electron: z.string().min(1) });
@@ -107,6 +144,7 @@ export const layoutIdSchema = z.string().min(1);
 export const layoutListSchema = z.array(layoutPresetSchema);
 export const booleanSchema = z.boolean();
 export const editCommandSchema = z.enum(['undo', 'redo', 'cut', 'copy', 'paste', 'delete', 'selectAll']);
+export const pickedColourSchema = hexColorSchema.nullable();
 
 export const exportResultSchema = z.object({ status: z.enum(['exported', 'cancelled']) });
 
@@ -229,6 +267,22 @@ export interface LoopyApi {
   deleteBoard: (id: string) => Promise<Board[]>;
   readBoard: (id: string) => Promise<BoardSnapshot>;
   applyBoardChanges: (id: string, changes: BoardChanges) => Promise<BoardSnapshot>;
+  listPalettes: () => Promise<Palette[]>;
+  createPalette: (input: PaletteInput) => Promise<Palette>;
+  updatePalette: (id: string, patch: PalettePatch) => Promise<Palette>;
+  deletePalette: (id: string) => Promise<Palette[]>;
+  getAssets: () => Promise<AssetsSnapshot>;
+  createAssetFolder: (input: FolderInput) => Promise<AssetsSnapshot>;
+  updateAssetFolder: (id: string, patch: FolderPatch) => Promise<AssetsSnapshot>;
+  deleteAssetFolder: (id: string) => Promise<AssetsSnapshot>;
+  importAssets: (input: AssetImport) => Promise<AssetPickResult>;
+  pickAssets: (target: AssetTarget) => Promise<AssetPickResult>;
+  updateAsset: (id: string, patch: AssetPatch) => Promise<AssetsSnapshot>;
+  moveAssets: (ids: string[], folderId: string | null) => Promise<AssetsSnapshot>;
+  deleteAssets: (ids: string[]) => Promise<AssetsSnapshot>;
+  exportAsset: (id: string) => Promise<ExportResult>;
+  setAssetSettings: (patch: AssetSettingsPatch) => Promise<AssetsSnapshot>;
+  pickScreenColour: () => Promise<string | null>;
 }
 
 export const entityIdSchema = z.string().min(1);
@@ -236,4 +290,13 @@ export const labelIdsSchema = z.array(entityIdSchema);
 export const positionSchema = z.string().min(1);
 export const commentBodySchema = z.string().min(1).max(20_000);
 
-export { boardListSchema, boardSchema, boardSnapshotSchema, ticketsSnapshotSchema };
+export {
+  assetPickResultSchema,
+  assetsSnapshotSchema,
+  boardListSchema,
+  boardSchema,
+  boardSnapshotSchema,
+  paletteListSchema,
+  paletteSchema,
+  ticketsSnapshotSchema,
+};

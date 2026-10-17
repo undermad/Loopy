@@ -9,7 +9,7 @@ The shell follows Blender: a menu bar on top with workspace tabs, a screen made 
 
 ## Workspaces
 
-A workspace is a named tab with its own area tree. Click a tab to switch, double-click or use the context menu to rename, duplicate, move or delete it, and the `+` button adds one from a template: Planning, Design, Palette or Empty. Each workspace keeps its tree, its maximised area and every area's state while inactive.
+A workspace is a named tab with its own area tree. Click a tab to switch, double-click or use the context menu to rename, duplicate, move or delete it, and the `+` button adds one from a template: Planning, Design, Palette, Assets or Empty. Each workspace keeps its tree, its maximised area and every area's state while inactive.
 
 Workspaces are device state. `src/renderer/lib/workspaces` holds them and writes them to `state.json` through `state:set` 500 ms after the last change and on unload, so they come back after a restart whichever project is open.
 
@@ -46,6 +46,10 @@ The menu bar is a Radix Menubar rendered in the renderer. Edit commands go to th
 | Ctrl+PageUp   | Previous workspace          |
 | Ctrl+Space    | Maximise area under pointer |
 | F11           | Toggle fullscreen           |
+
+## File drops
+
+A file dropped anywhere in the window that no editor handles is added to the project's assets, into the folder the asset options choose for its kind, and a toast reports the count. The Assets and Colours editors handle their own drops first. See the assets page.
 
 ## Status bar
 

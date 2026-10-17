@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { NodeResizer, type NodeProps } from '@xyflow/react';
 import { MIN_NOTE_SIZE, noteDataSchema } from '@shared/board';
+import { readableTextColour } from '@renderer/lib/colour';
 import { useTranslation } from '@renderer/lib/i18n';
+import { useResolvedColour } from '@renderer/lib/palettes';
 import { cx } from '@renderer/ui';
 import styles from './NoteNode.module.scss';
 
@@ -14,6 +16,8 @@ export function NoteNode({ data, selected, dragging }: NodeProps & { data: NoteN
   const { t } = useTranslation('editors');
   const parsed = noteDataSchema.safeParse(data);
   const text = parsed.success ? parsed.data.text : '';
+  const fill = useResolvedColour(parsed.success ? parsed.data.fill : null);
+  const fillStyle = fill ? { background: fill, color: readableTextColour(fill) } : undefined;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(text);
   const area = useRef<HTMLTextAreaElement>(null);
@@ -36,6 +40,8 @@ export function NoteNode({ data, selected, dragging }: NodeProps & { data: NoteN
         editing && styles['editing'],
       )}
       tabIndex={0}
+      style={fillStyle}
+      data-fill={fill ?? undefined}
       onDoubleClick={() => {
         setDraft(text);
         setEditing(true);

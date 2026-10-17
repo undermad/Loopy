@@ -150,6 +150,50 @@ export const projectMigrations: SqlMigrations = [
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );`,
+  `CREATE TABLE palettes (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL CHECK (length(name) > 0),
+    harmony TEXT NOT NULL,
+    base_index INTEGER NOT NULL DEFAULT 2,
+    source TEXT NOT NULL DEFAULT 'wheel',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE palette_colours (
+    id TEXT PRIMARY KEY,
+    palette_id TEXT NOT NULL REFERENCES palettes(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL DEFAULT '',
+    hex TEXT NOT NULL
+  );
+  CREATE INDEX palette_colours_by_palette ON palette_colours(palette_id, position);
+  ALTER TABLE boards ADD COLUMN background_ref TEXT;
+  ALTER TABLE boards ADD COLUMN grid_ref TEXT;
+  CREATE TABLE asset_folders (
+    id TEXT PRIMARY KEY,
+    parent_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL,
+    name TEXT NOT NULL CHECK (length(name) > 0),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE INDEX asset_folders_by_parent ON asset_folders(parent_id);
+  ALTER TABLE assets ADD COLUMN folder_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL;
+  ALTER TABLE assets ADD COLUMN name TEXT NOT NULL DEFAULT 'asset';
+  ALTER TABLE assets ADD COLUMN kind TEXT NOT NULL DEFAULT 'other';
+  ALTER TABLE assets ADD COLUMN width INTEGER;
+  ALTER TABLE assets ADD COLUMN height INTEGER;
+  ALTER TABLE assets ADD COLUMN tags TEXT NOT NULL DEFAULT '[]';
+  ALTER TABLE assets ADD COLUMN updated_at TEXT NOT NULL DEFAULT '';
+  UPDATE assets SET updated_at = created_at WHERE updated_at = '';
+  CREATE INDEX assets_by_folder ON assets(folder_id, name);
+  INSERT INTO asset_folders (id, parent_id, name, created_at, updated_at) VALUES
+    ('folder-images', NULL, 'Images', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'),
+    ('folder-audio', NULL, 'Audio', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'),
+    ('folder-video', NULL, 'Video', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'),
+    ('folder-documents', NULL, 'Documents', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'),
+    ('folder-fonts', NULL, 'Fonts', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'),
+    ('folder-models', NULL, 'Models', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z'),
+    ('folder-archives', NULL, 'Archives', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;
