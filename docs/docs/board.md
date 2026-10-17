@@ -23,15 +23,17 @@ The Board editor is an infinite canvas built on React Flow. It anchors the Desig
 | Connect two notes | Drag from a note's handle to another note                                                 |
 | Delete            | Select and press Delete or Backspace                                                      |
 | Switch board      | The board dropdown in the header, which also creates, renames and deletes                 |
-| Background colour | The swatch in the header                                                                  |
+| Colours           | The background and grid swatches in the header, or the Properties panel                   |
 
 The viewport, grid, snap and minimap toggles are area state, so two areas can show one board at different zoom levels and the choice survives a workspace switch. The board's content, colour and units live in the project.
 
 ## Units and grid
 
-Every board has a unit (px, mm, cm, m or km) and a unit scale, the number of canvas pixels in one unit, as Blender has a length unit and a unit scale. Coordinates and sizes are stored in canvas pixels; the Properties panel converts them with `toUnits` and `fromUnits` from `src/renderer/lib/board`, so changing the scale rescales what every panel shows without touching the data. New boards use metres at 100 pixels per metre.
+Every board has a unit (px, mm, cm, m or km) and a scale in canvas pixels per unit, as Blender has a length unit and a unit scale. Coordinates and sizes are stored in canvas pixels; the Properties panel converts them with `toUnits` and `fromUnits` from `src/renderer/lib/board`, so changing the scale rescales what every panel shows without touching the data. New boards use metres at 100 pixels per metre. Choosing pixels sets the scale to 1 and locks it, so a 10 px note reads as 10 px.
 
-The grid is one unit per dot and ten units per line, and it is not resizable by hand. `gridStep` picks the power of ten that keeps dots at least sixteen screen pixels apart at the current zoom, so zooming in reveals finer dots and zooming out hides them, the way Blender's grid subdivides. Snapping uses the same step, so a snapped note always lands on a visible dot; with snapping off, moves are pixel exact.
+The grid is drawn by `Grid` in `src/renderer/components/editors/Board` as three line levels a decade apart, after Blender's world grid. `gridStep` picks the finest power of ten of the unit whose lines sit at least twelve screen pixels apart; that level fades in as you zoom closer, the next level up is a unit (or ten, or a hundred, depending on zoom) drawn a little wider, and the level above that wider still. When the fine level reaches 120 screen pixels it hands over: the finest lines become the unit lines without a visible jump, because `gridLevels` interpolates width and opacity with the same fade. The scheme has no fixed range, so the zoom runs from 1% to 2000% and the grid stays readable. Lines through the origin mark the axes.
+
+The grid colour is stored per board next to the background colour, picked from the header or the Properties panel, and drawn with opacity so one colour works on light and dark boards. Snapping uses the finest visible step, so a snapped note always lands on a line; with snapping off, moves are pixel exact.
 
 ## Properties
 
@@ -41,11 +43,11 @@ The header's panel button opens a Properties editor by splitting the board area 
 
 ## Model
 
-Project migration 3 adds `boards`, `board_nodes`, `board_edges` and an `assets` table reserved for images. Migration 5 adds `unit` and `unit_scale` to `boards`.
+Project migration 3 adds `boards`, `board_nodes`, `board_edges` and an `assets` table reserved for images. Migration 5 adds `unit` and `unit_scale` to `boards`; migration 6 adds `grid_color`.
 
 | Table         | Columns                                                                             |
 | ------------- | ----------------------------------------------------------------------------------- |
-| `boards`      | `id`, `name`, `background_color`, `unit`, `unit_scale`, timestamps                  |
+| `boards`      | `id`, `name`, `background_color`, `grid_color`, `unit`, `unit_scale`, timestamps    |
 | `board_nodes` | `id`, `board_id`, `type`, `x`, `y`, `width`, `height`, `z`, `data` JSON, timestamps |
 | `board_edges` | `id`, `board_id`, `source_id`, `target_id`, `data` JSON                             |
 

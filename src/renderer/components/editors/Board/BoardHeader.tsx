@@ -92,6 +92,12 @@ export function BoardHeader({
             label={t('board.background')}
             onChange={(backgroundColor) => void updateBoard(board.id, { backgroundColor })}
           />
+          <ColorPicker
+            size="sm"
+            value={board.gridColor}
+            label={t('board.gridColor')}
+            onChange={(gridColor) => void updateBoard(board.id, { gridColor })}
+          />
           <IconButton
             label={t('board.zoomOut')}
             size="sm"

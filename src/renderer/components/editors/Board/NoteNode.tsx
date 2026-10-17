@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NodeResizer, type NodeProps } from '@xyflow/react';
-import { noteDataSchema } from '@shared/board';
+import { MIN_NOTE_SIZE, noteDataSchema } from '@shared/board';
 import { useTranslation } from '@renderer/lib/i18n';
 import { cx } from '@renderer/ui';
 import styles from './NoteNode.module.scss';
@@ -50,8 +50,8 @@ export function NoteNode({ data, selected, dragging }: NodeProps & { data: NoteN
     >
       <NodeResizer
         isVisible={selected}
-        minWidth={120}
-        minHeight={80}
+        minWidth={MIN_NOTE_SIZE.width}
+        minHeight={MIN_NOTE_SIZE.height}
         lineClassName={styles['resizeLine'] ?? ''}
       />
       {editing ? (

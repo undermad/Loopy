@@ -1,12 +1,10 @@
 import { useState, type ComponentType } from 'react';
-import { noteDataSchema, type Board, type BoardNode, type BoardNodeType } from '@shared/board';
+import { MIN_NOTE_SIZE, noteDataSchema, type Board, type BoardNode, type BoardNodeType } from '@shared/board';
 import { commitChanges, fromUnits, toUnits } from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Field, TextArea } from '@renderer/ui';
 import { NumberField } from './NumberField';
 import styles from './PropertiesEditor.module.scss';
-
-const MIN_SIZE = { width: 120, height: 80 };
 
 function TransformSection({ board, node }: { board: Board; node: BoardNode }) {
   const { t } = useTranslation('editors');
@@ -38,7 +36,7 @@ function TransformSection({ board, node }: { board: Board; node: BoardNode }) {
         <NumberField
           label={label('width')}
           value={toUnits(node.width, board)}
-          min={toUnits(MIN_SIZE.width, board)}
+          min={toUnits(MIN_NOTE_SIZE.width, board)}
           onCommit={(value) => {
             patch({ width: fromUnits(value, board) });
           }}
@@ -46,7 +44,7 @@ function TransformSection({ board, node }: { board: Board; node: BoardNode }) {
         <NumberField
           label={label('height')}
           value={toUnits(node.height, board)}
-          min={toUnits(MIN_SIZE.height, board)}
+          min={toUnits(MIN_NOTE_SIZE.height, board)}
           onCommit={(value) => {
             patch({ height: fromUnits(value, board) });
           }}

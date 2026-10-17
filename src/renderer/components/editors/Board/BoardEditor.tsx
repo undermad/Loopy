@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Background,
-  BackgroundVariant,
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
@@ -33,6 +31,7 @@ import { areaActions, useActiveWorkspace } from '@renderer/lib/workspaces';
 import { EmptyState, Spinner } from '@renderer/ui';
 import { AreaHeaderContent } from '../../Shell/AreaHeaderContent';
 import { BoardHeader } from './BoardHeader';
+import { Grid } from './Grid';
 import { NoteNode } from './NoteNode';
 import { newEdge, newNote, readViewport, settleNodeChanges, toFlowEdges, toFlowNodes } from './boardFlow';
 import styles from './BoardEditor.module.scss';
@@ -156,19 +155,14 @@ function Canvas({ boardId, state, setState }: { boardId: string } & Pick<EditorP
       selectionOnDrag
       panOnDrag={[1, 2]}
       zoomOnDoubleClick={false}
-      minZoom={0.05}
-      maxZoom={8}
+      minZoom={0.01}
+      maxZoom={20}
       deleteKeyCode={['Backspace', 'Delete']}
       proOptions={{ hideAttribution: true }}
       className={styles['flow']}
       style={{ background: snapshot.board.backgroundColor }}
     >
-      {grid ? (
-        <>
-          <Background id="minor" variant={BackgroundVariant.Dots} gap={step} size={1.5} />
-          <Background id="major" variant={BackgroundVariant.Lines} gap={step * 10} lineWidth={1} />
-        </>
-      ) : null}
+      {grid ? <Grid board={snapshot.board} /> : null}
       {minimap ? <MiniMap pannable zoomable className={styles['minimap']} /> : null}
     </ReactFlow>
   );

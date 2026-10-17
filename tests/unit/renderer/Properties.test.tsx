@@ -55,7 +55,7 @@ describe('PropertiesEditor', () => {
     await user.type(name, 'Level 1{Enter}');
     expect(api.updateBoard).toHaveBeenCalledWith(board.id, { name: 'Level 1' });
 
-    const scale = screen.getByLabelText(/Unit scale/);
+    const scale = screen.getByLabelText(/Pixels per unit/);
     expect(scale).toHaveValue(100);
     await user.clear(scale);
     await user.type(scale, '50{Enter}');
@@ -64,6 +64,17 @@ describe('PropertiesEditor', () => {
     await user.click(screen.getByRole('combobox', { name: 'Unit' }));
     await user.click(await screen.findByRole('option', { name: 'Centimetres' }));
     expect(api.updateBoard).toHaveBeenCalledWith(board.id, { unit: 'cm' });
+
+    await user.click(screen.getByRole('combobox', { name: 'Unit' }));
+    await user.click(await screen.findByRole('option', { name: 'Pixels' }));
+    expect(api.updateBoard).toHaveBeenCalledWith(board.id, { unit: 'px', unitScale: 1 });
+    expect(await screen.findByLabelText(/Pixels per unit/)).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'Grid colour' }));
+    const hex = await screen.findByRole('textbox', { name: 'Grid colour' });
+    await user.clear(hex);
+    await user.type(hex, '336699');
+    expect(api.updateBoard).toHaveBeenLastCalledWith(board.id, { gridColor: '#336699' });
   });
 
   it('shows a selected note in board units and writes edits back in pixels', async () => {
@@ -96,7 +107,7 @@ describe('PropertiesEditor', () => {
     await user.clear(width);
     await user.type(width, '0.5{Enter}');
     expect(api.applyBoardChanges).toHaveBeenLastCalledWith(board.id, {
-      upsertNodes: [expect.objectContaining({ id: 'n1', width: 120 }) as object],
+      upsertNodes: [expect.objectContaining({ id: 'n1', width: 50 }) as object],
     });
 
     const y = screen.getByLabelText('Y (m)');

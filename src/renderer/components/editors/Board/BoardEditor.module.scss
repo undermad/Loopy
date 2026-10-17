@@ -26,8 +26,6 @@
   --xy-selection-border: 1px solid var(--color-accent);
   --xy-node-boxshadow-selected: 0 0 0 2px var(--color-accent);
   --xy-minimap-background-color: var(--color-surface-raised);
-  --xy-background-pattern-dots-color: color-mix(in srgb, var(--color-fg) 22%, transparent);
-  --xy-background-pattern-lines-color: color-mix(in srgb, var(--color-fg) 10%, transparent);
 
   min-height: 0;
   flex: 1;
@@ -36,4 +34,12 @@
 .minimap {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }

@@ -114,6 +114,7 @@ export const projectMigrations: SqlMigrations = [
   DROP TABLE ticket_labels_v4;`,
   `ALTER TABLE boards ADD COLUMN unit TEXT NOT NULL DEFAULT 'm' CHECK (unit IN ('px', 'mm', 'cm', 'm', 'km'));
   ALTER TABLE boards ADD COLUMN unit_scale REAL NOT NULL DEFAULT 100 CHECK (unit_scale > 0);`,
+  `ALTER TABLE boards ADD COLUMN grid_color TEXT NOT NULL DEFAULT '#808080';`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

@@ -30,6 +30,7 @@ describe('board flow helpers', () => {
         id: 'board',
         name: 'B',
         backgroundColor: '#ffffff',
+        gridColor: '#808080',
         unit: 'm' as const,
         unitScale: 100,
         createdAt: '',

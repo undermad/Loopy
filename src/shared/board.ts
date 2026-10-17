@@ -7,6 +7,7 @@ export const boardSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1).max(80),
   backgroundColor: hexColorSchema,
+  gridColor: hexColorSchema,
   unit: boardUnitSchema,
   unitScale: z.number().positive().max(1_000_000),
   createdAt: z.iso.datetime(),
@@ -48,6 +49,7 @@ export const boardListSchema = z.array(boardSchema);
 export const boardInputSchema = z.object({
   name: boardSchema.shape.name,
   backgroundColor: hexColorSchema.optional(),
+  gridColor: hexColorSchema.optional(),
   unit: boardUnitSchema.optional(),
   unitScale: boardSchema.shape.unitScale.optional(),
 });
@@ -56,6 +58,7 @@ export const boardPatchSchema = z
   .object({
     name: boardSchema.shape.name,
     backgroundColor: hexColorSchema,
+    gridColor: hexColorSchema,
     unit: boardUnitSchema,
     unitScale: boardSchema.shape.unitScale,
   })
@@ -69,7 +72,9 @@ export const boardChangesSchema = z.object({
 });
 
 export const DEFAULT_BOARD_BACKGROUND = '#f4f4f5';
+export const DEFAULT_BOARD_GRID = '#808080';
 export const DEFAULT_NOTE_SIZE = { width: 200, height: 120 };
+export const MIN_NOTE_SIZE = { width: 20, height: 20 };
 export const DEFAULT_BOARD_UNIT: BoardUnit = 'm';
 export const DEFAULT_BOARD_UNIT_SCALE = 100;
 

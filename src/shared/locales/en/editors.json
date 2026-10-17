@@ -20,7 +20,7 @@
     "name": "Name",
     "background": "Background colour",
     "unit": "Unit",
-    "unitScale": "Unit scale",
+    "unitScale": "Pixels per unit",
     "position": "Position",
     "size": "Size",
     "x": "X",
@@ -36,7 +36,8 @@
       "cm": "Centimetres",
       "m": "Metres",
       "km": "Kilometres"
-    }
+    },
+    "gridColor": "Grid colour"
   },
   "colours": {
     "soon": "Project colour schemes arrive with a later release."
@@ -141,6 +142,6 @@
     "editHint": "Double-click a note to edit it. Drag it to move, select it to resize.",
     "snap": "Snap to grid",
     "properties": "Properties panel",
-    "unitScaleHint": "Canvas pixels per unit"
+    "gridColor": "Grid colour"
   }
 }

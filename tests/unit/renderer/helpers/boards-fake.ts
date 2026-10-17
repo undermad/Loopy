@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 import {
   DEFAULT_BOARD_BACKGROUND,
+  DEFAULT_BOARD_GRID,
   DEFAULT_BOARD_UNIT,
   DEFAULT_BOARD_UNIT_SCALE,
   boardChangesSchema,
@@ -32,6 +33,7 @@ export function createBoardsFake() {
         id: `board-${String(data.boards.length + 1)}`,
         name: input.name,
         backgroundColor: input.backgroundColor ?? DEFAULT_BOARD_BACKGROUND,
+        gridColor: input.gridColor ?? DEFAULT_BOARD_GRID,
         unit: input.unit ?? DEFAULT_BOARD_UNIT,
         unitScale: input.unitScale ?? DEFAULT_BOARD_UNIT_SCALE,
         createdAt: stamp,
@@ -47,6 +49,7 @@ export function createBoardsFake() {
         ...snapshot.board,
         name: patch.name ?? snapshot.board.name,
         backgroundColor: patch.backgroundColor ?? snapshot.board.backgroundColor,
+        gridColor: patch.gridColor ?? snapshot.board.gridColor,
         unit: patch.unit ?? snapshot.board.unit,
         unitScale: patch.unitScale ?? snapshot.board.unitScale,
       };

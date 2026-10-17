@@ -8,6 +8,7 @@ export interface NumberFieldProps {
   min?: number;
   step?: number;
   digits?: number;
+  disabled?: boolean;
 }
 
 function format(value: number, digits: number): string {
@@ -15,7 +16,15 @@ function format(value: number, digits: number): string {
   return String(Object.is(rounded, -0) ? 0 : rounded);
 }
 
-export function NumberField({ label, value, onCommit, min, step = 0.1, digits = 3 }: NumberFieldProps) {
+export function NumberField({
+  label,
+  value,
+  onCommit,
+  min,
+  step = 0.1,
+  digits = 3,
+  disabled = false,
+}: NumberFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? format(value, digits);
 
@@ -37,6 +46,7 @@ export function NumberField({ label, value, onCommit, min, step = 0.1, digits = 
         step={step}
         {...(min !== undefined ? { min } : {})}
         value={shown}
+        disabled={disabled}
         onChange={(event) => {
           setDraft(event.target.value);
         }}

@@ -41,20 +41,33 @@ export function BoardProperties({ board }: { board: Board }) {
         />
         <span>{t('properties.background')}</span>
       </div>
+      <div className={styles['swatchRow']}>
+        <ColorPicker
+          size="sm"
+          value={board.gridColor}
+          label={t('properties.gridColor')}
+          onChange={(gridColor) => void updateBoard(board.id, { gridColor })}
+        />
+        <span>{t('properties.gridColor')}</span>
+      </div>
       <Field label={t('properties.unit')}>
         <Select
           size="sm"
           value={board.unit}
           aria-label={t('properties.unit')}
           options={BOARD_UNITS.map((unit) => ({ value: unit, label: t(`properties.units.${unit}`) }))}
-          onValueChange={(unit) => void updateBoard(board.id, { unit: unit as BoardUnit })}
+          onValueChange={(value) => {
+            const unit = value as BoardUnit;
+            void updateBoard(board.id, unit === 'px' ? { unit, unitScale: 1 } : { unit });
+          }}
         />
       </Field>
       <NumberField
-        label={`${t('properties.unitScale')} (${t('board.unitScaleHint')})`}
+        label={t('properties.unitScale')}
         value={board.unitScale}
         min={0.001}
         step={1}
+        disabled={board.unit === 'px'}
         onCommit={(unitScale) => void updateBoard(board.id, { unitScale })}
       />
     </section>

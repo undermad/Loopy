@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import {
   DEFAULT_BOARD_BACKGROUND,
+  DEFAULT_BOARD_GRID,
   DEFAULT_BOARD_UNIT,
   DEFAULT_BOARD_UNIT_SCALE,
   boardChangesSchema,
@@ -31,7 +32,7 @@ function transaction<T>(db: DatabaseSync, work: () => T): T {
 }
 
 const BOARD_COLUMNS =
-  'id, name, background_color AS backgroundColor, unit, unit_scale AS unitScale, created_at AS createdAt, updated_at AS updatedAt';
+  'id, name, background_color AS backgroundColor, grid_color AS gridColor, unit, unit_scale AS unitScale, created_at AS createdAt, updated_at AS updatedAt';
 
 function parseJson(value: unknown): unknown {
   return typeof value === 'string' ? JSON.parse(value) : {};
@@ -46,11 +47,12 @@ export function createBoard(db: DatabaseSync, raw: unknown): Board {
   const stamp = now();
   const id = randomUUID();
   db.prepare(
-    'INSERT INTO boards (id, name, background_color, unit, unit_scale, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO boards (id, name, background_color, grid_color, unit, unit_scale, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
   ).run(
     id,
     input.name,
     input.backgroundColor ?? DEFAULT_BOARD_BACKGROUND,
+    input.gridColor ?? DEFAULT_BOARD_GRID,
     input.unit ?? DEFAULT_BOARD_UNIT,
     input.unitScale ?? DEFAULT_BOARD_UNIT_SCALE,
     stamp,
@@ -76,6 +78,10 @@ export function updateBoard(db: DatabaseSync, id: string, raw: unknown): Board {
   if (patch.backgroundColor !== undefined) {
     sets.push('background_color = ?');
     values.push(patch.backgroundColor);
+  }
+  if (patch.gridColor !== undefined) {
+    sets.push('grid_color = ?');
+    values.push(patch.gridColor);
   }
   if (patch.unit !== undefined) {
     sets.push('unit = ?');
