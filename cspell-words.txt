@@ -1,4 +1,6 @@
+cimode
 commitlint
+culori
 dialogs
 docusaurus
 domcontentloaded
@@ -8,6 +10,7 @@ fontsource
 frontmatter
 gitleaks
 knip
+lingui
 linted
 lintstagedrc
 lucide
@@ -19,6 +22,7 @@ radix
 secretlint
 servernum
 stylelint
+tinykeys
 undermad
 unstub
 vars
