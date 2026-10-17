@@ -22,7 +22,7 @@ import { EmptyState, Spinner } from '@renderer/ui';
 import { AreaHeaderContent } from '../../Shell/AreaHeaderContent';
 import { BoardHeader } from './BoardHeader';
 import { NoteNode } from './NoteNode';
-import { newEdge, newNote, nodeFromFlow, readViewport, toFlowEdges, toFlowNodes } from './boardFlow';
+import { newEdge, newNote, readViewport, settleNodeChanges, toFlowEdges, toFlowNodes } from './boardFlow';
 import styles from './BoardEditor.module.scss';
 
 const nodeTypes = { note: NoteNode };
@@ -56,25 +56,14 @@ function Canvas({ boardId, state, setState }: { boardId: string } & Pick<EditorP
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       if (!snapshot) return;
-      const next = applyNodeChanges(changes, nodes);
-      const removed = changes.filter((change) => change.type === 'remove').map((change) => change.id);
-      const settled: string[] = [];
-      for (const change of changes) {
-        if (change.type === 'position' || change.type === 'dimensions') {
-          const flowNode = next.find((candidate) => candidate.id === change.id);
-          if (flowNode) pending.current.set(change.id, flowNode);
-          const finished = change.type === 'position' ? change.dragging === false : change.resizing === false;
-          if (finished) settled.push(change.id);
-        }
-      }
-      const settledNodes = settled.flatMap((id) => {
-        const flowNode = pending.current.get(id);
-        const original = snapshot.nodes.find((candidate) => candidate.id === id);
-        pending.current.delete(id);
-        return flowNode && original ? [nodeFromFlow(original, flowNode)] : [];
-      });
-      if (settledNodes.length > 0 || removed.length > 0) {
-        void commitChanges(boardId, { upsertNodes: settledNodes, removeNodeIds: removed });
+      const { updates, removed } = settleNodeChanges(
+        changes,
+        applyNodeChanges(changes, nodes),
+        snapshot.nodes,
+        pending.current,
+      );
+      if (updates.length > 0 || removed.length > 0) {
+        void commitChanges(boardId, { upsertNodes: updates, removeNodeIds: removed });
       }
     },
     [boardId, nodes, snapshot],
