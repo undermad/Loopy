@@ -25,7 +25,7 @@ description: One paragraph per tool and why it is in the repository.
 
 **husky** installs the git hooks, **lint-staged** runs tools on staged files only, **commitlint** enforces the commit format.
 
-**dotenv** loads `.env` in the main process; **zod** validates it and every IPC payload and project file.
+**dotenv** loads `.env` in the main process; **zod** validates it, every IPC payload, the settings and state files and project metadata.
 
 **Dependabot** opens weekly grouped updates for npm and GitHub Actions.
 

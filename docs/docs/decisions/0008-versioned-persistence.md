@@ -15,3 +15,5 @@ Every project file carries `schemaVersion`. Loading runs migrations up to the cu
 ## Consequences
 
 A format change always adds a migration and a test that loads a file from the previous version. The migration runner is tested independently of the current schema.
+
+ADR [0014](./0014-sqlite-project-file.md) moves project files to SQLite with `user_version` and SQL migrations. The JSON runner described here now serves the settings and device state files of ADR [0015](./0015-app-state-json.md).

@@ -13,3 +13,9 @@ mac:
   category: public.app-category.productivity
 linux:
   target: AppImage
+fileAssociations:
+  - ext: loopy
+    name: Loopy Project
+    description: Loopy project
+    mimeType: application/x-loopy
+    role: Editor
