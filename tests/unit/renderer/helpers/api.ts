@@ -6,11 +6,20 @@ import {
   type AppSettingsPatch,
 } from '@shared/app-settings';
 import type { RecentProject } from '@shared/device-state';
-import type { ColorScheme, LoopyApi, ProjectState, ProjectSummary } from '@shared/ipc';
+import type {
+  ColorScheme,
+  LoopyApi,
+  ProjectState,
+  ProjectSummary,
+  ShellState,
+  ShellStatePatch,
+} from '@shared/ipc';
+import type { LayoutPreset } from '@shared/layout';
 import type { ProjectInfo } from '@shared/project';
 import { builtInThemes, type Theme } from '@shared/theme';
 import { bootstrap } from '@renderer/bootstrap';
 import { resetProjectStore } from '@renderer/lib/project';
+import { resetWorkspacesStore } from '@renderer/lib/workspaces';
 import { resetSettingsStore } from '@renderer/lib/settings';
 import { resetThemeStore } from '@renderer/lib/theme';
 
@@ -20,6 +29,8 @@ export interface FakeApi extends LoopyApi {
   projects: ProjectSummary[];
   recent: RecentProject[];
   current: ProjectInfo | null;
+  shell: ShellState;
+  layouts: LayoutPreset[];
   emitSettings: (settings: AppSettings) => void;
   emitNativeTheme: (scheme: ColorScheme) => void;
   emitProject: () => void;
@@ -41,6 +52,8 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     projects: [],
     recent: [],
     current: null,
+    shell: { workspaces: null, statusBar: true },
+    layouts: [],
     getAppVersion: vi.fn(() => Promise.resolve({ app: '0.1.0', electron: '44.8.0' })),
     getSettings: vi.fn(() => Promise.resolve(api.settings)),
     setSettings: vi.fn((patch: AppSettingsPatch) => {
@@ -104,6 +117,27 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
       projectListeners.add(listener);
       return () => projectListeners.delete(listener);
     }),
+    getShellState: vi.fn(() => Promise.resolve(api.shell)),
+    setShellState: vi.fn((patch: ShellStatePatch) => {
+      api.shell = {
+        workspaces: patch.workspaces === undefined ? api.shell.workspaces : patch.workspaces,
+        statusBar: patch.statusBar ?? api.shell.statusBar,
+      };
+      return Promise.resolve(api.shell);
+    }),
+    listLayouts: vi.fn(() => Promise.resolve(api.layouts)),
+    saveLayout: vi.fn((layout: LayoutPreset) => {
+      api.layouts = [...api.layouts.filter((candidate) => candidate.id !== layout.id), layout];
+      return Promise.resolve(layout);
+    }),
+    deleteLayout: vi.fn((id: string) => {
+      api.layouts = api.layouts.filter((candidate) => candidate.id !== id);
+      return Promise.resolve();
+    }),
+    exportLayout: vi.fn(() => Promise.resolve({ status: 'exported' as const })),
+    importLayout: vi.fn(() => Promise.resolve({ status: 'cancelled' as const })),
+    toggleFullscreen: vi.fn(() => Promise.resolve(true)),
+    editCommand: vi.fn(() => Promise.resolve()),
     emitSettings: (settings) => {
       settingsListeners.forEach((listener) => {
         listener(settings);
@@ -127,6 +161,7 @@ export async function bootTestApp(overrides: Partial<AppSettings> = {}, scheme: 
   resetSettingsStore();
   resetThemeStore();
   resetProjectStore();
+  resetWorkspacesStore();
   const api = createFakeApi(overrides, scheme);
   window.loopy = api;
   await bootstrap(api);

@@ -30,7 +30,8 @@
     "documentation": "Documentation",
     "shortcuts": "Keyboard shortcuts",
     "reportIssue": "Report an issue",
-    "about": "About Loopy"
+    "about": "About Loopy",
+    "editCommands": "Edit"
   },
   "workspace": {
     "tabs": "Workspaces",
@@ -45,7 +46,13 @@
     "moveLeft": "Move left",
     "moveRight": "Move right",
     "next": "Next workspace",
-    "previous": "Previous workspace"
+    "previous": "Previous workspace",
+    "templates": {
+      "planning": "Planning",
+      "design": "Design",
+      "palette": "Palette",
+      "empty": "Empty"
+    }
   },
   "area": {
     "editor": "Editor type",
@@ -62,7 +69,15 @@
     "close": "Close area",
     "maximise": "Maximise area",
     "restore": "Restore area",
-    "corner": "Drag to split or join"
+    "corner": "Drag to split or join",
+    "swapWith": "Swap with",
+    "split": "Split",
+    "preview": {
+      "splitRow": "Split vertically",
+      "splitColumn": "Split horizontally",
+      "join": "Join",
+      "swap": "Swap"
+    }
   },
   "layout": {
     "saveTitle": "Save layout",
@@ -78,11 +93,27 @@
       "planning": "Planning",
       "design": "Design",
       "palette": "Palette"
-    }
+    },
+    "current": "Current layout",
+    "builtIn": "Built in",
+    "custom": "Saved",
+    "none": "No saved layouts"
   },
   "status": {
     "ready": "Ready",
     "project": "Project: {{name}}",
-    "noProject": "No project open"
+    "noProject": "No project open",
+    "hint": "Ctrl+Space maximises the area under the pointer. Drag an area corner to split or join."
+  },
+  "about": {
+    "title": "About Loopy",
+    "version": "Version {{version}}",
+    "electron": "Electron {{version}}",
+    "description": "Game design and project management, on your desktop."
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "action": "Action",
+    "keys": "Keys"
   }
 }

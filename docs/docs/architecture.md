@@ -47,10 +47,10 @@ The boundary is a convention checked in review, not a lint rule. A deep import s
 | `theme`      | Active theme, applying colour tokens, following the system mode | shipped |
 | `i18n`       | i18next setup, language switching, `Intl` formatting            | shipped |
 | `settings`   | Settings store synced with main                                 | shipped |
-| `layout`     | Area tree model, split, join, resize, swap, maximise            | planned |
-| `workspaces` | Workspace list, active workspace, layout presets                | planned |
-| `editors`    | Editor registry: component, icon, title key, default state      | planned |
-| `shortcuts`  | Key map and the `useShortcuts` hook                             | planned |
+| `layout`     | Area tree model, split, join, resize, swap, maximise            | shipped |
+| `workspaces` | Workspace list, active workspace, layout presets                | shipped |
+| `editors`    | Editor registry: component, icon, title key, default state      | shipped |
+| `shortcuts`  | Key map and the `useShortcuts` hook                             | shipped |
 
 ## IPC rules
 
@@ -69,9 +69,10 @@ Everything lives under Electron's user data directory. `storagePaths` in `src/ma
 | File                  | Holds                                                    | Format                     |
 | --------------------- | -------------------------------------------------------- | -------------------------- |
 | `settings.json`       | App preferences: theme, UI font, font size               | JSON with `schemaVersion`  |
-| `state.json`          | Device state: window bounds, last project, recent list   | JSON with `schemaVersion`  |
+| `state.json`          | Device state: recent projects, workspaces, status bar    | JSON with `schemaVersion`  |
 | `projects/<id>.loopy` | One project: metadata, settings and later boards, assets | SQLite with `user_version` |
 | `themes/<id>.json`    | One custom theme per file, see the theming page          | JSON with `schemaVersion`  |
+| `layouts/<id>.json`   | One saved layout preset per file, see the shell page     | JSON with `schemaVersion`  |
 
 The user never sees these paths. The project picker lists the `projects` directory, and sharing goes through export and import.
 

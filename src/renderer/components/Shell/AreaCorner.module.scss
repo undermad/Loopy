@@ -1,0 +1,41 @@
+.corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: crosshair;
+  z-index: 6;
+  opacity: 0;
+  touch-action: none;
+
+  &:hover {
+    background: var(--color-accent);
+    opacity: 0.6;
+  }
+}
+
+.topLeft {
+  top: 0;
+  left: 0;
+  border-bottom-right-radius: 100%;
+}
+
+.topRight {
+  top: 0;
+  right: 0;
+  border-bottom-left-radius: 100%;
+}
+
+.bottomLeft {
+  bottom: 0;
+  left: 0;
+  border-top-right-radius: 100%;
+}
+
+.bottomRight {
+  right: 0;
+  bottom: 0;
+  border-top-left-radius: 100%;
+}

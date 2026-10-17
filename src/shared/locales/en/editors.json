@@ -18,5 +18,14 @@
   },
   "colours": {
     "soon": "Project colour schemes arrive with a later release."
+  },
+  "placeholder": {
+    "title": "{{editor}} arrives soon",
+    "hint": "This editor is part of a later step."
+  },
+  "gallery": {
+    "title": "Component gallery",
+    "sizes": "Sizes",
+    "states": "States"
   }
 }

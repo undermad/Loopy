@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { readdir, rename } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
 import type { IpcMain } from 'electron';
-import type { DeviceState } from '@shared/device-state';
 import {
   IpcChannel,
   projectIdSchema,
@@ -15,7 +14,7 @@ import {
   type ProjectSummary,
 } from '@shared/ipc';
 import { PROJECT_FILE_EXTENSION, type ProjectInfo } from '@shared/project';
-import type { JsonStore } from '../storage/json-store';
+import type { DeviceStateService } from '../services/device-state';
 import type { StoragePaths } from '../storage/paths';
 import {
   createProject,
@@ -32,11 +31,10 @@ import type { FileDialogs } from './themes';
 
 export interface ProjectHandlerDeps {
   paths: StoragePaths;
-  deviceState: JsonStore<DeviceState>;
+  deviceState: DeviceStateService;
   dialogs: FileDialogs;
   broadcast: Broadcast;
   revealInFolder: (path: string) => void;
-  onLoadError?: (error: unknown) => void;
 }
 
 export interface ProjectService {
@@ -53,37 +51,25 @@ function failureCode(error: unknown): ProjectFailureCode {
   return 'CORRUPT';
 }
 
-export async function registerProjectHandlers(
+export function registerProjectHandlers(
   ipc: Pick<IpcMain, 'handle'>,
   deps: ProjectHandlerDeps,
-): Promise<ProjectService> {
-  let device: DeviceState;
-  try {
-    device = await deps.deviceState.load();
-  } catch (error) {
-    deps.onLoadError?.(error);
-    device = deps.deviceState.defaults();
-  }
+): ProjectService {
   let current: ProjectDatabase | null = null;
   let currentInfo: ProjectInfo | null = null;
 
-  const state = (): ProjectState => ({ current: currentInfo, recent: device.recentProjects });
+  const state = (): ProjectState => ({ current: currentInfo, recent: deps.deviceState.get().recentProjects });
   const notify = () => {
     deps.broadcast(IpcChannel.projectChanged, state());
   };
 
-  async function saveDevice(next: Partial<DeviceState>): Promise<void> {
-    device = { ...device, ...next };
-    await deps.deviceState.save(device);
-  }
-
   async function touchRecent(info: ProjectInfo): Promise<void> {
     const entry = { id: info.id, name: info.name, openedAt: new Date().toISOString() };
-    const recentProjects = [entry, ...device.recentProjects.filter((item) => item.id !== info.id)].slice(
-      0,
-      MAX_RECENT,
-    );
-    await saveDevice({ recentProjects, lastProjectId: info.id });
+    const recent = deps.deviceState.get().recentProjects.filter((item) => item.id !== info.id);
+    await deps.deviceState.update({
+      recentProjects: [entry, ...recent].slice(0, MAX_RECENT),
+      lastProjectId: info.id,
+    });
   }
 
   function close(): Promise<void> {
@@ -112,7 +98,7 @@ export async function registerProjectHandlers(
     } catch {
       return [];
     }
-    const lastOpened = new Map(device.recentProjects.map((item) => [item.id, item.openedAt]));
+    const lastOpened = new Map(deps.deviceState.get().recentProjects.map((item) => [item.id, item.openedAt]));
     const summaries: ProjectSummary[] = [];
     for (const entry of entries) {
       if (extname(entry) !== `.${PROJECT_FILE_EXTENSION}`) continue;
@@ -196,13 +182,17 @@ export async function registerProjectHandlers(
     const id = projectIdSchema.parse(rawId);
     if (currentInfo?.id === id) await close();
     await removeDatabaseFiles(deps.paths.projectFile(id));
-    await saveDevice({ recentProjects: device.recentProjects.filter((item) => item.id !== id) });
+    await deps.deviceState.update({
+      recentProjects: deps.deviceState.get().recentProjects.filter((item) => item.id !== id),
+    });
     notify();
   }
 
   async function removeRecent(rawId: unknown): Promise<ProjectState> {
     const id = projectIdSchema.parse(rawId);
-    await saveDevice({ recentProjects: device.recentProjects.filter((item) => item.id !== id) });
+    await deps.deviceState.update({
+      recentProjects: deps.deviceState.get().recentProjects.filter((item) => item.id !== id),
+    });
     return state();
   }
 

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IpcChannel, type OpenProjectResult, type ProjectState, type ProjectSummary } from '@shared/ipc';
 import type { ProjectInfo } from '@shared/project';
 import { registerProjectHandlers } from '../../../src/main/ipc/project';
+import { createDeviceStateService } from '../../../src/main/services/device-state';
 import type { FileDialogs } from '../../../src/main/ipc/themes';
 import { createDeviceStateStore, createProject, storagePaths } from '../../../src/main/storage';
 
@@ -36,9 +37,9 @@ async function setup(dialogs: Partial<FileDialogs> = {}) {
   const ipc = fakeIpc();
   const broadcast = vi.fn();
   const revealInFolder = vi.fn();
-  const service = await registerProjectHandlers(ipc, {
+  const service = registerProjectHandlers(ipc, {
     paths,
-    deviceState: createDeviceStateStore(paths.deviceState),
+    deviceState: await createDeviceStateService(createDeviceStateStore(paths.deviceState)),
     broadcast,
     revealInFolder,
     dialogs: {

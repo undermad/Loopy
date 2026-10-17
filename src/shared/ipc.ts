@@ -6,6 +6,7 @@ import {
   type AppSettingsPatch,
 } from './app-settings';
 import { recentProjectSchema } from './device-state';
+import { layoutPresetSchema, workspacesSchema, type LayoutPreset } from './layout';
 import { projectInfoSchema, projectNameSchema, type ProjectInfo } from './project';
 import { themeSchema, type Theme } from './theme';
 
@@ -17,6 +18,8 @@ export const IpcChannel = {
   shellGetNativeTheme: 'shell:getNativeTheme',
   shellNativeThemeChanged: 'shell:nativeThemeChanged',
   shellGetLocale: 'shell:getLocale',
+  windowToggleFullscreen: 'window:toggleFullscreen',
+  windowEditCommand: 'window:editCommand',
   themesList: 'themes:list',
   themesSave: 'themes:save',
   themesDelete: 'themes:delete',
@@ -33,25 +36,38 @@ export const IpcChannel = {
   projectReveal: 'project:reveal',
   projectRemoveRecent: 'project:removeRecent',
   projectChanged: 'project:changed',
+  stateGet: 'state:get',
+  stateSet: 'state:set',
+  layoutsList: 'layouts:list',
+  layoutsSave: 'layouts:save',
+  layoutsDelete: 'layouts:delete',
+  layoutsExport: 'layouts:export',
+  layoutsImport: 'layouts:import',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
 
-export const appVersionSchema = z.object({
-  app: z.string().min(1),
-  electron: z.string().min(1),
-});
-
+export const appVersionSchema = z.object({ app: z.string().min(1), electron: z.string().min(1) });
 export const colorSchemeSchema = z.enum(['light', 'dark']);
 export const localeSchema = z.string().min(2);
 export const themeIdSchema = z.string().min(1);
 export const themeListSchema = z.array(themeSchema);
 export const projectIdSchema = z.uuid();
+export const layoutIdSchema = z.string().min(1);
+export const layoutListSchema = z.array(layoutPresetSchema);
+export const booleanSchema = z.boolean();
+export const editCommandSchema = z.enum(['undo', 'redo', 'cut', 'copy', 'paste', 'delete', 'selectAll']);
 
 export const exportResultSchema = z.object({ status: z.enum(['exported', 'cancelled']) });
 
 export const importThemeResultSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('imported'), theme: themeSchema }),
+  z.object({ status: z.literal('cancelled') }),
+  z.object({ status: z.literal('invalid') }),
+]);
+
+export const importLayoutResultSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('imported'), layout: layoutPresetSchema }),
   z.object({ status: z.literal('cancelled') }),
   z.object({ status: z.literal('invalid') }),
 ]);
@@ -62,10 +78,8 @@ export const projectFailureCodeSchema = z.enum([
   'UNSUPPORTED_VERSION',
   'CORRUPT',
 ]);
-
 export const projectSummarySchema = projectInfoSchema.extend({ lastOpenedAt: z.iso.datetime().optional() });
 export const projectListSchema = z.array(projectSummarySchema);
-
 export const projectStateSchema = z.object({
   current: projectInfoSchema.nullable(),
   recent: z.array(recentProjectSchema),
@@ -82,17 +96,31 @@ export const importProjectResultSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('failed'), code: projectFailureCodeSchema }),
 ]);
 
-export { appSettingsPatchSchema, appSettingsSchema, projectInfoSchema, projectNameSchema, themeSchema };
+export const shellStateSchema = z.object({ workspaces: workspacesSchema.nullable(), statusBar: z.boolean() });
+export const shellStatePatchSchema = shellStateSchema.partial();
+
+export {
+  appSettingsPatchSchema,
+  appSettingsSchema,
+  layoutPresetSchema,
+  projectInfoSchema,
+  projectNameSchema,
+  themeSchema,
+};
 
 export type AppVersion = z.infer<typeof appVersionSchema>;
 export type ColorScheme = z.infer<typeof colorSchemeSchema>;
 export type ExportResult = z.infer<typeof exportResultSchema>;
 export type ImportThemeResult = z.infer<typeof importThemeResultSchema>;
+export type ImportLayoutResult = z.infer<typeof importLayoutResultSchema>;
 export type ProjectFailureCode = z.infer<typeof projectFailureCodeSchema>;
 export type ProjectSummary = z.infer<typeof projectSummarySchema>;
 export type ProjectState = z.infer<typeof projectStateSchema>;
 export type OpenProjectResult = z.infer<typeof openProjectResultSchema>;
 export type ImportProjectResult = z.infer<typeof importProjectResultSchema>;
+export type ShellState = z.infer<typeof shellStateSchema>;
+export type ShellStatePatch = z.infer<typeof shellStatePatchSchema>;
+export type EditCommand = z.infer<typeof editCommandSchema>;
 export type Unsubscribe = () => void;
 
 export interface LoopyApi {
@@ -103,6 +131,8 @@ export interface LoopyApi {
   getNativeTheme: () => Promise<ColorScheme>;
   onNativeThemeChanged: (listener: (scheme: ColorScheme) => void) => Unsubscribe;
   getLocale: () => Promise<string>;
+  toggleFullscreen: () => Promise<boolean>;
+  editCommand: (command: EditCommand) => Promise<void>;
   listThemes: () => Promise<Theme[]>;
   saveTheme: (theme: Theme) => Promise<Theme>;
   deleteTheme: (id: string) => Promise<void>;
@@ -119,4 +149,11 @@ export interface LoopyApi {
   revealProject: (id: string) => Promise<void>;
   removeRecentProject: (id: string) => Promise<ProjectState>;
   onProjectChanged: (listener: (state: ProjectState) => void) => Unsubscribe;
+  getShellState: () => Promise<ShellState>;
+  setShellState: (patch: ShellStatePatch) => Promise<ShellState>;
+  listLayouts: () => Promise<LayoutPreset[]>;
+  saveLayout: (layout: LayoutPreset) => Promise<LayoutPreset>;
+  deleteLayout: (id: string) => Promise<void>;
+  exportLayout: (layout: LayoutPreset) => Promise<ExportResult>;
+  importLayout: () => Promise<ImportLayoutResult>;
 }

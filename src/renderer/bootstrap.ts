@@ -1,11 +1,16 @@
 import { useEffect } from 'react';
+import i18next from 'i18next';
 import type { LoopyApi } from '@shared/ipc';
+import { builtInLayoutPresets } from '@shared/layout-presets';
 import { applyLanguage, initI18n } from '@renderer/lib/i18n';
 import { bootProject } from '@renderer/lib/project';
 import { bootSettings, useSettings } from '@renderer/lib/settings';
 import { bootTheme } from '@renderer/lib/theme';
+import { bootWorkspaces } from '@renderer/lib/workspaces';
+import { registerEditors } from './components/editors/registerEditors';
 
 export async function bootstrap(api: LoopyApi): Promise<void> {
+  registerEditors();
   const [settings, locale] = await Promise.all([
     bootSettings(api),
     api.getLocale(),
@@ -13,6 +18,15 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
     bootProject(api),
   ]);
   await initI18n(settings.language, locale);
+  await bootWorkspaces(api, () => {
+    const names = {
+      default: i18next.t('shell:layout.presets.default'),
+      planning: i18next.t('shell:layout.presets.planning'),
+      design: i18next.t('shell:layout.presets.design'),
+      palette: i18next.t('shell:layout.presets.palette'),
+    };
+    return builtInLayoutPresets(names)[0]?.workspaces ?? [];
+  });
 }
 
 export function useLanguageSync(): void {

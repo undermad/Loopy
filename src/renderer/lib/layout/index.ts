@@ -1,0 +1,18 @@
+export {
+  collectAreas,
+  createArea,
+  findArea,
+  findParent,
+  joinAreas,
+  neighbours,
+  normalise,
+  patchAreaState,
+  removeArea,
+  resizeSplit,
+  setAreaEditor,
+  splitArea,
+  swapAreas,
+  type ParentMatch,
+  type Side,
+  type SplitResult,
+} from './tree';
