@@ -49,3 +49,42 @@ test('writes linked notes in the Idea Map and follows a link', async ({ window }
     timeout: 15_000,
   });
 });
+
+test('writes a note in the split editor and sees it rendered while typing', async ({ window }) => {
+  await window.getByRole('button', { name: 'New project' }).click();
+  await window.getByLabel(/Project name/).fill('Space Game');
+  await window.getByRole('button', { name: 'Create' }).click();
+
+  await window.getByRole('tab', { name: 'Idea Map' }).click();
+  const explorer = window.getByLabel('Notes', { exact: true });
+  await explorer.getByRole('button', { name: 'New note' }).click();
+  const title = window.getByRole('textbox', { name: 'Note title' });
+  await title.fill('Combat');
+  await title.press('Enter');
+
+  const area = window.getByRole('region', { name: 'note', exact: true });
+  await area.getByRole('button', { name: 'Editor type' }).click();
+  await window.getByRole('menuitem', { name: 'Split note' }).click();
+  await explorer.getByText('Combat', { exact: true }).click();
+
+  const syntax = window.getByRole('region', { name: 'Syntax' });
+  const rendered = window.getByRole('region', { name: 'Rendered' });
+  await syntax.getByRole('textbox', { name: 'Note text' }).click();
+  await window.keyboard.type('# Melee\n\nHits **hard** with $E = mc^2$');
+  await expect(rendered.getByRole('heading', { name: 'Melee', level: 1 })).toBeVisible();
+  await expect(rendered.locator('strong', { hasText: 'hard' })).toBeVisible();
+  await expect(rendered.locator('.katex').first()).toBeVisible();
+  await expect(syntax).toContainText('# Melee');
+
+  const divider = window.getByRole('separator', { name: 'Resize panes' });
+  await divider.focus();
+  await window.keyboard.press('ArrowRight');
+  await expect(divider).toHaveAttribute('aria-valuenow', '55');
+
+  await window.getByRole('radio', { name: 'Rendered' }).click();
+  await expect(syntax).toBeHidden();
+  await expect(rendered.getByRole('heading', { name: 'Melee' })).toBeVisible();
+  await window.getByRole('radio', { name: 'Syntax' }).click();
+  await expect(rendered).toBeHidden();
+  await expect(syntax).toBeVisible();
+});

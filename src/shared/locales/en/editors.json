@@ -10,6 +10,7 @@
     "assets": "Assets",
     "notes": "Notes",
     "note": "Note",
+    "noteSplit": "Split note",
     "graph": "Graph",
     "backlinks": "Note details",
     "gallery": "Component gallery",

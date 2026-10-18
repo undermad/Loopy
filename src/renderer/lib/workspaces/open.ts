@@ -6,6 +6,7 @@ import { addWorkspace, setActiveWorkspace, updateWorkspace, workspacesStore } fr
 
 export interface OpenTarget {
   editor: string;
+  alternates?: string[];
   state: Record<string, unknown>;
   template: WorkspaceTemplate['id'];
   workspaceName: string;
@@ -13,11 +14,14 @@ export interface OpenTarget {
 
 export type WorkspaceNames = Record<'planning' | 'design' | 'palette' | 'assets' | 'ideas', string>;
 
+export const noteAlternates = ['noteSplit'];
+
 export function openInEditor(target: OpenTarget): string {
   const { workspaces, activeId } = workspacesStore.getState();
+  const accepts = (editor: string) => editor === target.editor || !!target.alternates?.includes(editor);
   const ordered = [...workspaces].sort((a, b) => Number(b.id === activeId) - Number(a.id === activeId));
   for (const workspace of ordered) {
-    const area = collectAreas(workspace.root).find((candidate) => candidate.editor === target.editor);
+    const area = collectAreas(workspace.root).find((candidate) => accepts(candidate.editor));
     if (!area) continue;
     if (workspace.id !== activeId) setActiveWorkspace(workspace.id);
     updateWorkspace(workspace.id, (current) => ({
@@ -31,7 +35,7 @@ export function openInEditor(target: OpenTarget): string {
     addWorkspace(target.template, target.workspaceName);
   setActiveWorkspace(home.id);
   const areas = collectAreas(home.root);
-  const existing = areas.find((area) => area.editor === target.editor);
+  const existing = areas.find((area) => accepts(area.editor));
   if (existing) {
     updateWorkspace(home.id, (current) => ({
       ...current,
@@ -80,6 +84,7 @@ export function linkTarget(link: TicketLink, names: WorkspaceNames): OpenTarget 
     case 'note':
       return {
         editor: 'note',
+        alternates: [...noteAlternates],
         state: { noteId: link.id },
         template: 'ideas',
         workspaceName: names.ideas,

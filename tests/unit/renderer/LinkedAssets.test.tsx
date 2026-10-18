@@ -122,6 +122,25 @@ describe('opening linked assets', () => {
     const created = areasOf(workspace('Design').root).find((area) => area.editor === 'board');
     expect(created?.state).toMatchObject({ boardId: 'b2' });
   });
+
+  it('opens a note in a split note area when the workspace has one instead of a note area', () => {
+    act(() => {
+      openInEditor(linkTarget({ kind: 'note', id: 'n1' }, NAMES));
+    });
+    const noteArea = areasOf(workspace('Idea Map').root).find((area) => area.editor === 'note');
+    act(() => {
+      areaActions.setEditor(noteArea?.id ?? '', 'noteSplit', { view: 'split' });
+    });
+    act(() => {
+      openInEditor(linkTarget({ kind: 'note', id: 'n2' }, NAMES));
+    });
+    const areas = areasOf(workspace('Idea Map').root);
+    expect(areas.filter((area) => area.editor === 'note')).toHaveLength(0);
+    expect(areas.find((area) => area.id === noteArea?.id)?.state).toMatchObject({
+      noteId: 'n2',
+      view: 'split',
+    });
+  });
 });
 
 describe('linked assets on a ticket', () => {

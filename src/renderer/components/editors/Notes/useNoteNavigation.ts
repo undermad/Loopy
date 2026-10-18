@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type { LinkParts } from '@shared/markdown';
 import { createNote, findNote, nextNoteTitle, resolveNote, useNoteIndex } from '@renderer/lib/notes';
 import { selectTicket } from '@renderer/lib/tickets';
-import { openInEditor, openLinked, useWorkspaceNames } from '@renderer/lib/workspaces';
+import { noteAlternates, openInEditor, openLinked, useWorkspaceNames } from '@renderer/lib/workspaces';
 import { useLoopyItems } from './useLoopyItems';
 
 export interface NoteNavigation {
@@ -26,6 +26,7 @@ export function useNoteNavigation(
       }
       openInEditor({
         editor: 'note',
+        alternates: noteAlternates,
         state: { noteId, anchor },
         template: 'ideas',
         workspaceName: names.ideas,

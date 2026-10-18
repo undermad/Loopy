@@ -1,5 +1,6 @@
 import {
   Brush,
+  Columns2,
   FolderOpen,
   KanbanSquare,
   Layers,
@@ -24,6 +25,7 @@ import { GraphView } from './Notes/GraphView';
 import { NoteDetails } from './Notes/NoteDetails';
 import { NoteEditor } from './Notes/NoteEditor';
 import { NotesExplorer } from './Notes/NotesExplorer';
+import { SplitNoteEditor } from './Notes/SplitNoteEditor';
 import { PropertiesEditor } from './Properties/PropertiesEditor';
 import { TicketEditor } from './Tickets/TicketEditor';
 import { TicketsEditor } from './Tickets/TicketsEditor';
@@ -105,6 +107,14 @@ export function registerEditors(): void {
     component: NoteEditor,
     category: 'ideas',
     defaultState: () => ({ mode: 'live' }),
+  });
+  registerEditor({
+    id: 'noteSplit',
+    titleKey: 'types.noteSplit',
+    icon: Columns2,
+    component: SplitNoteEditor,
+    category: 'ideas',
+    defaultState: () => ({ view: 'split', ratio: 0.5 }),
   });
   registerEditor({
     id: 'graph',
