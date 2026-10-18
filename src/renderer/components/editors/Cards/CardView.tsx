@@ -1,13 +1,15 @@
-import { useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { ImageOff, X } from 'lucide-react';
 import { assetUrl } from '@shared/assets';
-import type { CardValue } from '@shared/board';
+import type { BoardLink, CardValue } from '@shared/board';
 import type { CardField, CardLayout, CardTextSize } from '@shared/cards';
-import { useAssetsSnapshot } from '@renderer/lib/assets';
-import { fieldValue, statFraction } from '@renderer/lib/cards';
+import { assetDropZoneProps, useAssetDropZone, useAssetsSnapshot } from '@renderer/lib/assets';
+import { coerceValue, fieldValue, linkTargets, statFraction } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useResolvedColour } from '@renderer/lib/palettes';
+import { openLinked, useWorkspaceNames } from '@renderer/lib/workspaces';
 import { DropdownMenu, NumberInput, cx } from '@renderer/ui';
+import { AssetLinkCard, useResolvedLink } from '../../AssetLinkCard/AssetLinkCard';
 import styles from './CardView.module.scss';
 
 export interface CardViewProps {
@@ -114,7 +116,7 @@ interface ListProps {
 
 function Tags({ value, label, editable, onCommit }: ListProps & { onCommit: (next: string[]) => void }) {
   const { t } = useTranslation('editors');
-  const tags = Array.isArray(value) ? value : [];
+  const tags = Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
   const [draft, setDraft] = useState('');
   return (
     <div className={styles['tags']} aria-label={label} role="list">
@@ -349,9 +351,108 @@ function FieldView({ field, value, editable, onChange }: FieldViewProps) {
           )}
         </div>
       );
+    case 'link':
+      return <LinkValue field={field} value={value} label={label} editable={editable} onCommit={onChange} />;
     case 'divider':
       return <hr className={styles['divider']} />;
   }
+}
+
+function LinkChip({
+  link,
+  editable,
+  onOpen,
+  onRemove,
+}: {
+  link: BoardLink;
+  editable: boolean;
+  onOpen: (link: BoardLink) => void;
+  onRemove: () => void;
+}) {
+  const { t } = useTranslation('editors');
+  const item = useResolvedLink(link);
+  return (
+    <span className={styles['link']} role="listitem">
+      <AssetLinkCard
+        link={link}
+        onOpen={() => {
+          onOpen(link);
+        }}
+        className={cx(INTERACTIVE, styles['linkCard'])}
+      />
+      {editable ? (
+        <button
+          type="button"
+          className={cx(INTERACTIVE, styles['tagRemove'])}
+          aria-label={t('cards.removeLink', { name: item.name })}
+          onClick={onRemove}
+        >
+          <X aria-hidden="true" />
+        </button>
+      ) : null}
+    </span>
+  );
+}
+
+function LinkValue({
+  field,
+  value,
+  label,
+  editable,
+  onCommit,
+}: ListProps & { field: CardField; onCommit: (next: CardValue) => void }) {
+  const { t } = useTranslation('editors');
+  const names = useWorkspaceNames();
+  const zone = useRef<HTMLDivElement>(null);
+  const [over, setOver] = useState(false);
+  const links = linkTargets(value);
+  useAssetDropZone(zone, (detail) => {
+    if (!editable || detail.phase === 'leave') {
+      setOver(false);
+      return;
+    }
+    if (detail.phase === 'move') {
+      setOver(true);
+      return;
+    }
+    setOver(false);
+    const next = coerceValue(field, field.multiple ? [...links, ...detail.links] : detail.links);
+    if (next !== null) onCommit(next);
+  });
+  return (
+    <div
+      ref={zone}
+      role="group"
+      aria-label={label}
+      className={cx(styles['links'], over && styles['linksOver'])}
+      {...(editable ? assetDropZoneProps : {})}
+    >
+      {links.length > 0 ? (
+        <span className={styles['linkList']} role="list">
+          {links.map((link) => (
+            <LinkChip
+              key={`${link.kind}:${link.id}`}
+              link={link}
+              editable={editable}
+              onOpen={(target) => {
+                openLinked(target, names);
+              }}
+              onRemove={() => {
+                onCommit(
+                  coerceValue(
+                    field,
+                    links.filter((item) => item !== link),
+                  ),
+                );
+              }}
+            />
+          ))}
+        </span>
+      ) : (
+        <span className={cx(styles['static'], styles['empty'])}>{editable ? t('cards.linkHint') : '–'}</span>
+      )}
+    </div>
+  );
 }
 
 export function CardView({

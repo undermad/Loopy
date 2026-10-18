@@ -1,10 +1,11 @@
 import { use, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type * as Flow from '@xyflow/react';
 import type { Edge, FinalConnectionState, Node, ReactFlowProps } from '@xyflow/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BoardChanges, BoardEdge, BoardNode } from '@shared/board';
+import type { LayoutNode } from '@shared/layout';
 import { BoardActionsContext, type BoardActions } from '@renderer/components/editors/Board/BoardContext';
 import { BoardEditor } from '@renderer/components/editors/Board/BoardEditor';
 import { AreaContext } from '@renderer/components/Shell/AreaContext';
@@ -23,9 +24,10 @@ import {
   setBoardSelection,
   setLiveLayers,
 } from '@renderer/lib/board';
-import { createCardTemplate } from '@renderer/lib/cards';
+import { createCardTemplate, createSavedCard } from '@renderer/lib/cards';
 import { runEditCommand } from '@renderer/lib/commands';
 import { getBrushState, newLayer } from '@renderer/lib/drawing';
+import { useActiveWorkspace } from '@renderer/lib/workspaces';
 import { ToastProvider, TooltipProvider } from '@renderer/ui';
 import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
 
@@ -139,6 +141,17 @@ function mouse(init: { altKey?: boolean; shiftKey?: boolean; clientX?: number; c
 
 function at(target: EventTarget, clientX: number, clientY: number) {
   return { target, clientX, clientY } as unknown as ReactMouseEvent<HTMLDivElement>;
+}
+
+function designerTarget(): unknown {
+  const { result } = renderHook(() => useActiveWorkspace());
+  const find = (layout: LayoutNode): unknown =>
+    layout.kind === 'area'
+      ? layout.editor === 'cardDesigner'
+        ? layout.state['target']
+        : undefined
+      : layout.children.map(find).find((value) => value !== undefined);
+  return result.current ? find(result.current.root) : undefined;
 }
 
 function changes(): BoardChanges[] {
@@ -744,6 +757,40 @@ describe('board keyboard and clipboard', () => {
 });
 
 describe('dropping assets', () => {
+  it('places a saved card as a card that follows it', async () => {
+    const template = await createCardTemplate({
+      name: 'Hero',
+      width: 240,
+      height: 200,
+      fields: [{ id: 'name', kind: 'text', label: 'Hero name' }],
+    });
+    const saved = await createSavedCard({
+      name: 'Knight',
+      templateId: template.id,
+      values: { name: 'Sir Loop' },
+    });
+    const loose = await createSavedCard({ name: 'Loose', layout: { width: 500, height: 300 } });
+    const surface = await open([]);
+    vi.spyOn(document, 'elementsFromPoint').mockReturnValue([surface]);
+    act(() => {
+      reportAssetDrag([], 100, 100, 'drop', [
+        { kind: 'card', id: saved.id },
+        { kind: 'card', id: loose.id },
+      ]);
+    });
+    const placed = changes().at(-1)?.upsertNodes ?? [];
+    expect(placed.map((item) => [item.type, item.width, item.height])).toEqual([
+      ['card', 240, 200],
+      ['card', 500, 300],
+    ]);
+    expect(placed[0]?.data).toMatchObject({
+      cardId: saved.id,
+      templateId: template.id,
+      values: { name: 'Sir Loop' },
+    });
+    expect(placed[1]?.data).toMatchObject({ cardId: loose.id, templateId: null });
+  });
+
   it('fills a card image field, stacks dropped files and snaps to the grid', async () => {
     const { ids } = await act(() =>
       importFiles(
@@ -825,18 +872,7 @@ describe('dropping assets', () => {
 
     await user.click(screen.getByRole('button', { name: 'Card' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Edit card templates…' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Card template' });
-    expect(within(dialog).getByRole('textbox', { name: 'Template name' })).toHaveValue('Hero');
-    const name = within(dialog).getByRole('textbox', { name: 'Template name' });
-    await user.clear(name);
-    await user.type(name, 'Villain');
-    await user.click(within(dialog).getByRole('button', { name: 'Save template' }));
-    await waitFor(() => {
-      expect(api.updateCardTemplate).toHaveBeenCalled();
-    });
-    expect(latest['cardTemplate']).toBe(template.id);
-    await user.click(first(within(dialog).getAllByRole('button', { name: 'Close' })));
-    expect(screen.queryByRole('dialog', { name: 'Card template' })).not.toBeInTheDocument();
+    expect(designerTarget()).toEqual({ kind: 'template', id: template.id });
   });
 });
 
@@ -923,14 +959,11 @@ describe('board context menu', () => {
 
     fireEvent.contextMenu(item('card'));
     await user.click(await screen.findByRole('menuitem', { name: 'Edit card template' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Card template' });
-    expect(within(dialog).getByRole('textbox', { name: 'Template name' })).toHaveValue('Hero');
-    await user.click(first(within(dialog).getAllByRole('button', { name: 'Close' })));
+    expect(designerTarget()).toMatchObject({ kind: 'template' });
 
     fireEvent.contextMenu(item('blank'));
     await user.click(await screen.findByRole('menuitem', { name: 'Edit card template' }));
-    const fresh = await screen.findByRole('dialog', { name: 'Card template' });
-    expect(within(fresh).getByRole('button', { name: 'Quest' })).toBeInTheDocument();
+    expect(designerTarget()).toBeNull();
   });
 
   it('reverses and deletes arrows and ignores drags and empty space', async () => {
@@ -991,9 +1024,3 @@ describe('board area', () => {
     expect(latest['minimap']).toBe(false);
   });
 });
-
-function first(items: HTMLElement[]): HTMLElement {
-  const [item] = items;
-  if (!item) throw new Error('missing element');
-  return item;
-}

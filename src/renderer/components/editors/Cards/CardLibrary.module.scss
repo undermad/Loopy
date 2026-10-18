@@ -1,0 +1,82 @@
+@use '../../../styles/mixins' as *;
+
+.library {
+  @include stack(var(--space-2));
+
+  height: 100%;
+  padding: var(--space-3);
+  overflow: auto;
+}
+
+.actions {
+  @include row(var(--space-2));
+
+  flex-wrap: wrap;
+}
+
+.heading {
+  margin: var(--space-2) 0 0;
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.empty {
+  margin: 0;
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+}
+
+.list {
+  @include stack(2px);
+
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  align-items: center;
+  gap: 0 var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-fg);
+  font: inherit;
+  cursor: pointer;
+  grid-template-columns: 16px minmax(0, 1fr);
+  text-align: left;
+  touch-action: none;
+
+  &:hover {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: var(--color-fg-muted);
+    grid-row: span 2;
+  }
+}
+
+.name {
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+}

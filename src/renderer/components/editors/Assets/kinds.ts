@@ -28,7 +28,7 @@ export interface FolderDropData {
   scope: AssetScope;
 }
 
-export type InternalKind = 'board' | 'palette' | 'note';
+export type InternalKind = 'board' | 'palette' | 'note' | 'card';
 
 export interface InternalItem {
   kind: InternalKind;
@@ -42,6 +42,7 @@ export const INTERNAL_SCOPES: Record<InternalKind, Exclude<AssetScope, 'files'>>
   board: 'boards',
   palette: 'palettes',
   note: 'notes',
+  card: 'cards',
 };
 
 export function internalKey(item: Pick<InternalItem, 'kind' | 'id'>): string {
@@ -103,7 +104,9 @@ export function readFolderId(
 
 export function readScope(state: Record<string, unknown>): AssetScope {
   const value = state['scope'];
-  return value === 'boards' || value === 'palettes' || value === 'notes' ? value : 'files';
+  return value === 'boards' || value === 'palettes' || value === 'notes' || value === 'cards'
+    ? value
+    : 'files';
 }
 
 export function hasFiles(transfer: DataTransfer | null): boolean {

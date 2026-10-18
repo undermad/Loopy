@@ -26,6 +26,7 @@ const NAMES = {
   palette: 'Palette',
   assets: 'Assets',
   ideas: 'Idea Map',
+  cards: 'Cards',
 };
 
 function areasOf(node: LayoutNode): { id: string; editor: string; state: Record<string, unknown> }[] {
@@ -166,7 +167,7 @@ describe('linked assets on a ticket', () => {
     await user.click(within(screen.getByRole('group', { name: 'Colour palettes' })).getByRole('switch'));
     expect(screen.queryByRole('group', { name: 'Files' })).toBeInTheDocument();
     await user.type(
-      screen.getByRole('searchbox', { name: 'Search boards, palettes, notes and files' }),
+      screen.getByRole('searchbox', { name: 'Search boards, palettes, notes, cards and files' }),
       'zzz',
     );
     expect(screen.getByText('Nothing to link yet')).toBeInTheDocument();

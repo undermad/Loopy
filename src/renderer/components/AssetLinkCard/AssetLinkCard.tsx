@@ -1,9 +1,10 @@
-import { NotebookText, Palette, PenTool, Unlink } from 'lucide-react';
+import { IdCard, NotebookText, Palette, PenTool, Unlink } from 'lucide-react';
 import { assetUrl, type Asset } from '@shared/assets';
 import { frontmatterEnd } from '@shared/markdown';
 import type { TicketLink } from '@shared/tickets';
 import { useAssetsSnapshot } from '@renderer/lib/assets';
 import { useBoards } from '@renderer/lib/board';
+import { useSavedCards } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useNotes } from '@renderer/lib/notes';
 import { usePalettes } from '@renderer/lib/palettes';
@@ -26,6 +27,7 @@ export function useResolvedLink(link: TicketLink): ResolvedLink {
   const palettes = usePalettes() ?? [];
   const { assets } = useAssetsSnapshot();
   const notes = useNotes();
+  const cards = useSavedCards() ?? [];
   const detail = t(`assetLink.kinds.${link.kind}`);
   if (link.kind === 'board') {
     const board = boards.find((item) => item.id === link.id);
@@ -58,6 +60,17 @@ export function useResolvedLink(link: TicketLink): ResolvedLink {
       colours: [],
       asset: null,
       missing: !note,
+    };
+  }
+  if (link.kind === 'card') {
+    const card = cards.find((item) => item.id === link.id);
+    return {
+      link,
+      name: card?.name ?? t('assetLink.missing'),
+      detail,
+      colours: [],
+      asset: null,
+      missing: !card,
     };
   }
   const asset = assets.find((item) => item.id === link.id) ?? null;
@@ -94,7 +107,9 @@ function LinkIcon({ item }: { item: ResolvedLink }) {
         ? Palette
         : item.link.kind === 'note'
           ? NotebookText
-          : KIND_ICONS[item.asset?.kind ?? 'other'];
+          : item.link.kind === 'card'
+            ? IdCard
+            : KIND_ICONS[item.asset?.kind ?? 'other'];
   return <Icon aria-hidden="true" />;
 }
 

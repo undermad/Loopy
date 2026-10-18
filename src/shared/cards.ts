@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FONT_WEIGHTS, TEXT_ALIGNS, cardValueSchema, itemStyleSchema } from './board';
+import { FONT_WEIGHTS, TEXT_ALIGNS, boardLinkKindSchema, cardValueSchema, itemStyleSchema } from './board';
 import { colourValueSchema } from './colours';
 
 export const CARD_FIELD_KINDS = [
@@ -13,6 +13,7 @@ export const CARD_FIELD_KINDS = [
   'image',
   'stat',
   'colour',
+  'link',
   'divider',
 ] as const;
 
@@ -45,6 +46,8 @@ export const cardFieldSchema = z.object({
   options: z.array(z.string().trim().min(1).max(40)).max(CARD_MAX_OPTIONS).default([]),
   min: z.number().nullable().default(null),
   max: z.number().nullable().default(null),
+  linkKinds: z.array(boardLinkKindSchema).max(8).default([]),
+  multiple: z.boolean().default(false),
   style: cardFieldStyleSchema.default({}),
 });
 
@@ -87,6 +90,42 @@ export const cardTemplatePatchSchema = z
   })
   .partial();
 
+const cardValuesSchema = z.record(z.string(), cardValueSchema);
+
+export const savedCardSchema = z.object({
+  id: z.string().min(1),
+  folderId: z.string().min(1).nullable(),
+  name: z.string().trim().min(1).max(80),
+  templateId: z.string().min(1).nullable(),
+  layout: cardLayoutSchema.nullable(),
+  values: cardValuesSchema,
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const savedCardListSchema = z.array(savedCardSchema);
+
+export const savedCardInputSchema = z.object({
+  name: savedCardSchema.shape.name,
+  folderId: savedCardSchema.shape.folderId.default(null),
+  templateId: savedCardSchema.shape.templateId.default(null),
+  layout: cardLayoutSchema.nullable().default(null),
+  values: cardValuesSchema.default({}),
+});
+
+export const savedCardPatchSchema = z
+  .object({
+    name: savedCardSchema.shape.name,
+    folderId: savedCardSchema.shape.folderId,
+    templateId: savedCardSchema.shape.templateId,
+    layout: cardLayoutSchema.nullable(),
+    values: cardValuesSchema,
+  })
+  .partial();
+
+export type SavedCard = z.infer<typeof savedCardSchema>;
+export type SavedCardInput = z.input<typeof savedCardInputSchema>;
+export type SavedCardPatch = z.input<typeof savedCardPatchSchema>;
 export type CardFieldKind = z.infer<typeof cardFieldKindSchema>;
 export type CardSpan = (typeof CARD_SPANS)[number];
 export type CardTextSize = (typeof CARD_TEXT_SIZES)[number];

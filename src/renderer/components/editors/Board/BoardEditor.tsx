@@ -118,7 +118,7 @@ import {
   type Rect,
   type Segment,
 } from '@renderer/lib/board';
-import { findCardTemplate, useCardTemplates } from '@renderer/lib/cards';
+import { findCardTemplate, findSavedCard, resolveCardLayout, useCardTemplates } from '@renderer/lib/cards';
 import { drawingAt, getBrushState, updateBrush } from '@renderer/lib/drawing';
 import { readableTextColour } from '@renderer/lib/colour';
 import type { EditorProps } from '@renderer/lib/editors';
@@ -127,6 +127,8 @@ import { useSettings } from '@renderer/lib/settings';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useColourFromRef } from '@renderer/lib/palettes';
 import {
+  cardTarget,
+  openInEditor,
   openLinked,
   panelActions,
   usePanelOpen,
@@ -147,7 +149,6 @@ import { DrawingOverlay } from './DrawingOverlay';
 import { QUICK_MENU_SIZE, QuickCreateMenu, type QuickChoice } from './QuickCreateMenu';
 import { Grid } from './Grid';
 import { SelectionGuard } from './SelectionGuard';
-import { TemplateEditorDialog } from './cards/TemplateEditorDialog';
 import { CardItem } from './items/CardItem';
 import { ContainerItem } from './items/ContainerItem';
 import { DrawingItem } from './items/DrawingItem';
@@ -864,16 +865,23 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
                 }
               : { preset: 'file', data: { assetId: asset.id }, size: fileSize(asset) },
           ),
-          ...placeable.map((link): StackEntry => ({
-            preset: 'link',
-            data: { target: link },
-            size: presetSize('link'),
-          })),
+          ...placeable.map((link): StackEntry => {
+            const card = link.kind === 'card' ? findSavedCard(link.id) : null;
+            const layout = card ? resolveCardLayout(card, templates) : null;
+            if (card) {
+              return {
+                preset: 'card',
+                data: { cardId: card.id, templateId: card.templateId, values: structuredClone(card.values) },
+                size: layout ? { width: layout.width, height: layout.height } : presetSize('card'),
+              };
+            }
+            return { preset: 'link', data: { target: link }, size: presetSize('link') };
+          }),
         ],
         point,
       );
     },
-    [allNodes, assetList, boardId, commit, flow, imageFieldAt, placeStack, select],
+    [allNodes, assetList, boardId, commit, flow, imageFieldAt, placeStack, select, templates],
   );
 
   const importAndPlace = useCallback(
@@ -1227,6 +1235,11 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
         commit({ upsertNodes: undock([node.id], allNodes) });
       },
       editTemplate: (node) => {
+        const cardId = node.data['cardId'];
+        if (typeof cardId === 'string' && findSavedCard(cardId)) {
+          openInEditor(cardTarget({ kind: 'card', id: cardId }, names));
+          return;
+        }
         onEditTemplate(typeof node.data['templateId'] === 'string' ? node.data['templateId'] : null);
       },
       removeNode: (node) => {
@@ -1254,7 +1267,7 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
         select([]);
       },
     }),
-    [allNodes, commit, duplicate, onEditTemplate, select],
+    [allNodes, commit, duplicate, names, onEditTemplate, select],
   );
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -1703,15 +1716,16 @@ function BoardArea({ areaId, state, setState }: EditorProps) {
   const layersOpen = usePanelOpen('layers');
   const brushesOpen = usePanelOpen('brushes');
   const editorRef = useRef<HTMLDivElement>(null);
-  const [templateEditor, setTemplateEditor] = useState<{ templateId: string | null; key: number } | null>(
-    null,
-  );
+  const names = useWorkspaceNames();
   const requested = typeof state['boardId'] === 'string' ? state['boardId'] : null;
   const board = boards?.find((item) => item.id === requested) ?? boards?.[0] ?? null;
 
-  const openTemplateEditor = useCallback((templateId: string | null) => {
-    setTemplateEditor({ templateId, key: Date.now() });
-  }, []);
+  const openTemplateEditor = useCallback(
+    (templateId: string | null) => {
+      openInEditor(cardTarget(templateId ? { kind: 'template', id: templateId } : null, names));
+    },
+    [names],
+  );
 
   function togglePanel(panel: BoardPanel) {
     const width = editorRef.current?.getBoundingClientRect().width ?? 0;
@@ -1768,19 +1782,6 @@ function BoardArea({ areaId, state, setState }: EditorProps) {
       ) : (
         <EmptyState icon={<PenTool />} title={t('board.empty')} description={t('board.emptyHint')} />
       )}
-      {templateEditor ? (
-        <TemplateEditorDialog
-          key={templateEditor.key}
-          open
-          templateId={templateEditor.templateId}
-          onOpenChange={(open) => {
-            if (!open) setTemplateEditor(null);
-          }}
-          onSaved={(template) => {
-            setState({ cardTemplate: template.id });
-          }}
-        />
-      ) : null}
     </div>
   );
 }

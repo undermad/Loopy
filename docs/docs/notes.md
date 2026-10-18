@@ -56,6 +56,7 @@ Links use Obsidian's syntax, so a vault imports without changes. Loopy items use
 | `[[board:Level 1]]`     | A link to the board named Level 1                                |
 | `[[palette:Forest]]`    | A link to the palette; `![[palette:Forest]]` shows its swatches  |
 | `[[asset:hero.png]]`    | A link to the file; `![[asset:hero.png]]` shows images and media |
+| `[[card:Knight]]`       | A link to the saved card named Knight                            |
 | `[[ticket:12]]`         | A link to ticket 12 with its key, title and state                |
 | `#enemy`, `#enemy/boss` | Tags; nested tags match their parent in search                   |
 

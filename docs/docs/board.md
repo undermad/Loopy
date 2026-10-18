@@ -127,6 +127,8 @@ Drag a board or colour palette card from the Assets editor onto the canvas to pl
 
 Select a link item, then click its card to open it. Dragging the card moves the item instead. A palette opens like a ticket link: in an open Colours editor, or in the Palette workspace. A board opens in the same board area and remembers the board you came from. A back button below the tools returns to it. Links can go several boards deep, and the button steps back one board at a time. Picking a board from the header clears the trail.
 
+A saved card dragged from the Assets editor or the Card library becomes a card item that follows the saved card, sized to its layout, see the cards page. An asset dropped on a card's asset link field fills that field instead.
+
 A note dragged from the Assets editor or the Notes editor becomes a link item too. Its card shows the note's title and first line, and clicking it opens the note in the Idea Map workspace, see the notes page.
 
 The item type is `link`, with `target` in its data. Properties can point it at another board or palette. The trail is the area state `boardTrail`, a list of board ids, so each board area keeps its own. `AssetLinkCard` in `src/renderer/components/AssetLinkCard` draws the card for boards and tickets.
@@ -148,7 +150,7 @@ An item's `data` holds a shared base and its own content. The base is `style`, `
 | `text`      | `text`. Text, sticky notes and shapes are presets of this type    |
 | `image`     | `assetId`, `fit` (contain by default, cover or stretch) and `alt` |
 | `container` | `title` and `showTitle`. Children point at it through `parent_id` |
-| `card`      | `templateId` and `values`, keyed by field id                      |
+| `card`      | `templateId`, `cardId` and `values`, keyed by field id            |
 | `file`      | `assetId` of a non-image asset                                    |
 | `drawing`   | `resolution`, `offsetX` and `offsetY`; paint lives in tiles       |
 

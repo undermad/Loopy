@@ -55,6 +55,7 @@
       "palette": "Palette",
       "assets": "Assets",
       "ideas": "Idea Map",
+      "cards": "Cards",
       "empty": "Empty"
     }
   },
@@ -109,7 +110,8 @@
       "design": "Design",
       "palette": "Palette",
       "assets": "Assets",
-      "ideas": "Idea Map"
+      "ideas": "Idea Map",
+      "cards": "Cards"
     },
     "current": "Current layout",
     "builtIn": "Built in",

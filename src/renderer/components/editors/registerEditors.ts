@@ -2,9 +2,11 @@ import {
   Brush,
   Columns2,
   FolderOpen,
+  IdCard,
   KanbanSquare,
   Layers,
   LayoutTemplate,
+  Library,
   Link2,
   Network,
   NotebookPen,
@@ -18,6 +20,8 @@ import { registerEditor } from '@renderer/lib/editors';
 import { AssetsEditor } from './Assets/AssetsEditor';
 import { BoardEditor } from './Board/BoardEditor';
 import { BrushesEditor } from './Brushes/BrushesEditor';
+import { CardDesigner } from './Cards/CardDesigner';
+import { CardLibrary } from './Cards/CardLibrary';
 import { ColoursEditor } from './Colours/ColoursEditor';
 import { EmptyEditor } from './EmptyEditor';
 import { LayersEditor } from './Layers/LayersEditor';
@@ -138,5 +142,20 @@ export function registerEditors(): void {
     icon: Ticket,
     component: TicketEditor,
     category: 'planning',
+  });
+  registerEditor({
+    id: 'cardLibrary',
+    titleKey: 'types.cardLibrary',
+    icon: Library,
+    component: CardLibrary,
+    category: 'cards',
+  });
+  registerEditor({
+    id: 'cardDesigner',
+    titleKey: 'types.cardDesigner',
+    icon: IdCard,
+    component: CardDesigner,
+    category: 'cards',
+    defaultState: () => ({ target: null }),
   });
 }

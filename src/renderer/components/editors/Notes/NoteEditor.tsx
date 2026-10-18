@@ -215,6 +215,7 @@ export function NoteEditor({
       palette: loopy.items.palette.map((item) => ({ name: item.name, detail: '' })),
       asset: loopy.items.asset.map((item) => ({ name: item.name, detail: item.detail })),
       ticket: loopy.items.ticket.map((item) => ({ name: item.name, detail: item.detail })),
+      card: loopy.items.card.map((item) => ({ name: item.name, detail: '' })),
     },
     tags: [...index.tags.values()].map((tag) => tag.name),
     kindLabel: (kind) => t(`kinds.${kind}`),

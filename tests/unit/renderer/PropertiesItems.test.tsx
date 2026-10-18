@@ -1,4 +1,5 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
+import { useWorkspaces } from '@renderer/lib/workspaces';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BoardChanges } from '@shared/board';
@@ -149,7 +150,9 @@ describe('item properties', () => {
     await user.type(value, 'Ignis{Enter}');
     expect(lastChange().upsertNodes?.[0]?.data).toMatchObject({ values: { name: 'Ignis' } });
     await user.click(screen.getByRole('button', { name: 'Edit template' }));
-    expect(await screen.findByRole('dialog', { name: 'Card template' })).toBeInTheDocument();
+    expect(JSON.stringify(renderHook(() => useWorkspaces()).result.current)).toContain(
+      `"target":{"kind":"template","id":"${template.id}"}`,
+    );
     view.unmount();
   });
 

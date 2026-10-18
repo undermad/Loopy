@@ -1,12 +1,12 @@
 import type { NodeProps } from '@xyflow/react';
 import { LayoutTemplate } from 'lucide-react';
 import { itemData, withData } from '@renderer/lib/board';
-import { useCardTemplate } from '@renderer/lib/cards';
+import { updateSavedCard, useBoardCard, valueText } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useResolvedColour } from '@renderer/lib/palettes';
 import { cx } from '@renderer/ui';
 import { useBoardActions } from '../BoardContext';
-import { CardView } from '../cards/CardView';
+import { CardView } from '../../Cards/CardView';
 import { ItemFrame } from './ItemFrame';
 import type { ItemFlowNode } from './TextItem';
 import styles from './items.module.scss';
@@ -16,33 +16,37 @@ export function CardItem({ data, selected, dragging, width, height }: NodeProps<
   const actions = useBoardActions();
   const { node } = data;
   const content = itemData({ type: 'card', data: node.data });
-  const template = useCardTemplate(content.templateId);
-  const accent = useResolvedColour(template?.accent ?? null);
-  const title = Object.values(content.values).find((value) => typeof value === 'string' && value.trim());
+  const { card, layout, values } = useBoardCard(content);
+  const accent = useResolvedColour(layout?.accent ?? null);
+  const title = Object.values(values).find((value) => typeof value === 'string' && value.trim());
+  const templateName = layout && 'name' in layout && typeof layout.name === 'string' ? layout.name : null;
 
   return (
     <ItemFrame
       node={node}
       label={
-        content.name || (typeof title === 'string' ? title : '') || (template?.name ?? t('properties.card'))
+        [content.name, card?.name, typeof title === 'string' ? title : '', templateName].find(Boolean) ??
+        t('properties.card')
       }
       selected={selected}
       dragging={dragging}
       width={width ?? node.width}
       height={height ?? node.height}
-      layers={[template?.style]}
+      layers={[layout?.style]}
     >
       {() => (
         <>
           {accent ? <span className={styles['accent']} style={{ background: accent }} /> : null}
-          {template ? (
+          {layout ? (
             <CardView
               className={cx('nowheel', styles['cardBody'], !selected && styles['cardInert'])}
-              layout={template}
-              values={content.values}
+              layout={layout}
+              values={values}
               editable={!content.locked}
               onChange={(fieldId, value) => {
-                actions.updateNode(withData(node, { values: { ...content.values, [fieldId]: value } }));
+                const next = { ...values, [fieldId]: value };
+                if (card) void updateSavedCard(card.id, { values: next });
+                actions.updateNode(withData(node, { values: next }));
               }}
             />
           ) : (
@@ -51,7 +55,7 @@ export function CardItem({ data, selected, dragging, width, height }: NodeProps<
               <span>{content.templateId ? t('board.templateMissing') : t('board.chooseTemplate')}</span>
               {Object.entries(content.values).map(([key, value]) => (
                 <span key={key} className={styles['cardValue']}>
-                  {Array.isArray(value) ? value.join(', ') : String(value ?? '')}
+                  {valueText(value)}
                 </span>
               ))}
             </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { useWorkspaces } from '@renderer/lib/workspaces';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BoardNode } from '@shared/board';
@@ -155,8 +156,11 @@ describe('board tools', () => {
     await createBoard({ name: 'Empty' });
     render(<Harness initial={{ tool: 'card' }} />);
     await place(100, 100);
-    expect(await screen.findByRole('dialog', { name: 'Card template' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Character' })).toBeInTheDocument();
+    await vi.waitFor(() => {
+      expect(JSON.stringify(renderHook(() => useWorkspaces()).result.current)).toContain(
+        '"editor":"cardDesigner"',
+      );
+    });
   });
 
   it('duplicates, reorders, locks and deletes items from the context menu', async () => {

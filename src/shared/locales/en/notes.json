@@ -8,7 +8,8 @@
     "board": "Board",
     "palette": "Palette",
     "asset": "File",
-    "ticket": "Ticket"
+    "ticket": "Ticket",
+    "card": "Card"
   },
   "templates": {
     "blank": { "name": "Blank note", "body": "" },

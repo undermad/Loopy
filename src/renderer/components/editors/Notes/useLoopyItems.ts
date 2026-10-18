@@ -4,6 +4,7 @@ import type { LoopyLinkKind } from '@shared/markdown';
 import { ticketKey } from '@shared/tickets';
 import { useAssetsSnapshot } from '@renderer/lib/assets';
 import { useBoards } from '@renderer/lib/board';
+import { useSavedCards } from '@renderer/lib/cards';
 import { usePalettes } from '@renderer/lib/palettes';
 import { useCurrentProject } from '@renderer/lib/project';
 import { useTicketsSnapshot } from '@renderer/lib/tickets';
@@ -34,6 +35,7 @@ export function useLoopyItems(): LoopyItems {
   const palettes = usePalettes();
   const { assets } = useAssetsSnapshot();
   const tickets = useTicketsSnapshot();
+  const savedCards = useSavedCards();
   const project = useCurrentProject();
   const projectName = project?.name ?? '';
 
@@ -59,6 +61,7 @@ export function useLoopyItems(): LoopyItems {
           stateColour: state?.color ?? null,
         };
       }),
+      card: (savedCards ?? []).map((card) => base('card', card.id, card.name)),
     };
     const lookup = new Map<string, LoopyItem>();
     for (const list of Object.values(items)) {
@@ -78,5 +81,5 @@ export function useLoopyItems(): LoopyItems {
     const imageUrl = (item: LoopyItem | null) =>
       item?.asset?.kind === 'image' ? assetUrl(item.asset.id) : null;
     return { items, find, imageUrl };
-  }, [boards, palettes, assets, tickets, projectName]);
+  }, [boards, palettes, assets, tickets, projectName, savedCards]);
 }

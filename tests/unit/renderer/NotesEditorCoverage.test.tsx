@@ -862,6 +862,7 @@ const data: CompletionData = {
     palette: [{ name: 'Dusk', detail: '' }],
     asset: [{ name: 'hero.png', detail: 'image' }],
     ticket: [{ name: '1', detail: 'SG-1 Combat' }],
+    card: [],
   },
   tags: ['enemy', 'design'],
   kindLabel: (kind) => `Kind ${kind}`,

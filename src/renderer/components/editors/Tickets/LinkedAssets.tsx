@@ -3,6 +3,7 @@ import { Link2, X } from 'lucide-react';
 import type { TicketLink } from '@shared/tickets';
 import { useAssetsSnapshot } from '@renderer/lib/assets';
 import { useBoards } from '@renderer/lib/board';
+import { useSavedCards } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useNotes } from '@renderer/lib/notes';
 import { usePalettes } from '@renderer/lib/palettes';
@@ -55,6 +56,7 @@ export function LinkedAssets({ ticketId, links }: { ticketId: string; links: Tic
   const boards = useBoards() ?? [];
   const palettes = usePalettes() ?? [];
   const notes = useNotes();
+  const cards = useSavedCards() ?? [];
   const { assets } = useAssetsSnapshot();
   const [query, setQuery] = useState('');
 
@@ -83,6 +85,12 @@ export function LinkedAssets({ ticketId, links }: { ticketId: string; links: Tic
       links: notes
         .filter((note) => matches(note.title))
         .map((note) => ({ link: { kind: 'note', id: note.id }, name: note.title })),
+    },
+    {
+      title: t('ticket.links.cards'),
+      links: cards
+        .filter((card) => matches(card.name))
+        .map((card) => ({ link: { kind: 'card', id: card.id }, name: card.name })),
     },
     {
       title: t('ticket.links.files'),

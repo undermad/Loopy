@@ -12,7 +12,7 @@ export interface OpenTarget {
   workspaceName: string;
 }
 
-export type WorkspaceNames = Record<'planning' | 'design' | 'palette' | 'assets' | 'ideas', string>;
+export type WorkspaceNames = Record<'planning' | 'design' | 'palette' | 'assets' | 'ideas' | 'cards', string>;
 
 export const noteAlternates = ['noteSplit'];
 
@@ -89,7 +89,21 @@ export function linkTarget(link: TicketLink, names: WorkspaceNames): OpenTarget 
         template: 'ideas',
         workspaceName: names.ideas,
       };
+    case 'card':
+      return cardTarget({ kind: 'card', id: link.id }, names);
   }
+}
+
+export function cardTarget(
+  target: { kind: 'template' | 'card'; id: string } | null,
+  names: WorkspaceNames,
+): OpenTarget {
+  return {
+    editor: 'cardDesigner',
+    state: { target },
+    template: 'cards',
+    workspaceName: names.cards,
+  };
 }
 
 export function openLinked(link: TicketLink, names: WorkspaceNames): string {
@@ -104,5 +118,6 @@ export function useWorkspaceNames(): WorkspaceNames {
     palette: t('layout.presets.palette'),
     assets: t('layout.presets.assets'),
     ideas: t('layout.presets.ideas'),
+    cards: t('layout.presets.cards'),
   };
 }

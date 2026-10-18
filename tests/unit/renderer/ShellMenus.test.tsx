@@ -43,7 +43,7 @@ describe('shell menus', () => {
 
     await user.click(screen.getByRole('menuitem', { name: 'Window' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Reset to default layout' }));
-    expect(screen.getAllByRole('tab')).toHaveLength(5);
+    expect(screen.getAllByRole('tab')).toHaveLength(6);
 
     vi.mocked(api.importLayout).mockResolvedValueOnce({ status: 'invalid' });
     await user.click(screen.getByRole('menuitem', { name: 'Window' }));

@@ -26,7 +26,7 @@ export const DEFAULT_FOLDER_IDS: Record<Exclude<AssetKind, 'other'>, string> = {
   archive: 'folder-archives',
 };
 
-export const ASSET_SCOPES = ['files', 'boards', 'palettes', 'notes'] as const;
+export const ASSET_SCOPES = ['files', 'boards', 'palettes', 'notes', 'cards'] as const;
 export const assetScopeSchema = z.enum(ASSET_SCOPES);
 
 export const assetFolderSchema = z.object({

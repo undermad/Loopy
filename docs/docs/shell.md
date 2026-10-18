@@ -9,7 +9,7 @@ The shell follows Blender: a menu bar on top with workspace tabs, a screen made 
 
 ## Workspaces
 
-A workspace is a named tab with its own area tree. Click a tab to switch, double-click or use the context menu to rename, duplicate, move or delete it, and the `+` button adds one from a template: Planning, Design, Palette, Assets, Idea Map or Empty. Each workspace keeps its tree, its maximised area and every area's state while inactive.
+A workspace is a named tab with its own area tree. Click a tab to switch, double-click or use the context menu to rename, duplicate, move or delete it, and the `+` button adds one from a template: Planning, Design, Palette, Assets, Idea Map, Cards or Empty. Each workspace keeps its tree, its maximised area and every area's state while inactive.
 
 Workspaces are device state. `src/renderer/lib/workspaces` holds them and writes them to `state.json` through `state:set` 500 ms after the last change and on unload, so they come back after a restart whichever project is open.
 
@@ -17,7 +17,7 @@ Workspaces are device state. `src/renderer/lib/workspaces` holds them and writes
 
 The tree in `src/shared/layout.ts` is a split node with children and fractional sizes, or an area with an editor id and opaque state. `src/renderer/lib/layout` holds the pure operations: split, join, close, swap, resize, change editor, patch state, and `normalise`, which flattens same-direction nesting and single-child splits. Every operation keeps sizes summing to one.
 
-`src/renderer/lib/editors` is the registry. `registerEditors` in `src/renderer/components/editors` fills it at boot with the editor components, so the library never imports a component. The header of every area has the editor switcher on the left, a slot editors fill through `AreaHeaderContent`, and the area menu on the right. The switcher groups editors under the workspace they belong to: Planning, Design, Palette, Assets, Idea Map and General, from each editor's `category`. The slot is a `ScrollStrip`: when an editor's toolbar is wider than the area, the wheel or a middle-button drag scrolls it and its edges fade to show there is more.
+`src/renderer/lib/editors` is the registry. `registerEditors` in `src/renderer/components/editors` fills it at boot with the editor components, so the library never imports a component. The header of every area has the editor switcher on the left, a slot editors fill through `AreaHeaderContent`, and the area menu on the right. The switcher groups editors under the workspace they belong to: Planning, Design, Palette, Assets, Idea Map, Cards and General, from each editor's `category`. The slot is a `ScrollStrip`: when an editor's toolbar is wider than the area, the wheel or a middle-button drag scrolls it and its edges fade to show there is more.
 
 | Gesture                                 | Result                                                                                                                                                              |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
