@@ -57,3 +57,5 @@ Drag and drop in the tickets editor is pointer-driven, so a test drags with `mou
 ## E2E user data
 
 The Electron fixture in `tests/e2e/fixtures/electron.ts` starts every test with an empty temporary directory passed as `LOOPY_USER_DATA`, which main applies with `app.setPath` before anything is read. A run never touches the settings, projects or themes of the machine it runs on.
+
+The single-instance lock is per user data directory, so parallel workers never block each other. `tests/e2e/open-file.spec.ts` launches its own apps instead of using the fixture: one with a `.loopy` path in `argv`, and one plain second Electron process against a running app's directory to exercise `second-instance`.
