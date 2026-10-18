@@ -19,5 +19,9 @@
   "imported": "Project \"{{name}}\" imported.",
   "exported": "Project exported.",
   "deleteConfirm": "Delete the project \"{{name}}\"? The file is removed from your projects folder.",
-  "openFailed": "The project could not be opened."
+  "openFailed": "The project could not be opened.",
+  "replaceMessage": "\"{{name}}\" on this computer has newer changes than the file you opened.",
+  "replaceDetail": "Replacing it loses those changes.",
+  "replace": "Replace",
+  "keepMine": "Keep mine"
 }

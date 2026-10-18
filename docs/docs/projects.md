@@ -11,6 +11,20 @@ With no project open the renderer shows `WelcomeScreen` from `src/renderer/compo
 
 Open file imports: the chosen `.loopy` file is copied into the projects directory and the copy is opened, so a file on removable or synced storage is never written live. The hint under the button says so.
 
+An import replaces the project with the same id. When the local copy was modified more recently than the file being imported, main asks first; Keep mine cancels the import. Modification time is read from the file and its `-wal`, because `project.updated_at` is set once at creation.
+
+## Opening from Explorer
+
+The installer registers `.loopy` with Loopy. Double-clicking a file starts the app with its path in `argv`; `projectPathFromArgv` in `src/main/open-file.ts` finds it and `ProjectService.openFile` opens it.
+
+| File location                 | Result                                       |
+| ----------------------------- | -------------------------------------------- |
+| Inside the projects directory | Opened by id, no copy                        |
+| Anywhere else                 | Imported as above, with the same prompt      |
+| Missing or unreadable         | Error dialog naming the file, welcome screen |
+
+Loopy holds a single-instance lock per user data directory. A second launch passes its `argv` to the running app through `second-instance` and quits, so the file opens in the existing window. The renderer needs no channel of its own: it follows `project:changed`.
+
 ## Where projects live
 
 `userData/projects/<id>.loopy`, one file per project, named by the project id stored inside it. The main process keeps at most one project open. `state.json` holds the ten most recently opened projects with their names, so the welcome screen can show a recent entry even after its file is gone, greyed out with a Remove action.

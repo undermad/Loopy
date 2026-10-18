@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { readdir, rename } from 'node:fs/promises';
-import { basename, extname } from 'node:path';
+import { readdir, rename, stat } from 'node:fs/promises';
+import { basename, dirname, extname, resolve } from 'node:path';
 import type { IpcMain } from 'electron';
 import {
   IpcChannel,
@@ -35,13 +35,17 @@ export interface ProjectHandlerDeps {
   dialogs: FileDialogs;
   broadcast: Broadcast;
   revealInFolder: (path: string) => void;
+  confirmReplace: (name: string) => Promise<boolean>;
 }
 
 export interface ProjectService {
   current(): ProjectDatabase | null;
   state(): ProjectState;
   close(): Promise<void>;
+  openFile(path: string): Promise<ImportProjectResult | OpenProjectResult>;
 }
+
+type ImportOutcome = ImportProjectResult | { status: 'kept'; id: string };
 
 const projectFilters = [{ name: 'Loopy project', extensions: [PROJECT_FILE_EXTENSION] }];
 const MAX_RECENT = 10;
@@ -49,6 +53,18 @@ const MAX_RECENT = 10;
 function failureCode(error: unknown): ProjectFailureCode {
   if (error instanceof ProjectFileError && error.code !== 'ALREADY_EXISTS') return error.code;
   return 'CORRUPT';
+}
+
+async function modifiedAt(path: string): Promise<number> {
+  const times = await Promise.all(
+    [path, `${path}-wal`].map((file) =>
+      stat(file).then(
+        (info) => info.mtimeMs,
+        () => 0,
+      ),
+    ),
+  );
+  return Math.max(...times);
 }
 
 export function registerProjectHandlers(
@@ -145,26 +161,65 @@ export function registerProjectHandlers(
     }
   }
 
-  async function importFromFile(): Promise<ImportProjectResult> {
-    const picked = await deps.dialogs.showOpenDialog({ properties: ['openFile'], filters: projectFilters });
-    const source = picked.filePaths[0];
-    if (picked.canceled || !source) return { status: 'cancelled' };
+  async function localName(id: string): Promise<string | null> {
+    if (currentInfo?.id === id) return currentInfo.name;
+    try {
+      const database = await openProject(deps.paths.projectFile(id));
+      try {
+        return readProjectInfo(database).name;
+      } finally {
+        database.close();
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  async function keepLocal(id: string, source: string): Promise<boolean> {
+    const target = deps.paths.projectFile(id);
+    const [localTime, sourceTime] = await Promise.all([modifiedAt(target), modifiedAt(source)]);
+    if (localTime <= sourceTime) return false;
+    const name = await localName(id);
+    return name !== null && !(await deps.confirmReplace(name));
+  }
+
+  async function importFrom(source: string): Promise<ImportOutcome> {
     const temporary = deps.paths.projectFile(randomUUID());
     try {
       const copy = await importProject(source, temporary);
       const info = readProjectInfo(copy);
       copy.close();
-      const target = deps.paths.projectFile(info.id);
-      if (target !== temporary) {
-        if (currentInfo?.id === info.id) await close();
-        await removeDatabaseFiles(target);
-        await rename(temporary, target);
+      if (await keepLocal(info.id, source)) {
+        await removeDatabaseFiles(temporary);
+        return { status: 'kept', id: info.id };
       }
+      const target = deps.paths.projectFile(info.id);
+      if (currentInfo?.id === info.id) await close();
+      await removeDatabaseFiles(target);
+      await rename(temporary, target);
       return { status: 'imported', project: await adopt(await openProject(target)) };
     } catch (error) {
       await removeDatabaseFiles(temporary);
       return { status: 'failed', code: failureCode(error) };
     }
+  }
+
+  async function importFromFile(): Promise<ImportProjectResult> {
+    const picked = await deps.dialogs.showOpenDialog({ properties: ['openFile'], filters: projectFilters });
+    const source = picked.filePaths[0];
+    if (picked.canceled || !source) return { status: 'cancelled' };
+    const outcome = await importFrom(source);
+    return outcome.status === 'kept' ? { status: 'cancelled' } : outcome;
+  }
+
+  async function openFile(path: string): Promise<ImportProjectResult | OpenProjectResult> {
+    const location = resolve(path);
+    if (dirname(location) === resolve(deps.paths.projects)) {
+      const id = projectIdSchema.safeParse(basename(location, `.${PROJECT_FILE_EXTENSION}`));
+      if (id.success) return open(id.data);
+    }
+    const outcome = await importFrom(location);
+    return outcome.status === 'kept' ? open(outcome.id) : outcome;
   }
 
   async function exportCurrent(): Promise<ExportResult> {
@@ -209,5 +264,5 @@ export function registerProjectHandlers(
   });
   ipc.handle(IpcChannel.projectRemoveRecent, (_event, id: unknown) => removeRecent(id));
 
-  return { current: () => current, state, close };
+  return { current: () => current, state, close, openFile };
 }
