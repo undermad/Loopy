@@ -304,6 +304,22 @@ export function AssetsEditor({ state, setState }: EditorProps) {
     setState({ selectedId: '', internalId: '' });
   }
 
+  function shownFolder(of: AssetScope): string | null | undefined {
+    if (scope !== of) return undefined;
+    return treeFiles && activeKeys.length > 0 ? undefined : folderId;
+  }
+
+  function openFolder(of: AssetScope, id: string | null) {
+    const patch: Record<string, unknown> = { scope: of, folderId: id ?? '' };
+    if (treeFiles) {
+      setSelection([]);
+      setAnchor(null);
+      patch['selectedId'] = '';
+      patch['internalId'] = '';
+    }
+    setState(patch);
+  }
+
   function select(
     key: string,
     modifiers: SelectModifiers,
@@ -712,9 +728,9 @@ export function AssetsEditor({ state, setState }: EditorProps) {
               rootIcon={<Files />}
               counts={counts}
               total={assets.length}
-              selectedId={scope === 'files' ? folderId : undefined}
+              selectedId={shownFolder('files')}
               onSelect={(id) => {
-                setState({ scope: 'files', folderId: id ?? '' });
+                openFolder('files', id);
               }}
               onImport={importDropped}
               leaves={fileLeaves}
@@ -734,9 +750,9 @@ export function AssetsEditor({ state, setState }: EditorProps) {
                   rootIcon={item === 'board' ? <PenTool /> : <Palette />}
                   counts={folderTally(own)}
                   total={own.length}
-                  selectedId={scope === itemScope ? folderId : undefined}
+                  selectedId={shownFolder(itemScope)}
                   onSelect={(id) => {
-                    setState({ scope: itemScope, folderId: id ?? '' });
+                    openFolder(itemScope, id);
                   }}
                   leaves={internalLeaves(item)}
                   renameLabel={t('item.name')}

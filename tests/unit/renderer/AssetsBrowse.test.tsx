@@ -326,3 +326,34 @@ describe('browsing assets', () => {
     expect(screen.getByRole('complementary', { name: 'Details panel' })).toBeInTheDocument();
   });
 });
+
+describe('selection in the folder tree', () => {
+  it('keeps one thing selected when switching between folders and items', async () => {
+    const user = userEvent.setup();
+    await act(() => createBoard({ name: 'Map' }));
+    render(<Harness initial={{ treeFiles: true }} />);
+    const files = await screen.findByRole('tree', { name: 'Folders' });
+    const boards = screen.getByRole('tree', { name: 'Boards' });
+    const images = within(files).getByRole('treeitem', { name: /Images/ });
+    const notes = within(files).getByRole('treeitem', { name: 'notes.txt' });
+    const theme = within(files).getByRole('treeitem', { name: 'theme.mp3' });
+    const map = within(boards).getByRole('treeitem', { name: 'Map' });
+    const selected = () => screen.getAllByRole('treeitem', { selected: true }).map((row) => row.textContent);
+
+    await user.click(images);
+    expect(selected()).toEqual(['Images1']);
+    await user.click(notes);
+    expect(selected()).toEqual(['notes.txt']);
+    await user.click(theme);
+    expect(selected()).toEqual(['theme.mp3']);
+    await user.click(map);
+    expect(selected()).toEqual(['Map']);
+
+    await user.click(within(boards).getByRole('treeitem', { name: /^Boards/ }));
+    expect(selected()).toEqual(['Boards1']);
+    await user.click(images);
+    expect(selected()).toEqual(['Images1']);
+    await user.click(notes);
+    expect(selected()).toEqual(['notes.txt']);
+  });
+});
