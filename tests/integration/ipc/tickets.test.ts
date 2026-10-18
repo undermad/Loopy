@@ -44,14 +44,14 @@ describe('tickets IPC handlers', () => {
 
   it('creates, numbers, moves, resolves, updates and deletes tickets', async () => {
     const call = setup();
-    let snapshot = await call(IpcChannel.ticketsCreate, { title: 'First', stateId: 'todo' });
-    snapshot = await call(IpcChannel.ticketsCreate, {
+    await call(IpcChannel.ticketsCreate, { title: 'First', stateId: 'todo' });
+    await call(IpcChannel.ticketsCreate, {
       title: 'Second',
       stateId: 'todo',
       type: 'bug',
       priority: 'high',
     });
-    snapshot = await call(IpcChannel.ticketsCreate, { title: 'Backlog item' });
+    let snapshot = await call(IpcChannel.ticketsCreate, { title: 'Backlog item' });
     expect(snapshot.tickets.map((ticket) => ticket.number).sort()).toEqual([1, 2, 3]);
     const byNumber = [...snapshot.tickets].sort((a, b) => a.number - b.number);
     const [first, second, backlog] = byNumber;
@@ -85,7 +85,7 @@ describe('tickets IPC handlers', () => {
     snapshot = await call(IpcChannel.statesMove, review?.id, '0');
     expect(snapshot.states[0]?.id).toBe(review?.id);
 
-    snapshot = await call(IpcChannel.ticketsCreate, { title: 'In review', stateId: review?.id });
+    await call(IpcChannel.ticketsCreate, { title: 'In review', stateId: review?.id });
     snapshot = await call(IpcChannel.statesUpdate, review?.id, { category: 'done', color: '#123456' });
     expect(snapshot.tickets[0]?.resolvedAt).not.toBeNull();
     expect(snapshot.states.find((state) => state.id === review?.id)).toMatchObject({
@@ -100,9 +100,9 @@ describe('tickets IPC handlers', () => {
 
   it('manages labels and ticket labels', async () => {
     const call = setup();
-    let snapshot = await call(IpcChannel.labelsCreate, { name: 'Art', color: '#ff0000' });
-    snapshot = await call(IpcChannel.labelsCreate, { name: 'Code', color: '#00ff00' });
-    snapshot = await call(IpcChannel.ticketsCreate, { title: 'Labelled' });
+    await call(IpcChannel.labelsCreate, { name: 'Art', color: '#ff0000' });
+    await call(IpcChannel.labelsCreate, { name: 'Code', color: '#00ff00' });
+    let snapshot = await call(IpcChannel.ticketsCreate, { title: 'Labelled' });
     const ticket = snapshot.tickets[0];
     const ids = snapshot.labels.map((label) => label.id);
     snapshot = await call(IpcChannel.ticketsSetLabels, ticket?.id, ids);
@@ -180,5 +180,25 @@ describe('migration 4', () => {
     expect(links.count).toBe(1);
     expect(() => db.prepare("UPDATE tickets SET type = 'idea' WHERE id = 't1'").run()).toThrow();
     db.close();
+  });
+
+  it('stores links to boards, palettes and assets without duplicates', async () => {
+    const call = setup();
+    const created = await call(IpcChannel.ticketsCreate, { title: 'Linked' });
+    const ticket = created.tickets[0];
+    expect(ticket?.links).toEqual([]);
+    const links = [
+      { kind: 'board', id: 'b1' },
+      { kind: 'palette', id: 'p1' },
+      { kind: 'board', id: 'b1' },
+    ];
+    const updated = await call(IpcChannel.ticketsUpdate, ticket?.id, { links });
+    expect(updated.tickets[0]?.links).toEqual([
+      { kind: 'board', id: 'b1' },
+      { kind: 'palette', id: 'p1' },
+    ]);
+    await expect(
+      call(IpcChannel.ticketsUpdate, ticket?.id, { links: [{ kind: 'sound', id: 'x' }] }),
+    ).rejects.toThrow();
   });
 });

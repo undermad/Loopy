@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import { appSettingsSchema, type AppSettings, type AppSettingsPatch } from './app-settings';
 import { recentProjectSchema } from './device-state';
-import { layoutPresetSchema, workspacesSchema, type LayoutPreset } from './layout';
+import {
+  layoutPresetSchema,
+  workspacesSchema,
+  type LayoutPreset,
+  layoutNodeSchema,
+  type LayoutNode,
+} from './layout';
 import { projectInfoSchema, projectNameSchema, type ProjectInfo } from './project';
 import { hexColorSchema, themeSchema, type Theme } from './theme';
 import {
@@ -30,6 +36,13 @@ import {
   type PaletteLibrary,
   type PalettePatch,
 } from './colours';
+import {
+  cardTemplateListSchema,
+  cardTemplateSchema,
+  type CardTemplate,
+  type CardTemplateInput,
+  type CardTemplatePatch,
+} from './cards';
 import {
   boardListSchema,
   boardSchema,
@@ -68,6 +81,11 @@ export const IpcChannel = {
   shellGetLocale: 'shell:getLocale',
   windowToggleFullscreen: 'window:toggleFullscreen',
   windowEditCommand: 'window:editCommand',
+  windowDetachArea: 'window:detachArea',
+  windowDetachedLayout: 'window:detachedLayout',
+  windowReturnLayout: 'window:returnLayout',
+  windowLayoutReturned: 'window:layoutReturned',
+  projectDataChanged: 'project:dataChanged',
   themesList: 'themes:list',
   themesSave: 'themes:save',
   themesDelete: 'themes:delete',
@@ -129,6 +147,10 @@ export const IpcChannel = {
   paletteClustersCreate: 'paletteClusters:create',
   paletteClustersUpdate: 'paletteClusters:update',
   paletteClustersDelete: 'paletteClusters:delete',
+  cardTemplatesList: 'cardTemplates:list',
+  cardTemplatesCreate: 'cardTemplates:create',
+  cardTemplatesUpdate: 'cardTemplates:update',
+  cardTemplatesDelete: 'cardTemplates:delete',
   assetsSnapshot: 'assets:snapshot',
   assetsCreateFolder: 'assets:createFolder',
   assetsUpdateFolder: 'assets:updateFolder',
@@ -215,6 +237,21 @@ export type ShellStatePatch = z.infer<typeof shellStatePatchSchema>;
 export type EditCommand = z.infer<typeof editCommandSchema>;
 export type Unsubscribe = () => void;
 
+export const DATA_DOMAINS = ['tickets', 'boards', 'palettes', 'cards', 'assets'] as const;
+export type DataDomain = (typeof DATA_DOMAINS)[number];
+export const dataChangeSchema = z.object({ domain: z.enum(DATA_DOMAINS) });
+export type DataChange = z.infer<typeof dataChangeSchema>;
+
+export const detachAreaSchema = z.object({
+  layout: layoutNodeSchema,
+  x: z.number(),
+  y: z.number(),
+  width: z.number().positive(),
+  height: z.number().positive(),
+});
+export type DetachArea = z.infer<typeof detachAreaSchema>;
+export const detachedLayoutSchema = layoutNodeSchema.nullable();
+
 export interface LoopyApi {
   getAppVersion: () => Promise<AppVersion>;
   getSettings: () => Promise<AppSettings>;
@@ -225,6 +262,11 @@ export interface LoopyApi {
   getLocale: () => Promise<string>;
   toggleFullscreen: () => Promise<boolean>;
   editCommand: (command: EditCommand) => Promise<void>;
+  detachArea: (input: DetachArea) => Promise<void>;
+  getDetachedLayout: () => Promise<LayoutNode | null>;
+  returnLayout: (layout: LayoutNode) => Promise<void>;
+  onLayoutReturned: (listener: (layout: LayoutNode) => void) => Unsubscribe;
+  onProjectDataChanged: (listener: (change: DataChange) => void) => Unsubscribe;
   listThemes: () => Promise<Theme[]>;
   saveTheme: (theme: Theme) => Promise<Theme>;
   deleteTheme: (id: string) => Promise<void>;
@@ -286,6 +328,10 @@ export interface LoopyApi {
   createPaletteCluster: (input: PaletteClusterInput) => Promise<PaletteLibrary>;
   updatePaletteCluster: (id: string, patch: PaletteClusterPatch) => Promise<PaletteCluster>;
   deletePaletteCluster: (id: string, withPalettes: boolean) => Promise<PaletteLibrary>;
+  listCardTemplates: () => Promise<CardTemplate[]>;
+  createCardTemplate: (input: CardTemplateInput) => Promise<CardTemplate>;
+  updateCardTemplate: (id: string, patch: CardTemplatePatch) => Promise<CardTemplate>;
+  deleteCardTemplate: (id: string) => Promise<CardTemplate[]>;
   getAssets: () => Promise<AssetsSnapshot>;
   createAssetFolder: (input: FolderInput) => Promise<AssetsSnapshot>;
   updateAssetFolder: (id: string, patch: FolderPatch) => Promise<AssetsSnapshot>;
@@ -313,6 +359,8 @@ export {
   boardSnapshotSchema,
   paletteClusterListSchema,
   paletteClusterSchema,
+  cardTemplateListSchema,
+  cardTemplateSchema,
   paletteLibrarySchema,
   paletteListSchema,
   paletteSchema,

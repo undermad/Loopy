@@ -26,9 +26,13 @@ export const DEFAULT_FOLDER_IDS: Record<Exclude<AssetKind, 'other'>, string> = {
   archive: 'folder-archives',
 };
 
+export const ASSET_SCOPES = ['files', 'boards', 'palettes'] as const;
+export const assetScopeSchema = z.enum(ASSET_SCOPES);
+
 export const assetFolderSchema = z.object({
   id: z.string().min(1),
   parentId: z.string().min(1).nullable(),
+  scope: assetScopeSchema.default('files'),
   name: z.string().trim().min(1).max(80),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
@@ -67,6 +71,7 @@ export const assetsSnapshotSchema = z.object({
 export const folderInputSchema = z.object({
   name: assetFolderSchema.shape.name,
   parentId: z.string().min(1).nullable().default(null),
+  scope: assetScopeSchema.default('files'),
 });
 
 export const folderPatchSchema = z
@@ -104,6 +109,7 @@ export const assetPickResultSchema = z.discriminatedUnion('status', [
 ]);
 
 export type AssetKind = z.infer<typeof assetKindSchema>;
+export type AssetScope = z.infer<typeof assetScopeSchema>;
 export type AssetFolder = z.infer<typeof assetFolderSchema>;
 export type Asset = z.infer<typeof assetSchema>;
 export type AssetSettings = z.infer<typeof assetSettingsSchema>;

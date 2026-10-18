@@ -44,7 +44,7 @@ describe('BoardHeader', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Board' }));
     await user.click(await screen.findByRole('menuitemradio', { name: 'Levels' }));
-    expect(setState).toHaveBeenCalledWith({ boardId: 'board-2' });
+    expect(setState).toHaveBeenCalledWith({ boardId: 'board-2', boardTrail: [] });
 
     await user.click(screen.getByRole('button', { name: 'Minimap' }));
     expect(setState).toHaveBeenCalledWith({ minimap: true });
@@ -55,6 +55,12 @@ describe('BoardHeader', () => {
     const split = vi.spyOn(areaActions, 'split');
     await user.click(screen.getByRole('button', { name: 'Properties panel' }));
     expect(split).toHaveBeenCalledWith('a', 'row', 0.7, 'properties');
+    await user.click(screen.getByRole('button', { name: 'Assets panel' }));
+    expect(split).toHaveBeenCalledWith('a', 'row', 0.7, 'assets', true);
+    await user.click(screen.getByRole('button', { name: 'Layers panel' }));
+    expect(split).toHaveBeenCalledWith('a', 'row', 0.7, 'layers');
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Redo' })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'Zoom in' }));
     await user.click(screen.getByRole('button', { name: 'Zoom out' }));
     await user.click(screen.getByRole('button', { name: 'Fit to content' }));
@@ -71,7 +77,7 @@ describe('BoardHeader', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'Delete board' }));
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
     expect(api.deleteBoard).toHaveBeenCalledWith('board-1');
-    expect(setState).toHaveBeenCalledWith({ boardId: 'board-2' });
+    expect(setState).toHaveBeenCalledWith({ boardId: 'board-2', boardTrail: [] });
   });
 });
 
@@ -85,6 +91,6 @@ describe('BoardHeader with a single board', () => {
       await user.click(await screen.findByRole('button', { name: 'Delete' }));
     }
     expect(await screen.findByText('No boards yet')).toBeInTheDocument();
-    expect(setState).toHaveBeenLastCalledWith({ boardId: '' });
+    expect(setState).toHaveBeenLastCalledWith({ boardId: '', boardTrail: [] });
   });
 });

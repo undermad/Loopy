@@ -77,10 +77,14 @@ export function readSnapshot(db: DatabaseSync): TicketsSnapshot {
     .prepare(
       `SELECT id, number, title, description, type, priority, state_id AS stateId, sprint_id AS sprintId,
         estimate, due_at AS dueAt, position,
-        created_at AS createdAt, updated_at AS updatedAt, resolved_at AS resolvedAt
+        created_at AS createdAt, updated_at AS updatedAt, resolved_at AS resolvedAt, links
        FROM tickets ORDER BY position`,
     )
-    .all();
+    .all()
+    .map((row) => ({
+      ...(row as Record<string, unknown>),
+      links: JSON.parse((row as { links: string }).links) as unknown,
+    }));
   const labels = db.prepare('SELECT id, name, color FROM labels ORDER BY name').all();
   const ticketLabels = db
     .prepare('SELECT ticket_id AS ticketId, label_id AS labelId FROM ticket_labels')
@@ -162,6 +166,11 @@ export function updateTicket(db: DatabaseSync, id: string, raw: unknown): Ticket
         sets.push(`${key === 'dueAt' ? 'due_at' : key} = ?`);
         values.push(value);
       }
+    }
+    if (patch.links !== undefined) {
+      const unique = [...new Map(patch.links.map((link) => [`${link.kind}:${link.id}`, link])).values()];
+      sets.push('links = ?');
+      values.push(JSON.stringify(unique));
     }
     let nextState = patch.stateId;
     if (patch.sprintId !== undefined && patch.sprintId !== current.sprintId) {

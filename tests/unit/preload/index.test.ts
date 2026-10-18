@@ -33,12 +33,16 @@ describe('preload API', () => {
 
   it('passes arguments through for setSettings and saveTheme', async () => {
     electronMock.ipcRenderer.invoke.mockResolvedValueOnce({
-      schemaVersion: 2,
+      schemaVersion: 3,
       theme: { mode: 'dark', light: 'light', dark: 'dark' },
       language: 'en',
       uiFont: 'Inter',
       fontSize: 14,
       defaultLayoutId: 'default',
+      editors: {
+        board: { grid: true, snap: false, minimap: false, wheel: 'zoom', quickButtons: true },
+        assets: { layout: 'grid', details: true },
+      },
     });
     await api.setSettings({ fontSize: 14 });
     expect(electronMock.ipcRenderer.invoke).toHaveBeenCalledWith(IpcChannel.settingsSet, { fontSize: 14 });
@@ -70,12 +74,16 @@ describe('preload API', () => {
 
 describe('preload API coverage', () => {
   const settings = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     theme: { mode: 'dark', light: 'light', dark: 'dark' },
     language: 'en',
     uiFont: 'Inter',
     fontSize: 14,
     defaultLayoutId: 'default',
+    editors: {
+      board: { grid: true, snap: false, minimap: false, wheel: 'zoom', quickButtons: true },
+      assets: { layout: 'grid', details: true },
+    },
   };
   const project = {
     id: '0b5d1a8e-2c4f-4e7a-9b3c-1d2e3f4a5b6c',
@@ -101,6 +109,7 @@ describe('preload API coverage', () => {
     gridRef: null,
     unit: 'm',
     unitScale: 100,
+    folderId: null,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
   };
@@ -113,13 +122,33 @@ describe('preload API coverage', () => {
     colours: [{ id: 'c', name: '', hex: '#ff0000' }],
     clusterId: null,
     clusterPosition: 0,
+    folderId: null,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
   };
   const cluster = { id: 'k', name: 'Magic', createdAt: project.createdAt, updatedAt: project.updatedAt };
+  const template = {
+    id: 't',
+    name: 'Hero',
+    width: 320,
+    height: 360,
+    style: {},
+    accent: null,
+    gap: 8,
+    fields: [],
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
+  };
   const assets = {
     folders: [
-      { id: 'f', parentId: null, name: 'Images', createdAt: project.createdAt, updatedAt: project.updatedAt },
+      {
+        id: 'f',
+        parentId: null,
+        scope: 'files',
+        name: 'Images',
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+      },
     ],
     assets: [],
     settings: { dropTarget: 'byKind', kindFolders: {} },
@@ -188,6 +217,10 @@ describe('preload API coverage', () => {
     ],
     ['updatePaletteCluster', ['k', { name: 'Spells' }], cluster],
     ['deletePaletteCluster', ['k', false], { palettes: [palette], clusters: [] }],
+    ['listCardTemplates', [], [template]],
+    ['createCardTemplate', [{ name: 'Hero' }], template],
+    ['updateCardTemplate', ['t', { name: 'Villain' }], template],
+    ['deleteCardTemplate', ['t'], []],
     ['getAssets', [], assets],
     ['createAssetFolder', [{ name: 'F' }], assets],
     ['updateAssetFolder', ['f', { name: 'F2' }], assets],

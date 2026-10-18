@@ -91,3 +91,26 @@
   font-family: var(--font-family-mono);
   font-size: var(--font-size-xs);
 }
+
+.detailsBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+
+  .title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+
+    svg {
+      width: 18px;
+      height: 18px;
+      color: var(--color-fg-muted);
+    }
+  }
+}
+
+.grow {
+  flex: 1;
+}

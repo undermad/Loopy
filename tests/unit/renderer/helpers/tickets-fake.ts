@@ -101,6 +101,7 @@ export function createTicketsFake(initial: TicketsSnapshot = emptyTicketsSnapsho
         createdAt: stamp,
         updatedAt: stamp,
         resolvedAt: null,
+        links: [],
       };
       data.snapshot.tickets.push(ticket);
       for (const labelId of input.labelIds) data.snapshot.ticketLabels.push({ ticketId: ticket.id, labelId });

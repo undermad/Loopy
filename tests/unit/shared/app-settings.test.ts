@@ -10,6 +10,10 @@ describe('app settings schema', () => {
       uiFont: 'Inter',
       fontSize: 14,
       defaultLayoutId: 'default',
+      editors: {
+        board: { grid: true, snap: false, minimap: false, wheel: 'zoom', quickButtons: true },
+        assets: { layout: 'grid', details: true },
+      },
     });
   });
 

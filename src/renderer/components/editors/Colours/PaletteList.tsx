@@ -26,8 +26,11 @@ export interface PaletteListProps {
   items: PaletteListItem[];
   clusters: PaletteCluster[];
   selectedId: string | null;
+  selectedClusterId: string | null;
   onSelect: (id: string) => void;
+  onSelectCluster: (id: string) => void;
   onNew: () => void;
+  onNewCluster: () => void;
   onDiscardNew: () => void;
   onCluster: (paletteId: string) => void;
 }
@@ -41,8 +44,11 @@ export function PaletteList({
   items,
   clusters,
   selectedId,
+  selectedClusterId,
   onSelect,
+  onSelectCluster,
   onNew,
+  onNewCluster,
   onDiscardNew,
   onCluster,
 }: PaletteListProps) {
@@ -202,10 +208,10 @@ export function PaletteList({
     const first = members[0]?.palette.id;
     return (
       <li key={cluster.id} className={styles['cluster']}>
-        <div className={styles['clusterHeader']}>
+        <div className={cx(styles['clusterHeader'], cluster.id === selectedClusterId && styles['selected'])}>
           <button
             type="button"
-            className={styles['clusterToggle']}
+            className={styles['clusterCaret']}
             aria-expanded={open}
             aria-label={t('library.clusterToggle', { name: cluster.name })}
             onClick={() => {
@@ -213,6 +219,16 @@ export function PaletteList({
             }}
           >
             {open ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
+            className={styles['clusterToggle']}
+            aria-label={t('library.selectCluster', { name: cluster.name })}
+            aria-current={cluster.id === selectedClusterId ? 'true' : undefined}
+            onClick={() => {
+              onSelectCluster(cluster.id);
+            }}
+          >
             <Layers aria-hidden="true" className={styles['clusterIcon']} />
             <span className={styles['nameText']}>{cluster.name}</span>
             <span className={styles['count']}>{t('library.clusterPalettes', { count: total })}</span>
@@ -312,9 +328,19 @@ export function PaletteList({
             setSearch(event.target.value);
           }}
         />
-        <IconButton label={t('library.new')} size="sm" variant="secondary" onClick={onNew}>
-          <Plus aria-hidden="true" />
-        </IconButton>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <IconButton label={t('library.new')} size="sm" variant="secondary" tooltip={false}>
+              <Plus aria-hidden="true" />
+            </IconButton>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content align="end">
+            <DropdownMenu.Item onSelect={onNew}>{t('library.newPalette')}</DropdownMenu.Item>
+            <DropdownMenu.Item disabled={items.length === 0} onSelect={onNewCluster}>
+              {t('library.newClusterFromSelection')}
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
       </div>
       <ScrollArea className={styles['scroll']}>
         {items.length === 0 && clusters.length === 0 ? (

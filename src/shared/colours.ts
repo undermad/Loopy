@@ -39,6 +39,7 @@ export const paletteSchema = z.object({
   colours: z.array(paletteColourSchema).min(PALETTE_MIN_COLOURS).max(PALETTE_MAX_COLOURS),
   clusterId: z.string().min(1).nullable(),
   clusterPosition: z.number().int().nonnegative(),
+  folderId: z.string().min(1).nullable().default(null),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
@@ -81,6 +82,7 @@ export const palettePatchSchema = z
     baseIndex: paletteSchema.shape.baseIndex,
     colours: z.array(paletteColourInputSchema).min(PALETTE_MIN_COLOURS).max(PALETTE_MAX_COLOURS),
     clusterId: paletteSchema.shape.clusterId,
+    folderId: z.string().min(1).nullable(),
   })
   .partial();
 

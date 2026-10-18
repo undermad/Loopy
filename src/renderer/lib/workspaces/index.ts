@@ -11,7 +11,12 @@ export {
   setActiveWorkspace,
 } from './store';
 export { areaActions, setHoveredArea } from './areas';
+export { dockZoneAt, setAreaDrag, useAreaDrag } from './drag';
+export { bootWindows, detachArea, isDetachedWindow, returnToMainWindow } from './windows';
+export { linkTarget, openInEditor, openLinked, useWorkspaceNames } from './open';
+export type { WorkspaceNames } from './open';
 export { panelActions } from './panels';
+export type { PanelPlacement } from './panels';
 export {
   applyLayout,
   currentLayout,

@@ -1,0 +1,130 @@
+@use '../../../styles/mixins' as *;
+
+.scope {
+  height: 100%;
+}
+
+.scroll {
+  height: 100%;
+}
+
+.list {
+  padding: var(--space-1);
+  margin: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 26px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+
+  &:hover {
+    background: var(--color-hover);
+  }
+
+  &:hover .toggle,
+  .toggle[aria-pressed='true'] {
+    opacity: 1;
+  }
+}
+
+.selected {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  }
+}
+
+.dragging {
+  position: relative;
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-md);
+  z-index: 1;
+}
+
+.hidden .name,
+.hidden .icon {
+  opacity: 0.45;
+}
+
+.grip,
+.caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-fg-muted);
+  flex: none;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.grip {
+  cursor: grab;
+}
+
+.caret {
+  cursor: pointer;
+}
+
+.icon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-fg-muted);
+  flex: none;
+}
+
+.name {
+  min-width: 0;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-fg);
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.rename {
+  min-width: 0;
+  padding: 1px 4px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font: inherit;
+  flex: 1;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.toggle {
+  opacity: 0;
+}

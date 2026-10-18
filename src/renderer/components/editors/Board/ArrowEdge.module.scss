@@ -1,0 +1,43 @@
+.halo {
+  stroke: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  stroke-linecap: round;
+}
+
+.animated {
+  animation: dash-flow 0.8s linear infinite;
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+
+.label {
+  position: absolute;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  background: var(--color-surface-raised);
+  color: var(--color-fg);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  pointer-events: all;
+}
+
+.labelSelected {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+.input {
+  width: 12em;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+
+  &:focus {
+    outline: none;
+  }
+}

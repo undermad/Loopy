@@ -4,6 +4,7 @@ export {
   dropFolderFor,
   folderActions,
   importFiles,
+  loadAssets,
   pickFiles,
   resetAssetsStore,
 } from './store';
@@ -19,3 +20,7 @@ export {
 } from './tree';
 export type { FolderNode } from './tree';
 export { useAsset, useAssetsLoaded, useAssetsSnapshot } from './hooks';
+export { assetDropZoneProps, reportAssetDrag, useAssetDropZone } from './drag';
+export type { AssetDragDetail } from './drag';
+export { isRenameClick, pickSelection, recordClick } from './selection';
+export type { ClickRecord } from './selection';

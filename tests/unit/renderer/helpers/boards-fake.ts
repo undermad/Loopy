@@ -38,6 +38,7 @@ export function createBoardsFake() {
         gridRef: input.gridRef ?? null,
         unit: input.unit ?? DEFAULT_BOARD_UNIT,
         unitScale: input.unitScale ?? DEFAULT_BOARD_UNIT_SCALE,
+        folderId: null,
         createdAt: stamp,
         updatedAt: stamp,
       };
@@ -56,6 +57,7 @@ export function createBoardsFake() {
         gridRef: patch.gridRef === undefined ? snapshot.board.gridRef : patch.gridRef,
         unit: patch.unit ?? snapshot.board.unit,
         unitScale: patch.unitScale ?? snapshot.board.unitScale,
+        folderId: patch.folderId === undefined ? snapshot.board.folderId : patch.folderId,
       };
       data.snapshots.set(id, { ...snapshot, board });
       data.boards = data.boards.map((item) => (item.id === id ? board : item));
@@ -78,9 +80,14 @@ export function createBoardsFake() {
         else nodes.push(node);
       }
       const removedEdges = new Set(changes.removeEdgeIds);
+      const updatedEdges = new Set(changes.upsertEdges.map((edge) => edge.id));
       const edges = [
         ...snapshot.edges.filter(
-          (edge) => !removedEdges.has(edge.id) && !removed.has(edge.sourceId) && !removed.has(edge.targetId),
+          (edge) =>
+            !removedEdges.has(edge.id) &&
+            !updatedEdges.has(edge.id) &&
+            !removed.has(edge.sourceId) &&
+            !removed.has(edge.targetId),
         ),
         ...changes.upsertEdges,
       ];

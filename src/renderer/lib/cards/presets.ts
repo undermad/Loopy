@@ -1,0 +1,136 @@
+import type { CardTemplateInput } from '@shared/cards';
+
+export interface StarterTemplate {
+  id: string;
+  template: CardTemplateInput;
+}
+
+const accent = (hex: string) => ({ hex, ref: null });
+
+export const STARTER_TEMPLATES: StarterTemplate[] = [
+  {
+    id: 'character',
+    template: {
+      name: 'Character',
+      width: 320,
+      height: 540,
+      accent: accent('#6366f1'),
+      fields: [
+        { id: 'portrait', kind: 'image', label: 'Portrait', showLabel: false },
+        { id: 'name', kind: 'heading', label: 'Name', showLabel: false, span: 8, placeholder: 'Name' },
+        {
+          id: 'role',
+          kind: 'select',
+          label: 'Role',
+          showLabel: false,
+          span: 4,
+          options: ['Hero', 'Ally', 'Enemy', 'Boss'],
+        },
+        { id: 'health', kind: 'stat', label: 'Health', min: 0, max: 100, defaultValue: 100 },
+        { id: 'attack', kind: 'number', label: 'Attack', span: 6, defaultValue: 10 },
+        { id: 'defence', kind: 'number', label: 'Defence', span: 6, defaultValue: 5 },
+        { id: 'abilities', kind: 'tags', label: 'Abilities' },
+        { id: 'bio', kind: 'longText', label: 'Description', placeholder: 'Who are they?' },
+      ],
+    },
+  },
+  {
+    id: 'item',
+    template: {
+      name: 'Item',
+      width: 280,
+      height: 380,
+      accent: accent('#f59e0b'),
+      fields: [
+        { id: 'name', kind: 'heading', label: 'Name', showLabel: false, span: 8, placeholder: 'Item name' },
+        {
+          id: 'rarity',
+          kind: 'select',
+          label: 'Rarity',
+          showLabel: false,
+          span: 4,
+          options: ['Common', 'Rare', 'Epic', 'Legendary'],
+        },
+        { id: 'icon', kind: 'image', label: 'Icon', showLabel: false, span: 4 },
+        { id: 'value', kind: 'number', label: 'Value', span: 4 },
+        { id: 'stackable', kind: 'checkbox', label: 'Stackable', span: 4 },
+        { id: 'effect', kind: 'longText', label: 'Effect' },
+      ],
+    },
+  },
+  {
+    id: 'ability',
+    template: {
+      name: 'Ability',
+      width: 300,
+      height: 420,
+      accent: accent('#ef4444'),
+      fields: [
+        { id: 'name', kind: 'heading', label: 'Name', showLabel: false, placeholder: 'Ability name' },
+        {
+          id: 'element',
+          kind: 'select',
+          label: 'Element',
+          span: 6,
+          options: ['Fire', 'Water', 'Earth', 'Air', 'Lightning'],
+        },
+        { id: 'colour', kind: 'colour', label: 'Colour', span: 6 },
+        { id: 'cost', kind: 'number', label: 'Cost', span: 6 },
+        { id: 'cooldown', kind: 'number', label: 'Cooldown', span: 6 },
+        { id: 'power', kind: 'stat', label: 'Power', min: 0, max: 10, defaultValue: 5 },
+        { id: 'description', kind: 'longText', label: 'Description' },
+      ],
+    },
+  },
+  {
+    id: 'location',
+    template: {
+      name: 'Location',
+      width: 340,
+      height: 460,
+      accent: accent('#10b981'),
+      fields: [
+        { id: 'name', kind: 'heading', label: 'Name', showLabel: false, placeholder: 'Location name' },
+        { id: 'image', kind: 'image', label: 'Image', showLabel: false },
+        { id: 'region', kind: 'text', label: 'Region', span: 6 },
+        {
+          id: 'danger',
+          kind: 'select',
+          label: 'Danger',
+          span: 6,
+          options: ['Safe', 'Low', 'Medium', 'High'],
+        },
+        { id: 'divider', kind: 'divider', label: '', showLabel: false },
+        { id: 'notes', kind: 'longText', label: 'Notes' },
+      ],
+    },
+  },
+  {
+    id: 'quest',
+    template: {
+      name: 'Quest',
+      width: 320,
+      height: 420,
+      accent: accent('#0ea5e9'),
+      fields: [
+        { id: 'title', kind: 'heading', label: 'Title', showLabel: false, placeholder: 'Quest title' },
+        { id: 'giver', kind: 'text', label: 'Given by', span: 6 },
+        { id: 'level', kind: 'number', label: 'Level', span: 6 },
+        { id: 'goal', kind: 'longText', label: 'Goal' },
+        { id: 'rewards', kind: 'tags', label: 'Rewards' },
+        { id: 'done', kind: 'checkbox', label: 'Completed' },
+      ],
+    },
+  },
+];
+
+export function blankTemplate(name: string): CardTemplateInput {
+  return {
+    name,
+    accent: accent('#6366f1'),
+    fields: [
+      { id: 'title', kind: 'heading', label: 'Title', showLabel: false, placeholder: 'Title' },
+      { id: 'description', kind: 'longText', label: 'Description' },
+    ],
+  };
+}

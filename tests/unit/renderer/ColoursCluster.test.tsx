@@ -76,6 +76,17 @@ beforeEach(async () => {
 });
 
 describe('palette clusters', () => {
+  it('stays on the cluster tab when another palette is picked', async () => {
+    const user = userEvent.setup();
+    const fire = await palette('Fire', '#e2361b');
+    await palette('Sea', '#1b6ee2');
+    render(<Harness initial={{ tab: 'cluster', paletteId: fire.id }} />);
+    expect(await screen.findByRole('heading', { name: 'Palette cluster' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Select palette Sea' }));
+    expect(screen.getByRole('radio', { name: 'Cluster' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('heading', { name: 'Palette cluster' })).toBeInTheDocument();
+  });
+
   it('asks for a seed when no saved palette is selected', async () => {
     render(<Harness initial={{ tab: 'cluster' }} />);
     expect(await screen.findByText('Select a seed palette')).toBeInTheDocument();
@@ -91,7 +102,9 @@ describe('palette clusters', () => {
     expect(nameField(2)).toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: 'Name of palette 3' })).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'New palettes' }), { target: { value: '3' } });
+    const count = screen.getByRole('spinbutton', { name: 'New palettes' });
+    fireEvent.change(count, { target: { value: '3' } });
+    fireEvent.blur(count);
     expect(nameField(3)).toBeInTheDocument();
     expect(
       screen.getByText('Complementary for one, triad for two, square for three, then evenly spaced.'),
@@ -272,5 +285,54 @@ describe('palette clusters', () => {
       within(screen.getByRole('group', { name: 'Ungrouped' })).getAllByRole('button', { name: /^Rock: / })
         .length,
     ).toBeGreaterThan(0);
+  });
+
+  it('selects a cluster, then modifies, renames, trims and extends it', async () => {
+    const user = userEvent.setup();
+    const { createCluster } = await import('@renderer/lib/palettes');
+    const fire = await palette('Fire', '#e2361b');
+    const water = await palette('Water', '#1b6be2');
+    await createCluster({ name: 'Magic', paletteIds: [fire.id, water.id] });
+    render(<Harness initial={{ paletteId: fire.id }} />);
+
+    const labels = ['Colour wheel', 'Cluster', 'From image', 'Contrast', 'Explore'];
+    const radios = (await screen.findAllByRole('radio')).map((radio) => radio.textContent);
+    expect(radios.filter((text) => labels.includes(text))).toEqual(labels);
+
+    await user.click(screen.getByRole('button', { name: 'Open cluster Magic' }));
+    expect(screen.getByRole('heading', { name: 'Magic' })).toBeInTheDocument();
+    expect(screen.getByText(/Press Modify to rename the cluster/)).toBeInTheDocument();
+    await user.click(firstOf(screen.getAllByRole('button', { name: 'Open' })));
+    expect(await screen.findByRole('button', { name: 'Modify' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Magic' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Open cluster Magic' }));
+    await user.click(screen.getByRole('button', { name: 'Modify' }));
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByRole('button', { name: 'Modify' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Modify' }));
+    const name = screen.getByRole('textbox', { name: 'Cluster name' });
+    await user.clear(name);
+    await user.type(name, 'Elements');
+    await user.click(screen.getByRole('switch', { name: 'Keep Water in the cluster' }));
+    await user.click(firstOf(screen.getAllByRole('switch', { name: /^Include / })));
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(await screen.findByText('Saved cluster Elements')).toBeInTheDocument();
+    expect(api.updatePaletteCluster).toHaveBeenCalledWith(expect.any(String), { name: 'Elements' });
+    expect(api.createPalette).toHaveBeenLastCalledWith(
+      expect.objectContaining({ clusterId: expect.any(String) as string }),
+    );
+    expect(screen.getByRole('heading', { name: 'Elements' })).toBeInTheDocument();
+  });
+
+  it('starts a new cluster from the library menu', async () => {
+    const user = userEvent.setup();
+    const fire = await palette('Fire', '#e2361b');
+    render(<Harness initial={{ paletteId: fire.id }} />);
+    await user.click(await screen.findByRole('button', { name: 'New palette' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'New cluster from the selected palette' }));
+    expect(await screen.findByRole('heading', { name: 'Palette cluster' })).toBeInTheDocument();
   });
 });

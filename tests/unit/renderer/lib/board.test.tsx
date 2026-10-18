@@ -9,7 +9,10 @@ import {
   useBoardSnapshot,
   useBoards,
 } from '@renderer/lib/board';
-import { newEdge, newNote } from '@renderer/components/editors/Board/boardFlow';
+import { createEdge, createItem } from '@renderer/lib/board';
+
+const newNote = (boardId: string, x: number, y: number, z: number) =>
+  createItem({ boardId, preset: 'sticky', rect: { x, y }, z });
 import { bootTestApp, makeProject } from '../helpers/api';
 
 describe('board library', () => {
@@ -34,7 +37,7 @@ describe('board library', () => {
     await act(async () => {
       await commitChanges(board.id, {
         upsertNodes: [note, other],
-        upsertEdges: [newEdge(board.id, note.id, other.id)],
+        upsertEdges: [createEdge(board.id, note.id, other.id)],
       });
     });
     expect(result.current.snapshot?.nodes).toHaveLength(2);

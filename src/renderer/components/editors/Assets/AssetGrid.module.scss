@@ -149,3 +149,17 @@
     object-fit: contain;
   }
 }
+
+.rename {
+  width: 100%;
+  min-width: 0;
+  height: 22px;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  outline: none;
+}

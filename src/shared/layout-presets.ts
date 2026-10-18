@@ -21,7 +21,19 @@ function split(direction: 'row' | 'column', children: LayoutNode[], sizes: numbe
 
 export const workspaceTemplates: readonly WorkspaceTemplate[] = [
   { id: 'planning', build: () => split('row', [area('tickets'), area('ticket')], [0.7, 0.3]) },
-  { id: 'design', build: () => split('row', [area('board'), area('properties')], [0.75, 0.25]) },
+  {
+    id: 'design',
+    build: () =>
+      split(
+        'row',
+        [
+          area('assets', { view: 'folders', search: '' }),
+          area('board'),
+          split('column', [area('properties'), area('layers')], [0.6, 0.4]),
+        ],
+        [0.24, 0.54, 0.22],
+      ),
+  },
   { id: 'palette', build: () => area('colours') },
   { id: 'assets', build: () => area('assets') },
   { id: 'empty', build: () => area('empty') },

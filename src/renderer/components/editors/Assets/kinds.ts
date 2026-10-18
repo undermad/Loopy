@@ -1,5 +1,6 @@
 import { Archive, Box, File, FileText, Film, Image, Music, Type } from 'lucide-react';
-import { type AssetFolder, type AssetKind } from '@shared/assets';
+import { type AssetFolder, type AssetKind, type AssetScope } from '@shared/assets';
+import type { BoardLink } from '@shared/board';
 import { folderPath } from '@renderer/lib/assets';
 
 export const KIND_ICONS: Record<AssetKind, typeof File> = {
@@ -18,15 +19,36 @@ export const ROOT_VALUE = 'root';
 export interface AssetDragData {
   type: 'asset';
   ids: string[];
+  links: BoardLink[];
 }
 
 export interface FolderDropData {
   type: 'folder';
   id: string | null;
+  scope: AssetScope;
 }
 
-export function folderDropId(id: string | null): string {
-  return `drop:${id ?? ROOT_VALUE}`;
+export type InternalKind = 'board' | 'palette';
+
+export interface InternalItem {
+  kind: InternalKind;
+  id: string;
+  name: string;
+  folderId: string | null;
+  colours: string[];
+}
+
+export const INTERNAL_SCOPES: Record<InternalKind, Exclude<AssetScope, 'files'>> = {
+  board: 'boards',
+  palette: 'palettes',
+};
+
+export function internalKey(item: Pick<InternalItem, 'kind' | 'id'>): string {
+  return `${item.kind}:${item.id}`;
+}
+
+export function folderDropId(id: string | null, scope: AssetScope = 'files'): string {
+  return `drop:${scope}:${id ?? ROOT_VALUE}`;
 }
 
 export function folderLabel(folders: AssetFolder[], id: string): string {
@@ -67,9 +89,20 @@ export function readBoolean(state: Record<string, unknown>, key: string, fallbac
   return typeof value === 'boolean' ? value : fallback;
 }
 
-export function readFolderId(state: Record<string, unknown>, folders: AssetFolder[]): string | null {
+export function readFolderId(
+  state: Record<string, unknown>,
+  folders: AssetFolder[],
+  scope: AssetScope = 'files',
+): string | null {
   const value = state['folderId'];
-  return typeof value === 'string' && folders.some((folder) => folder.id === value) ? value : null;
+  return typeof value === 'string' && folders.some((folder) => folder.id === value && folder.scope === scope)
+    ? value
+    : null;
+}
+
+export function readScope(state: Record<string, unknown>): AssetScope {
+  const value = state['scope'];
+  return value === 'boards' || value === 'palettes' ? value : 'files';
 }
 
 export function hasFiles(transfer: DataTransfer | null): boolean {

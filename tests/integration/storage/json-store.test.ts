@@ -63,6 +63,10 @@ describe('app settings store', () => {
       uiFont: 'Inter',
       fontSize: 14,
       defaultLayoutId: 'default',
+      editors: {
+        board: { grid: true, snap: false, minimap: false, wheel: 'zoom', quickButtons: true },
+        assets: { layout: 'grid', details: true },
+      },
     });
   });
 

@@ -8,6 +8,7 @@ export interface ScrollAreaProps {
   orientation?: 'vertical' | 'horizontal' | 'both';
   className?: string | undefined;
   viewportClassName?: string | undefined;
+  [data: `data-${string}`]: string | undefined;
 }
 
 export function ScrollArea({
@@ -15,10 +16,13 @@ export function ScrollArea({
   orientation = 'vertical',
   className,
   viewportClassName,
+  ...rest
 }: ScrollAreaProps) {
   return (
-    <Radix.Root className={cx(styles['root'], className)} type="auto">
-      <Radix.Viewport className={cx(styles['viewport'], viewportClassName)}>{children}</Radix.Viewport>
+    <Radix.Root className={cx(styles['root'], className)} type="auto" {...rest}>
+      <Radix.Viewport className={cx(styles['viewport'], viewportClassName)}>
+        {orientation === 'vertical' ? <div className={styles['fit']}>{children}</div> : children}
+      </Radix.Viewport>
       {orientation !== 'horizontal' ? (
         <Radix.Scrollbar orientation="vertical" className={styles['scrollbar']}>
           <Radix.Thumb className={styles['thumb']} />

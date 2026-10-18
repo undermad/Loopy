@@ -19,8 +19,28 @@ export function createWindowOptions(preloadPath: string): BrowserWindowConstruct
   };
 }
 
-export function createMainWindow(): BrowserWindow {
-  const window = new BrowserWindow(createWindowOptions(join(__dirname, '../preload/index.cjs')));
+export interface WindowBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export function createMainWindow(bounds?: WindowBounds): BrowserWindow {
+  const options = createWindowOptions(join(__dirname, '../preload/index.cjs'));
+  const window = new BrowserWindow(
+    bounds
+      ? {
+          ...options,
+          x: Math.round(bounds.x),
+          y: Math.round(bounds.y),
+          width: Math.max(360, Math.round(bounds.width)),
+          height: Math.max(240, Math.round(bounds.height)),
+          minWidth: 360,
+          minHeight: 240,
+        }
+      : options,
+  );
 
   window.on('ready-to-show', () => {
     window.show();

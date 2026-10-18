@@ -1,4 +1,5 @@
 import type { EditCommand } from '@shared/ipc';
+import { runEditCommand } from '@renderer/lib/commands';
 import { useTranslation } from '@renderer/lib/i18n';
 import {
   closeProject,
@@ -92,7 +93,7 @@ export function MenuBar({ onDialog, editCommand }: MenuBarProps) {
                 {index === 2 || index === 6 ? <Menubar.Separator /> : null}
                 <Menubar.Item
                   onSelect={() => {
-                    editCommand(command);
+                    if (!runEditCommand(command)) editCommand(command);
                   }}
                 >
                   {t(`menu.${command}`)}

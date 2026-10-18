@@ -1,0 +1,237 @@
+.card {
+  display: grid;
+  min-height: 0;
+  align-content: start;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fieldPickable {
+  border-radius: 4px;
+  outline: 1px dashed transparent;
+  cursor: pointer;
+  outline-offset: 2px;
+
+  &:hover {
+    outline-color: color-mix(in srgb, currentcolor 35%, transparent);
+  }
+}
+
+.fieldSelected {
+  outline: 2px solid var(--color-accent) !important;
+}
+
+.label {
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  opacity: 0.65;
+  text-transform: uppercase;
+}
+
+.static {
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+
+.empty {
+  opacity: 0.45;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentcolor 6%, transparent);
+  color: inherit;
+  font: inherit;
+
+  &:hover {
+    border-color: color-mix(in srgb, currentcolor 20%, transparent);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+
+  &::placeholder {
+    color: inherit;
+    opacity: 0.45;
+  }
+}
+
+.area {
+  min-height: 3.5em;
+  resize: vertical;
+}
+
+.number {
+  max-width: 7em;
+}
+
+.select {
+  cursor: pointer;
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentcolor 10%, transparent);
+  font-size: 0.85em;
+  justify-self: start;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentcolor 12%, transparent);
+  font-size: 0.85em;
+}
+
+.tagRemove {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+
+  svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+.tagInput {
+  min-width: 4em;
+  padding: 1px 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85em;
+  flex: 1;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.pictureFrame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 72px;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentcolor 8%, transparent);
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+}
+
+.pictureButton {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.noPicture {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8em;
+  opacity: 0.55;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bar {
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentcolor 12%, transparent);
+  overflow: hidden;
+  flex: 1;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--color-accent);
+  }
+}
+
+.statValue {
+  min-width: 2em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.colour {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 18px;
+  height: 18px;
+  border: 1px solid color-mix(in srgb, currentcolor 25%, transparent);
+  border-radius: 4px;
+}
+
+.hex {
+  width: 3em;
+  height: 1.6em;
+  padding: 0;
+}
+
+.divider {
+  width: 100%;
+  margin: 2px 0;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, currentcolor 18%, transparent);
+}

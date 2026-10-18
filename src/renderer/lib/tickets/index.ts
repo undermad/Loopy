@@ -1,4 +1,4 @@
-export { bootTickets, resetTicketsStore, selectTicket } from './store';
+export { bootTickets, loadTickets, resetTicketsStore, selectTicket } from './store';
 export {
   commentActions,
   labelActions,

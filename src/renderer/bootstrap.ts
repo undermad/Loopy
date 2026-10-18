@@ -1,16 +1,17 @@
 import { useEffect } from 'react';
 import i18next from 'i18next';
-import type { LoopyApi } from '@shared/ipc';
+import type { DataDomain, LoopyApi } from '@shared/ipc';
 import { builtInLayoutPresets } from '@shared/layout-presets';
-import { bootAssets } from '@renderer/lib/assets';
-import { bootBoards } from '@renderer/lib/board';
+import { bootAssets, loadAssets } from '@renderer/lib/assets';
+import { bootBoardShortcuts, bootBoards, refreshBoards } from '@renderer/lib/board';
 import { applyLanguage, initI18n } from '@renderer/lib/i18n';
-import { bootPalettes } from '@renderer/lib/palettes';
+import { bootCardTemplates, loadCardTemplates } from '@renderer/lib/cards';
+import { bootPalettes, loadPalettes } from '@renderer/lib/palettes';
 import { bootProject, currentProject } from '@renderer/lib/project';
 import { bootSettings, useSettings } from '@renderer/lib/settings';
 import { bootTheme } from '@renderer/lib/theme';
-import { bootTickets } from '@renderer/lib/tickets';
-import { bootWorkspaces } from '@renderer/lib/workspaces';
+import { bootTickets, loadTickets } from '@renderer/lib/tickets';
+import { bootWindows, bootWorkspaces } from '@renderer/lib/workspaces';
 import { registerEditors } from './components/editors/registerEditors';
 
 export async function bootstrap(api: LoopyApi): Promise<void> {
@@ -24,7 +25,9 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
   await initI18n(settings.language, locale);
   await bootTickets(api, currentProject() !== null);
   await bootBoards(api, currentProject() !== null);
+  bootBoardShortcuts();
   await bootPalettes(api, currentProject() !== null);
+  await bootCardTemplates(api, currentProject() !== null);
   await bootAssets(api, currentProject() !== null);
   await bootWorkspaces(api, () => {
     const names = {
@@ -35,6 +38,17 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
       assets: i18next.t('shell:layout.presets.assets'),
     };
     return builtInLayoutPresets(names)[0]?.workspaces ?? [];
+  });
+  await bootWindows(api);
+  const refresh: Record<DataDomain, () => Promise<unknown>> = {
+    tickets: loadTickets,
+    boards: refreshBoards,
+    palettes: loadPalettes,
+    cards: loadCardTemplates,
+    assets: loadAssets,
+  };
+  api.onProjectDataChanged(({ domain }) => {
+    if (currentProject()) void refresh[domain]().catch(() => undefined);
   });
 }
 

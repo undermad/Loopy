@@ -10,6 +10,7 @@ import {
   assetSettingsSchema,
   assetsSnapshotSchema,
   folderInputSchema,
+  type AssetScope,
   folderPatchSchema,
   resolveDropFolder,
   type AssetSettings,
@@ -45,7 +46,7 @@ function writeAssetSettings(db: DatabaseSync, settings: AssetSettings): void {
 export function readAssetsSnapshot(db: DatabaseSync): AssetsSnapshot {
   const folders = db
     .prepare(
-      'SELECT id, parent_id AS parentId, name, created_at AS createdAt, updated_at AS updatedAt FROM asset_folders ORDER BY name, id',
+      'SELECT id, parent_id AS parentId, scope, name, created_at AS createdAt, updated_at AS updatedAt FROM asset_folders ORDER BY name, id',
     )
     .all();
   const assets = db
@@ -65,8 +66,19 @@ function folderIds(db: DatabaseSync): Set<string> {
   return new Set((db.prepare('SELECT id FROM asset_folders').all() as { id: string }[]).map((row) => row.id));
 }
 
+function folderScope(db: DatabaseSync, id: string): AssetScope {
+  const row = db.prepare('SELECT scope FROM asset_folders WHERE id = ?').get(id) as
+    { scope: AssetScope } | undefined;
+  if (!row) throw new Error(`Unknown folder ${id}`);
+  return row.scope;
+}
+
+export function assertFolderScope(db: DatabaseSync, id: string | null, scope: AssetScope): void {
+  if (id !== null && folderScope(db, id) !== scope) throw new Error(`Folder ${id} does not hold ${scope}`);
+}
+
 function assertFolder(db: DatabaseSync, id: string | null): void {
-  if (id !== null && !folderIds(db).has(id)) throw new Error(`Unknown folder ${id}`);
+  assertFolderScope(db, id, 'files');
 }
 
 function isDescendant(db: DatabaseSync, folderId: string, ancestorId: string): boolean {
@@ -84,11 +96,11 @@ function isDescendant(db: DatabaseSync, folderId: string, ancestorId: string): b
 
 export function createFolder(db: DatabaseSync, raw: unknown): AssetsSnapshot {
   const input = folderInputSchema.parse(raw);
-  assertFolder(db, input.parentId);
+  assertFolderScope(db, input.parentId, input.scope);
   const stamp = now();
   db.prepare(
-    'INSERT INTO asset_folders (id, parent_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-  ).run(randomUUID(), input.parentId, input.name, stamp, stamp);
+    'INSERT INTO asset_folders (id, parent_id, scope, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+  ).run(randomUUID(), input.parentId, input.scope, input.name, stamp, stamp);
   return readAssetsSnapshot(db);
 }
 
@@ -102,7 +114,7 @@ export function updateFolder(db: DatabaseSync, id: string, raw: unknown): Assets
       values.push(patch.name);
     }
     if (patch.parentId !== undefined) {
-      assertFolder(db, patch.parentId);
+      assertFolderScope(db, patch.parentId, folderScope(db, id));
       if (patch.parentId !== null && isDescendant(db, patch.parentId, id)) {
         throw new Error(`Folder ${id} cannot move into itself`);
       }
@@ -126,6 +138,9 @@ export function deleteFolder(db: DatabaseSync, id: string): AssetsSnapshot {
       stamp,
       id,
     );
+    for (const table of ['boards', 'palettes']) {
+      db.prepare(`UPDATE ${table} SET folder_id = ? WHERE folder_id = ?`).run(row.parentId, id);
+    }
     db.prepare('UPDATE asset_folders SET parent_id = ?, updated_at = ? WHERE parent_id = ?').run(
       row.parentId,
       stamp,

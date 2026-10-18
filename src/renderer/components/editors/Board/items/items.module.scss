@@ -1,0 +1,220 @@
+.text {
+  white-space: pre-wrap;
+  user-select: none;
+}
+
+.placeholder {
+  opacity: 0.55;
+}
+
+.textEdit {
+  width: 100%;
+  max-height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  resize: none;
+  field-sizing: content;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.imageMissing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  width: 100%;
+  height: 100%;
+  background: var(--color-surface-sunken);
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.container {
+  cursor: default;
+}
+
+.dropTarget {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    content: '';
+    pointer-events: none;
+  }
+}
+
+.dropChip {
+  position: absolute;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  bottom: calc(100% + 8px);
+  left: 0;
+}
+
+.title {
+  font-size: var(--font-size-sm);
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titleEdit {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--font-size-sm);
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.accent {
+  position: absolute;
+  height: 6px;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+.cardBody {
+  height: 100%;
+  overflow: auto;
+  margin-top: 4px;
+}
+
+.file {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 100%;
+  min-height: 0;
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.fileIcon {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  opacity: 0.7;
+}
+
+.fileText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fileName {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileMeta {
+  font-size: 0.8em;
+  opacity: 0.65;
+}
+
+.video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border-radius: 4px;
+  background: #000;
+  object-fit: contain;
+}
+
+.audio {
+  width: 100%;
+  height: 32px;
+}
+
+.cardInert {
+  pointer-events: none;
+}
+
+.cardMissing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  height: 100%;
+  font-size: var(--font-size-xs);
+  opacity: 0.7;
+  text-align: center;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.cardValue {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link {
+  width: 100%;
+  height: 100%;
+}
+
+.linkEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+}

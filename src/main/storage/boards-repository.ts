@@ -12,8 +12,10 @@ import {
   boardSchema,
   boardSnapshotSchema,
   type Board,
+  type BoardNode,
   type BoardSnapshot,
 } from '@shared/board';
+import { assertFolderScope } from './assets-repository';
 
 function now(): string {
   return new Date().toISOString();
@@ -32,7 +34,7 @@ function transaction<T>(db: DatabaseSync, work: () => T): T {
 }
 
 const BOARD_COLUMNS =
-  'id, name, background_color AS backgroundColor, grid_color AS gridColor, background_ref AS backgroundRef, grid_ref AS gridRef, unit, unit_scale AS unitScale, created_at AS createdAt, updated_at AS updatedAt';
+  'id, name, background_color AS backgroundColor, grid_color AS gridColor, background_ref AS backgroundRef, grid_ref AS gridRef, unit, unit_scale AS unitScale, folder_id AS folderId, created_at AS createdAt, updated_at AS updatedAt';
 
 function parseJson(value: unknown): unknown {
   return typeof value === 'string' ? JSON.parse(value) : {};
@@ -120,6 +122,11 @@ export function updateBoard(db: DatabaseSync, id: string, raw: unknown): Board {
     sets.push('unit_scale = ?');
     values.push(patch.unitScale);
   }
+  if (patch.folderId !== undefined) {
+    assertFolderScope(db, patch.folderId, 'boards');
+    sets.push('folder_id = ?');
+    values.push(patch.folderId);
+  }
   db.prepare(`UPDATE boards SET ${sets.join(', ')} WHERE id = ?`).run(...values, id);
   return readBoardRow(db, id);
 }
@@ -133,7 +140,7 @@ export function readBoard(db: DatabaseSync, id: string): BoardSnapshot {
   const board = readBoardRow(db, id);
   const nodes = db
     .prepare(
-      'SELECT id, board_id AS boardId, type, x, y, width, height, z, data FROM board_nodes WHERE board_id = ? ORDER BY z, created_at',
+      'SELECT id, board_id AS boardId, parent_id AS parentId, type, x, y, width, height, z, data FROM board_nodes WHERE board_id = ? ORDER BY z, created_at',
     )
     .all(id)
     .map((row) => ({
@@ -152,21 +159,59 @@ export function readBoard(db: DatabaseSync, id: string): BoardSnapshot {
   return boardSnapshotSchema.parse({ board, nodes, edges });
 }
 
+function parentsFirst(db: DatabaseSync, boardId: string, nodes: BoardNode[]): BoardNode[] {
+  const batch = new Map(nodes.map((node) => [node.id, node]));
+  const stored = db.prepare(
+    'SELECT parent_id AS parentId, board_id AS boardId FROM board_nodes WHERE id = ?',
+  );
+  const parentOf = (id: string): { parentId: string | null; boardId: string } | null => {
+    const queued = batch.get(id);
+    if (queued) return { parentId: queued.parentId, boardId: queued.boardId };
+    const row = stored.get(id) as { parentId: string | null; boardId: string } | undefined;
+    return row ?? null;
+  };
+  for (const node of nodes) {
+    if (node.boardId !== boardId) throw new Error(`Node ${node.id} belongs to another board`);
+    const seen = new Set([node.id]);
+    let current = node.parentId;
+    while (current) {
+      if (seen.has(current)) throw new Error(`Node ${node.id} would contain itself`);
+      seen.add(current);
+      const parent = parentOf(current);
+      if (parent?.boardId !== boardId) {
+        throw new Error(`Unknown parent ${current} for node ${node.id}`);
+      }
+      current = parent.parentId;
+    }
+  }
+  const ordered: BoardNode[] = [];
+  const placed = new Set<string>();
+  const place = (node: BoardNode) => {
+    if (placed.has(node.id)) return;
+    placed.add(node.id);
+    const parent = node.parentId ? batch.get(node.parentId) : undefined;
+    if (parent) place(parent);
+    ordered.push(node);
+  };
+  for (const node of nodes) place(node);
+  return ordered;
+}
+
 export function applyChanges(db: DatabaseSync, boardId: string, raw: unknown): BoardSnapshot {
   const changes = boardChangesSchema.parse(raw);
   return transaction(db, () => {
     const stamp = now();
     const upsertNode = db.prepare(
-      `INSERT INTO board_nodes (id, board_id, type, x, y, width, height, z, data, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET type = excluded.type, x = excluded.x, y = excluded.y, width = excluded.width,
+      `INSERT INTO board_nodes (id, board_id, parent_id, type, x, y, width, height, z, data, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET parent_id = excluded.parent_id, type = excluded.type, x = excluded.x, y = excluded.y, width = excluded.width,
          height = excluded.height, z = excluded.z, data = excluded.data, updated_at = excluded.updated_at`,
     );
-    for (const node of changes.upsertNodes) {
-      if (node.boardId !== boardId) throw new Error(`Node ${node.id} belongs to another board`);
+    for (const node of parentsFirst(db, boardId, changes.upsertNodes)) {
       upsertNode.run(
         node.id,
         boardId,
+        node.parentId,
         node.type,
         node.x,
         node.y,

@@ -91,3 +91,21 @@
   color: var(--color-fg-muted);
   font-size: var(--font-size-xs);
 }
+
+.section {
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.file {
+  color: var(--color-fg-muted);
+  touch-action: none;
+}
+
+.dragging {
+  opacity: 0.4;
+}

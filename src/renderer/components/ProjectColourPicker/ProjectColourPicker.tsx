@@ -75,6 +75,38 @@ export function ProjectColourPicker({
         </button>
       </Popover.Trigger>
       <Popover.Content className={styles['content']} align="start" aria-label={label}>
+        <div className={styles['custom']}>
+          <span className={styles['paletteName']}>{t('picker.custom')}</span>
+          <HexColorPicker
+            className={styles['picker']}
+            color={resolved}
+            onChange={(hex) => {
+              onChange({ hex, ref: null });
+            }}
+          />
+          <div className={styles['customRow']}>
+            <HexColorInput
+              color={resolved}
+              onChange={(hex) => {
+                onChange({ hex, ref: null });
+              }}
+              prefixed
+              aria-label={label}
+              className={styles['input']}
+            />
+            <IconButton
+              label={t('contrast.eyedropper')}
+              size="sm"
+              onClick={() => {
+                void window.loopy.pickScreenColour().then((hex) => {
+                  if (hex) onChange({ hex, ref: null });
+                });
+              }}
+            >
+              <Pipette aria-hidden="true" />
+            </IconButton>
+          </div>
+        </div>
         {groups.length > 0 ? (
           <div className={styles['palettes']}>
             {groups.map((group) =>
@@ -110,38 +142,6 @@ export function ProjectColourPicker({
             {t('picker.noPalettes')}
           </p>
         )}
-        <div className={styles['custom']}>
-          <span className={styles['paletteName']}>{t('picker.custom')}</span>
-          <HexColorPicker
-            className={styles['picker']}
-            color={resolved}
-            onChange={(hex) => {
-              onChange({ hex, ref: null });
-            }}
-          />
-          <div className={styles['customRow']}>
-            <HexColorInput
-              color={resolved}
-              onChange={(hex) => {
-                onChange({ hex, ref: null });
-              }}
-              prefixed
-              aria-label={label}
-              className={styles['input']}
-            />
-            <IconButton
-              label={t('contrast.eyedropper')}
-              size="sm"
-              onClick={() => {
-                void window.loopy.pickScreenColour().then((hex) => {
-                  if (hex) onChange({ hex, ref: null });
-                });
-              }}
-            >
-              <Pipette aria-hidden="true" />
-            </IconButton>
-          </div>
-        </div>
       </Popover.Content>
     </Popover.Root>
   );

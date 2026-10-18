@@ -7,6 +7,7 @@ import {
 } from '@shared/app-settings';
 import type { RecentProject } from '@shared/device-state';
 import type {
+  DataChange,
   ColorScheme,
   LoopyApi,
   ProjectState,
@@ -14,7 +15,7 @@ import type {
   ShellState,
   ShellStatePatch,
 } from '@shared/ipc';
-import type { LayoutPreset } from '@shared/layout';
+import type { LayoutNode, LayoutPreset } from '@shared/layout';
 import type { ProjectInfo } from '@shared/project';
 import { builtInThemes, type Theme } from '@shared/theme';
 import { bootstrap } from '@renderer/bootstrap';
@@ -23,11 +24,13 @@ import { resetBoardStore } from '@renderer/lib/board';
 import { resetTicketsStore } from '@renderer/lib/tickets';
 import { resetWorkspacesStore } from '@renderer/lib/workspaces';
 import { resetAssetsStore } from '@renderer/lib/assets';
+import { resetCardTemplatesStore } from '@renderer/lib/cards';
 import { resetPalettesStore } from '@renderer/lib/palettes';
 import { resetSettingsStore } from '@renderer/lib/settings';
 import { resetThemeStore } from '@renderer/lib/theme';
 import { createAssetsFake } from './assets-fake';
 import { createBoardsFake } from './boards-fake';
+import { createCardsFake } from './cards-fake';
 import { createPalettesFake } from './palettes-fake';
 import { createTicketsFake } from './tickets-fake';
 
@@ -41,10 +44,14 @@ export interface FakeApi extends LoopyApi {
   layouts: LayoutPreset[];
   tickets: ReturnType<typeof createTicketsFake>['data'];
   palettesData: ReturnType<typeof createPalettesFake>['data'];
+  cardsData: ReturnType<typeof createCardsFake>['data'];
   assetsData: ReturnType<typeof createAssetsFake>['data'];
   emitSettings: (settings: AppSettings) => void;
   emitNativeTheme: (scheme: ColorScheme) => void;
   emitProject: () => void;
+  detachedLayout: LayoutNode | null;
+  emitLayoutReturned: (layout: LayoutNode) => void;
+  emitDataChanged: (change: DataChange) => void;
 }
 
 export function makeProject(name: string, id = crypto.randomUUID()): ProjectInfo {
@@ -54,12 +61,15 @@ export function makeProject(name: string, id = crypto.randomUUID()): ProjectInfo
 
 export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: ColorScheme = 'light'): FakeApi {
   const settingsListeners = new Set<(settings: AppSettings) => void>();
+  const returnedListeners = new Set<(layout: LayoutNode) => void>();
+  const dataListeners = new Set<(change: DataChange) => void>();
   const themeListeners = new Set<(scheme: ColorScheme) => void>();
   const projectListeners = new Set<(state: ProjectState) => void>();
   const projectState = (): ProjectState => ({ current: api.current, recent: api.recent });
   const ticketsFake = createTicketsFake();
   const boardsFake = createBoardsFake();
   const palettesFake = createPalettesFake();
+  const cardsFake = createCardsFake();
   const assetsFake = createAssetsFake();
   const api: FakeApi = {
     settings: appSettingsSchema.parse({ schemaVersion: APP_SETTINGS_SCHEMA_VERSION, ...overrides }),
@@ -71,10 +81,12 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     layouts: [],
     tickets: ticketsFake.data,
     palettesData: palettesFake.data,
+    cardsData: cardsFake.data,
     assetsData: assetsFake.data,
     ...ticketsFake.api,
     ...boardsFake.api,
     ...palettesFake.api,
+    ...cardsFake.api,
     ...assetsFake.api,
     getAppVersion: vi.fn(() => Promise.resolve({ app: '0.1.0', electron: '44.8.0' })),
     getSettings: vi.fn(() => Promise.resolve(api.settings)),
@@ -161,6 +173,32 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     toggleFullscreen: vi.fn(() => Promise.resolve(true)),
     pickScreenColour: vi.fn(() => Promise.resolve(null)),
     editCommand: vi.fn(() => Promise.resolve()),
+    detachArea: vi.fn(() => Promise.resolve()),
+    getDetachedLayout: vi.fn(() => Promise.resolve(api.detachedLayout)),
+    returnLayout: vi.fn(() => Promise.resolve()),
+    onLayoutReturned: vi.fn((listener: (layout: LayoutNode) => void) => {
+      returnedListeners.add(listener);
+      return () => {
+        returnedListeners.delete(listener);
+      };
+    }),
+    onProjectDataChanged: vi.fn((listener: (change: DataChange) => void) => {
+      dataListeners.add(listener);
+      return () => {
+        dataListeners.delete(listener);
+      };
+    }),
+    detachedLayout: null,
+    emitLayoutReturned: (layout) => {
+      returnedListeners.forEach((listener) => {
+        listener(layout);
+      });
+    },
+    emitDataChanged: (change) => {
+      dataListeners.forEach((listener) => {
+        listener(change);
+      });
+    },
     emitSettings: (settings) => {
       settingsListeners.forEach((listener) => {
         listener(settings);
@@ -192,6 +230,7 @@ export async function bootTestApp(
   resetTicketsStore();
   resetBoardStore();
   resetPalettesStore();
+  resetCardTemplatesStore();
   resetAssetsStore();
   const api = createFakeApi(overrides, scheme);
   prepare?.(api);

@@ -1,18 +1,24 @@
 import { useState, type DragEvent } from 'react';
+import { Palette, PenTool } from 'lucide-react';
 import { ASSET_KINDS, type AssetKind } from '@shared/assets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { cx } from '@renderer/ui';
-import { KIND_ICONS, hasFiles } from './kinds';
+import { KIND_ICONS, hasFiles, type InternalKind } from './kinds';
 import styles from './FolderTree.module.scss';
+
+export type KindChoice = AssetKind | InternalKind;
 
 export interface KindListProps {
   counts: Record<AssetKind, number>;
-  selected: AssetKind;
-  onSelect: (kind: AssetKind) => void;
+  internalCounts: Record<InternalKind, number>;
+  selected: KindChoice;
+  onSelect: (kind: KindChoice) => void;
   onImport: (files: FileList) => void;
 }
 
-export function KindList({ counts, selected, onSelect, onImport }: KindListProps) {
+const INTERNAL_ICONS: Record<InternalKind, typeof PenTool> = { board: PenTool, palette: Palette };
+
+export function KindList({ counts, internalCounts, selected, onSelect, onImport }: KindListProps) {
   const { t } = useTranslation('assets');
   const [hover, setHover] = useState<AssetKind | null>(null);
 
@@ -31,44 +37,64 @@ export function KindList({ counts, selected, onSelect, onImport }: KindListProps
     onImport(event.dataTransfer.files);
   }
 
+  function row(kind: KindChoice, label: string, count: number, Icon: typeof PenTool, external: boolean) {
+    const active = selected === kind;
+    return (
+      <div
+        key={kind}
+        role="option"
+        tabIndex={active ? 0 : -1}
+        aria-selected={active}
+        className={cx(styles['row'], active && styles['selected'], hover === kind && styles['over'])}
+        style={{ paddingLeft: 'var(--space-2)' }}
+        onClick={() => {
+          onSelect(kind);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onSelect(kind);
+          }
+        }}
+        onDragOver={
+          external
+            ? (event) => {
+                onDragOver(event, kind as AssetKind);
+              }
+            : undefined
+        }
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHover(null);
+        }}
+        onDrop={external ? onDrop : undefined}
+      >
+        <span className={styles['icon']} aria-hidden="true">
+          <Icon />
+        </span>
+        <span className={styles['name']}>{label}</span>
+        <span className={styles['count']}>{count}</span>
+      </div>
+    );
+  }
+
   return (
     <div role="listbox" aria-label={t('kindList')} className={styles['tree']}>
-      {ASSET_KINDS.map((kind) => {
-        const Icon = KIND_ICONS[kind];
-        const active = selected === kind;
-        return (
-          <div
-            key={kind}
-            role="option"
-            tabIndex={active ? 0 : -1}
-            aria-selected={active}
-            className={cx(styles['row'], active && styles['selected'], hover === kind && styles['over'])}
-            style={{ paddingLeft: 'var(--space-2)' }}
-            onClick={() => {
-              onSelect(kind);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onSelect(kind);
-              }
-            }}
-            onDragOver={(event) => {
-              onDragOver(event, kind);
-            }}
-            onDragLeave={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHover(null);
-            }}
-            onDrop={onDrop}
-          >
-            <span className={styles['icon']} aria-hidden="true">
-              <Icon />
-            </span>
-            <span className={styles['name']}>{t(`kinds.${kind}`)}</span>
-            <span className={styles['count']}>{counts[kind]}</span>
-          </div>
-        );
-      })}
+      <div role="presentation" className={styles['section']}>
+        {t('external')}
+      </div>
+      {ASSET_KINDS.map((kind) => row(kind, t(`kinds.${kind}`), counts[kind], KIND_ICONS[kind], true))}
+      <div role="presentation" className={styles['section']}>
+        {t('internal')}
+      </div>
+      {(['board', 'palette'] as const).map((kind) =>
+        row(
+          kind,
+          t(kind === 'board' ? 'boards' : 'palettes'),
+          internalCounts[kind],
+          INTERNAL_ICONS[kind],
+          false,
+        ),
+      )}
     </div>
   );
 }

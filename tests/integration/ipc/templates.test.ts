@@ -46,7 +46,7 @@ describe('comments', () => {
     await expect(call(IpcChannel.commentsUpdate, comment.id, '')).rejects.toThrow();
     snapshot = await call(IpcChannel.commentsDelete, comment.id);
     expect(snapshot.comments).toHaveLength(0);
-    snapshot = await call(IpcChannel.commentsCreate, { ticketId: ticket.id, body: '<p>Again</p>' });
+    await call(IpcChannel.commentsCreate, { ticketId: ticket.id, body: '<p>Again</p>' });
     snapshot = await call(IpcChannel.ticketsDelete, ticket.id);
     expect(snapshot.comments).toHaveLength(0);
   });

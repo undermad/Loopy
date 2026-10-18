@@ -203,6 +203,28 @@ export const projectMigrations: SqlMigrations = [
   ALTER TABLE palettes ADD COLUMN cluster_id TEXT REFERENCES palette_clusters(id) ON DELETE SET NULL;
   ALTER TABLE palettes ADD COLUMN cluster_position INTEGER NOT NULL DEFAULT 0;
   CREATE INDEX palettes_by_cluster ON palettes(cluster_id, cluster_position);`,
+  `ALTER TABLE board_nodes ADD COLUMN parent_id TEXT REFERENCES board_nodes(id) ON DELETE CASCADE;
+  CREATE INDEX board_nodes_by_parent ON board_nodes(parent_id);
+  UPDATE board_nodes SET type = 'text', data = json_object(
+    'text', COALESCE(json_extract(data, '$.text'), ''),
+    'style', json_object(
+      'fill', json(COALESCE(json_extract(data, '$.fill'), '{"hex":"#fde68a","ref":null}')),
+      'shadow', json('true'),
+      'padding', 12,
+      'radius', 4
+    )
+  ) WHERE type = 'note';
+  CREATE TABLE card_templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL CHECK (length(name) > 0),
+    data TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );`,
+  `ALTER TABLE asset_folders ADD COLUMN scope TEXT NOT NULL DEFAULT 'files' CHECK (scope IN ('files', 'boards', 'palettes'));
+  ALTER TABLE boards ADD COLUMN folder_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL;
+  ALTER TABLE palettes ADD COLUMN folder_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL;`,
+  `ALTER TABLE tickets ADD COLUMN links TEXT NOT NULL DEFAULT '[]';`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

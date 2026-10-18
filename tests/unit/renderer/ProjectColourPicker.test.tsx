@@ -2,7 +2,8 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ReactFlowProvider } from '@xyflow/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NoteNode } from '@renderer/components/editors/Board/NoteNode';
+import { BoardActionsContext } from '@renderer/components/editors/Board/BoardContext';
+import { TextItem } from '@renderer/components/editors/Board/items/TextItem';
 import { PropertiesEditor } from '@renderer/components/editors/Properties/PropertiesEditor';
 import { ProjectColourPicker } from '@renderer/components/ProjectColourPicker/ProjectColourPicker';
 import {
@@ -61,6 +62,10 @@ describe('ProjectColourPicker', () => {
     await user.click(screen.getByRole('button', { name: 'Fill' }));
     expect(await screen.findByRole('button', { name: 'Sea: Deep' })).toHaveAttribute('aria-pressed', 'true');
     const hex = screen.getByRole('textbox', { name: 'Fill' });
+    expect(
+      hex.compareDocumentPosition(screen.getByRole('button', { name: 'Sea: Deep' })) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(hex).toHaveValue('#112233');
     await act(async () => {
       await updatePalette(palette.id, { colours: [{ id: colour.id, name: 'Deep', hex: '#445566' }] });
@@ -119,13 +124,14 @@ describe('note fill', () => {
     const note = {
       id: 'n1',
       boardId: board.id,
-      type: 'note' as const,
+      parentId: null,
+      type: 'text' as const,
       x: 0,
       y: 0,
       width: 200,
       height: 120,
       z: 1,
-      data: { text: 'hi', fill: { hex: '#112233', ref } },
+      data: { text: 'hi', style: { fill: { hex: '#112233', ref } } },
     };
     await commitChanges(board.id, { upsertNodes: [note] });
     setBoardSelection(board.id, ['n1']);
@@ -134,20 +140,43 @@ describe('note fill', () => {
       <TooltipProvider>
         <ToastProvider closeLabel="Dismiss" regionLabel="Notifications">
           <ReactFlowProvider>
-            <NoteNode
-              id="n1"
-              type="note"
-              selected={false}
-              dragging={false}
-              zIndex={1}
-              isConnectable
-              positionAbsoluteX={0}
-              positionAbsoluteY={0}
-              deletable
-              selectable
-              draggable
-              data={{ text: 'hi', fill: { hex: '#112233', ref }, onChange: vi.fn() }}
-            />
+            <BoardActionsContext
+              value={{
+                boardId: board.id,
+                textColour: '#1a1a1a',
+                editingId: null,
+                setEditingId: vi.fn(),
+                updateNode: vi.fn(),
+                updateEdge: vi.fn(),
+                openTemplateEditor: vi.fn(),
+                dropTarget: null,
+                dockedPeers: new Set(),
+                wholeGroup: new Set(),
+                snapping: false,
+                keepRatio: false,
+                previewRotation: vi.fn(),
+                rotateItem: vi.fn(),
+                previewGeometry: vi.fn(),
+                setTransforming: vi.fn(),
+                gridStep: () => 10,
+                openLink: vi.fn(),
+              }}
+            >
+              <TextItem
+                id="n1"
+                type="text"
+                selected={false}
+                dragging={false}
+                zIndex={1}
+                isConnectable
+                positionAbsoluteX={0}
+                positionAbsoluteY={0}
+                deletable
+                selectable
+                draggable
+                data={{ node: note }}
+              />
+            </BoardActionsContext>
           </ReactFlowProvider>
           <PropertiesEditor areaId="p" state={{}} setState={() => undefined} />
         </ToastProvider>
@@ -163,7 +192,7 @@ describe('note fill', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Default' }));
     expect(api.applyBoardChanges).toHaveBeenLastCalledWith(board.id, {
-      upsertNodes: [expect.objectContaining({ data: { text: 'hi', fill: null } }) as object],
+      upsertNodes: [expect.objectContaining({ data: { text: 'hi', style: {} } }) as object],
     });
   });
 });

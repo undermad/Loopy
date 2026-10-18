@@ -4,15 +4,56 @@ export {
   createBoard,
   deleteBoard,
   loadBoard,
+  redoBoard,
+  refreshBoards,
   resetBoardStore,
   setActiveBoard,
+  getBoardNodes,
+  getBoardSelection,
   setBoardSelection,
   setLiveGeometry,
+  setLiveLayers,
+  undoBoard,
   updateBoard,
 } from './store';
 export type { LiveGeometry } from './store';
+export {
+  absolutePosition,
+  absoluteRect,
+  bringToFront,
+  containerAt,
+  createEdge,
+  createItem,
+  descendants,
+  duplicateItems,
+  edgeData,
+  effectiveZ,
+  fitSize,
+  itemAt,
+  itemData,
+  measureImage,
+  sidesBetween,
+  nextZ,
+  normaliseRect,
+  parentsFirst,
+  presetSize,
+  reparent,
+  resolveItemStyle,
+  sendToBack,
+  withData,
+  withStyle,
+} from './items';
+export type { ItemPreset, Point, Rect, ResolvedStyle } from './items';
 export type { GridLevel } from './units';
-export { useActiveBoardId, useBoardSelection, useBoardSnapshot, useBoards, useLiveNode } from './hooks';
+export {
+  useActiveBoardId,
+  useBoardHistory,
+  useBoardSelection,
+  useBoardSnapshot,
+  useBoards,
+  useLiveLayers,
+  useLiveNode,
+} from './hooks';
 export {
   BOARD_UNITS,
   formatLength,
@@ -23,3 +64,44 @@ export {
   toUnits,
   unitInPixels,
 } from './units';
+export {
+  childSelection,
+  clusterSelection,
+  drillTarget,
+  enteredScopes,
+  isReachable,
+  parentSelection,
+} from './focus';
+export {
+  dockCluster,
+  dockGroup,
+  dockItems,
+  findDock,
+  rotateCluster,
+  seams,
+  selectedDockGroup,
+  settleDocks,
+  splitSeam,
+  transformGroup,
+  undock,
+} from './docking';
+export type { DockSnap, Segment, DockGroup, GroupTransform } from './docking';
+export { bringForward, layerPosition, layerRows, moveLayer, sendBackward } from './layers';
+export type { LayerRow } from './layers';
+export { historyState, inverseChanges } from './history';
+export {
+  BOARD_CLIPBOARD_TYPE,
+  copyItems,
+  parseClip,
+  pasteItems,
+  recallClip,
+  rememberClip,
+  serialiseClip,
+} from './clipboard';
+export type { BoardClip } from './clipboard';
+export { alignItems, distributeItems, quickCreate, snapGuides } from './arrange';
+export type { Alignment, Guide, Side } from './arrange';
+export { bootBoardShortcuts, boardScopeProps } from './shortcuts';
+export { normaliseAngle, rotateBy, rotateVector, rotationOf, snapAngle } from './rotation';
+export { RESIZE_HANDLES, resizeCursor, resizeRect } from './resize';
+export type { ResizeHandle } from './resize';

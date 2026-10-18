@@ -3,9 +3,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FOLDER_IDS, assetUrl, type AssetPickResult, type AssetsSnapshot } from '@shared/assets';
+import type { Board } from '@shared/board';
+import type { Palette } from '@shared/colours';
 import { IpcChannel } from '@shared/ipc';
 import { assetIdFromUrl, handleAssetRequest } from '../../../src/main/asset-protocol';
 import { registerAssetsHandlers } from '../../../src/main/ipc/assets';
+import { registerBoardsHandlers } from '../../../src/main/ipc/boards';
+import { registerPalettesHandlers } from '../../../src/main/ipc/palettes';
 import { createProject, type ProjectDatabase } from '../../../src/main/storage';
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown;
@@ -224,5 +228,69 @@ describe('assets IPC handlers', () => {
   it('refuses every channel when no project is open', async () => {
     const { call } = setup(false);
     await expect(call(IpcChannel.assetsSnapshot)).rejects.toThrow(/No project/);
+  });
+
+  it('keeps board and palette folders in their own scope', async () => {
+    const { call } = setup();
+    const handlers = new Map<string, Handler>();
+    const ipc = { handle: vi.fn((channel: string, handler: Handler) => handlers.set(channel, handler)) };
+    registerBoardsHandlers(ipc, { project: () => project });
+    registerPalettesHandlers(ipc, { project: () => project });
+    const other = <T>(channel: string, ...args: unknown[]) =>
+      Promise.resolve().then(() => handlers.get(channel)?.({}, ...args)) as Promise<T>;
+    const folderNamed = (snapshot: AssetsSnapshot, name: string) =>
+      snapshot.folders.find((folder) => folder.name === name);
+
+    let snapshot = await call<AssetsSnapshot>(IpcChannel.assetsCreateFolder, {
+      name: 'Levels',
+      scope: 'boards',
+    });
+    const levels = folderNamed(snapshot, 'Levels');
+    expect(levels?.scope).toBe('boards');
+    snapshot = await call<AssetsSnapshot>(IpcChannel.assetsCreateFolder, {
+      name: 'Act 1',
+      parentId: levels?.id,
+      scope: 'boards',
+    });
+    const act = folderNamed(snapshot, 'Act 1');
+    await expect(
+      call(IpcChannel.assetsCreateFolder, { name: 'Bad', parentId: levels?.id, scope: 'palettes' }),
+    ).rejects.toThrow(/does not hold/);
+    await expect(call(IpcChannel.assetsCreateFolder, { name: 'Bad', parentId: levels?.id })).rejects.toThrow(
+      /does not hold/,
+    );
+    await expect(
+      call(IpcChannel.assetsUpdateFolder, act?.id, { parentId: DEFAULT_FOLDER_IDS.image }),
+    ).rejects.toThrow(/does not hold/);
+
+    const board = await other<Board>(IpcChannel.boardsCreate, { name: 'Map' });
+    expect(board.folderId).toBeNull();
+    const filed = await other<Board>(IpcChannel.boardsUpdate, board.id, { folderId: act?.id });
+    expect(filed.folderId).toBe(act?.id);
+    await expect(
+      other(IpcChannel.boardsUpdate, board.id, { folderId: DEFAULT_FOLDER_IDS.image }),
+    ).rejects.toThrow(/does not hold/);
+
+    snapshot = await call<AssetsSnapshot>(IpcChannel.assetsCreateFolder, {
+      name: 'Moods',
+      scope: 'palettes',
+    });
+    const moods = folderNamed(snapshot, 'Moods');
+    const palette = await other<Palette>(IpcChannel.palettesCreate, {
+      name: 'Warm',
+      harmony: 'custom',
+      baseIndex: 0,
+      source: 'wheel',
+      colours: [{ name: 'Red', hex: '#ff0000' }],
+    });
+    await expect(other(IpcChannel.palettesUpdate, palette.id, { folderId: act?.id })).rejects.toThrow(
+      /does not hold/,
+    );
+    const filedPalette = await other<Palette>(IpcChannel.palettesUpdate, palette.id, { folderId: moods?.id });
+    expect(filedPalette.folderId).toBe(moods?.id);
+
+    await call(IpcChannel.assetsDeleteFolder, act?.id);
+    const [moved] = await other<Board[]>(IpcChannel.boardsList);
+    expect(moved?.folderId).toBe(levels?.id);
   });
 });

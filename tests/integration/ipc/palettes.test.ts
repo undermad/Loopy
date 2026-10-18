@@ -149,7 +149,7 @@ describe('palettes IPC handlers', () => {
     const { projectMigrations } = await import('../../../src/main/storage/project-migrations');
     const db = new DatabaseSync(join(directory, 'legacy.loopy'));
     db.exec('PRAGMA foreign_keys = ON');
-    migrateDatabase(db, projectMigrations.slice(0, -1));
+    migrateDatabase(db, projectMigrations.slice(0, 8));
     db.prepare(
       `INSERT INTO palettes (id, name, harmony, base_index, source, created_at, updated_at)
        VALUES ('p1', 'Old', 'analogous', 0, 'wheel', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,

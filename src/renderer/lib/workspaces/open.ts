@@ -1,0 +1,94 @@
+import type { WorkspaceTemplate } from '@shared/layout-presets';
+import type { TicketLink } from '@shared/tickets';
+import { collectAreas, patchAreaState, setAreaEditor, splitArea } from '@renderer/lib/layout';
+import { useTranslation } from '@renderer/lib/i18n';
+import { addWorkspace, setActiveWorkspace, updateWorkspace, workspacesStore } from './store';
+
+export interface OpenTarget {
+  editor: string;
+  state: Record<string, unknown>;
+  template: WorkspaceTemplate['id'];
+  workspaceName: string;
+}
+
+export type WorkspaceNames = Record<'design' | 'palette' | 'assets', string>;
+
+export function openInEditor(target: OpenTarget): string {
+  const { workspaces, activeId } = workspacesStore.getState();
+  const ordered = [...workspaces].sort((a, b) => Number(b.id === activeId) - Number(a.id === activeId));
+  for (const workspace of ordered) {
+    const area = collectAreas(workspace.root).find((candidate) => candidate.editor === target.editor);
+    if (!area) continue;
+    if (workspace.id !== activeId) setActiveWorkspace(workspace.id);
+    updateWorkspace(workspace.id, (current) => ({
+      ...current,
+      root: patchAreaState(current.root, area.id, target.state),
+    }));
+    return area.id;
+  }
+  const home =
+    workspaces.find((workspace) => workspace.name === target.workspaceName) ??
+    addWorkspace(target.template, target.workspaceName);
+  setActiveWorkspace(home.id);
+  const areas = collectAreas(home.root);
+  const existing = areas.find((area) => area.editor === target.editor);
+  if (existing) {
+    updateWorkspace(home.id, (current) => ({
+      ...current,
+      root: patchAreaState(current.root, existing.id, target.state),
+    }));
+    return existing.id;
+  }
+  const empty = areas.find((area) => area.editor === 'empty');
+  let areaId = empty?.id ?? '';
+  updateWorkspace(home.id, (current) => {
+    if (empty)
+      return { ...current, root: setAreaEditor(current.root, empty.id, target.editor, target.state) };
+    const anchor = collectAreas(current.root)[0];
+    if (!anchor) return current;
+    const result = splitArea(current.root, anchor.id, 'row', 0.5, target.editor);
+    areaId = result.newAreaId;
+    const { maximisedAreaId: _ignored, ...rest } = current;
+    return { ...rest, root: patchAreaState(result.root, areaId, target.state) };
+  });
+  return areaId;
+}
+
+export function linkTarget(link: TicketLink, names: WorkspaceNames): OpenTarget {
+  switch (link.kind) {
+    case 'board':
+      return {
+        editor: 'board',
+        state: { boardId: link.id },
+        template: 'design',
+        workspaceName: names.design,
+      };
+    case 'palette':
+      return {
+        editor: 'colours',
+        state: { paletteId: link.id, clusterId: null, tab: 'wheel' },
+        template: 'palette',
+        workspaceName: names.palette,
+      };
+    case 'asset':
+      return {
+        editor: 'assets',
+        state: { scope: 'files', selectedId: link.id, details: true, search: '' },
+        template: 'assets',
+        workspaceName: names.assets,
+      };
+  }
+}
+
+export function openLinked(link: TicketLink, names: WorkspaceNames): string {
+  return openInEditor(linkTarget(link, names));
+}
+
+export function useWorkspaceNames(): WorkspaceNames {
+  const { t } = useTranslation('shell');
+  return {
+    design: t('layout.presets.design'),
+    palette: t('layout.presets.palette'),
+    assets: t('layout.presets.assets'),
+  };
+}

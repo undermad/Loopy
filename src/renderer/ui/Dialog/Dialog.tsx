@@ -9,7 +9,7 @@ export interface DialogContentProps {
   title: ReactNode;
   description?: ReactNode;
   closeLabel: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   children: ReactNode;
   className?: string | undefined;
 }

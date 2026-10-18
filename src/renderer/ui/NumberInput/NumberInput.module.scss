@@ -1,0 +1,33 @@
+@use '../styles/control' as *;
+
+.input {
+  @include field-base;
+
+  padding: 0 var(--space-2);
+  appearance: textfield;
+  font-variant-numeric: tabular-nums;
+
+  &:not(:focus, :disabled) {
+    cursor: ew-resize;
+  }
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+  }
+}
+
+.dragging {
+  border-color: var(--color-accent);
+  user-select: none;
+}
+
+.sm {
+  height: var(--control-height-sm);
+  font-size: var(--font-size-xs);
+}
+
+.md {
+  height: var(--control-height-md);
+}

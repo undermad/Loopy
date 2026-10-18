@@ -68,7 +68,7 @@ describe('boards IPC handlers', () => {
     const node = (id: string, x: number) => ({
       id,
       boardId: board.id,
-      type: 'note',
+      type: 'text',
       x,
       y: 0,
       width: 200,
@@ -90,7 +90,19 @@ describe('boards IPC handlers', () => {
     });
     expect(snapshot.nodes.find((item) => item.id === 'a')).toMatchObject({ x: 50, data: { text: 'moved' } });
 
-    snapshot = await call<BoardSnapshot>(IpcChannel.boardsApplyChanges, board.id, { removeNodeIds: ['b'] });
+    snapshot = await call<BoardSnapshot>(IpcChannel.boardsApplyChanges, board.id, {
+      upsertNodes: [
+        { ...node('file', 600), type: 'file', data: { assetId: 'asset-1', dock: 'd', hidden: true } },
+      ],
+    });
+    expect(snapshot.nodes.find((item) => item.id === 'file')).toMatchObject({
+      type: 'file',
+      data: { assetId: 'asset-1', dock: 'd', hidden: true },
+    });
+
+    snapshot = await call<BoardSnapshot>(IpcChannel.boardsApplyChanges, board.id, {
+      removeNodeIds: ['b', 'file'],
+    });
     expect(snapshot.nodes).toHaveLength(1);
     expect(snapshot.edges).toHaveLength(0);
 
@@ -98,6 +110,93 @@ describe('boards IPC handlers', () => {
       call(IpcChannel.boardsApplyChanges, board.id, { upsertNodes: [{ ...node('c', 0), boardId: 'other' }] }),
     ).rejects.toThrow(/another board/);
     await expect(call(IpcChannel.boardsRead, board.id)).resolves.toMatchObject({ board: { id: board.id } });
+  });
+
+  it('nests items in containers, stores parents first and removes children with their container', async () => {
+    const call = setup();
+    const board = await call<Board>(IpcChannel.boardsCreate, { name: 'Nest' });
+    const item = (id: string, parentId: string | null, type = 'text') => ({
+      id,
+      boardId: board.id,
+      parentId,
+      type,
+      x: 10,
+      y: 10,
+      width: 100,
+      height: 80,
+      z: 1,
+      data: {},
+    });
+
+    let snapshot = await call<BoardSnapshot>(IpcChannel.boardsApplyChanges, board.id, {
+      upsertNodes: [item('child', 'frame'), item('inner', 'child'), item('frame', null, 'container')],
+      upsertEdges: [{ id: 'e', boardId: board.id, sourceId: 'inner', targetId: 'frame', data: {} }],
+    });
+    expect(snapshot.nodes.find((node) => node.id === 'inner')?.parentId).toBe('child');
+    expect(snapshot.nodes.find((node) => node.id === 'frame')?.parentId).toBeNull();
+
+    await expect(
+      call(IpcChannel.boardsApplyChanges, board.id, { upsertNodes: [item('frame', 'inner', 'container')] }),
+    ).rejects.toThrow(/contain itself/);
+    await expect(
+      call(IpcChannel.boardsApplyChanges, board.id, { upsertNodes: [item('lost', 'missing')] }),
+    ).rejects.toThrow(/Unknown parent/);
+    const other = await call<Board>(IpcChannel.boardsCreate, { name: 'Other' });
+    await call(IpcChannel.boardsApplyChanges, other.id, {
+      upsertNodes: [{ ...item('foreign', null), boardId: other.id }],
+    });
+    await expect(
+      call(IpcChannel.boardsApplyChanges, board.id, { upsertNodes: [item('stray', 'foreign')] }),
+    ).rejects.toThrow(/Unknown parent/);
+
+    snapshot = await call<BoardSnapshot>(IpcChannel.boardsApplyChanges, board.id, {
+      removeNodeIds: ['frame'],
+    });
+    expect(snapshot.nodes).toEqual([]);
+    expect(snapshot.edges).toEqual([]);
+  });
+
+  it('turns old notes into styled text items when upgrading a project', async () => {
+    const { DatabaseSync } = await import('node:sqlite');
+    const { migrateDatabase } = await import('../../../src/main/storage/sql-migrations');
+    const { projectMigrations } = await import('../../../src/main/storage/project-migrations');
+    const db = new DatabaseSync(join(directory, 'legacy.loopy'));
+    db.exec('PRAGMA foreign_keys = ON');
+    migrateDatabase(db, projectMigrations.slice(0, 9));
+    db.prepare(
+      `INSERT INTO boards (id, name, background_color, grid_color, unit, unit_scale, created_at, updated_at)
+       VALUES ('b', 'Old', '#ffffff', '#808080', 'm', 100, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+    ).run();
+    const insert = db.prepare(
+      `INSERT INTO board_nodes (id, board_id, type, x, y, width, height, z, data, created_at, updated_at)
+       VALUES (?, 'b', 'note', 0, 0, 200, 120, 1, ?, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,
+    );
+    insert.run('plain', JSON.stringify({ text: 'Hello' }));
+    insert.run('filled', JSON.stringify({ text: 'Sea', fill: { hex: '#112233', ref: null } }));
+    migrateDatabase(db, projectMigrations);
+    const rows = db
+      .prepare('SELECT id, type, parent_id AS parentId, data FROM board_nodes ORDER BY id')
+      .all() as {
+      id: string;
+      type: string;
+      parentId: string | null;
+      data: string;
+    }[];
+    const templates = db.prepare('SELECT COUNT(*) AS count FROM card_templates').get() as { count: number };
+    db.close();
+    expect(rows.map((row) => [row.id, row.type, row.parentId])).toEqual([
+      ['filled', 'text', null],
+      ['plain', 'text', null],
+    ]);
+    expect(JSON.parse(rows[0]?.data ?? '{}')).toEqual({
+      text: 'Sea',
+      style: { fill: { hex: '#112233', ref: null }, shadow: true, padding: 12, radius: 4 },
+    });
+    expect(JSON.parse(rows[1]?.data ?? '{}')).toMatchObject({
+      text: 'Hello',
+      style: { fill: { hex: '#fde68a', ref: null } },
+    });
+    expect(templates.count).toBe(0);
   });
 
   it('refuses every channel when no project is open', async () => {

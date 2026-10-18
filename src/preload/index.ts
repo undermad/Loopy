@@ -10,6 +10,8 @@ import {
   boardSchema,
   boardSnapshotSchema,
   booleanSchema,
+  dataChangeSchema,
+  detachedLayoutSchema,
   colorSchemeSchema,
   exportResultSchema,
   importLayoutResultSchema,
@@ -19,6 +21,8 @@ import {
   layoutPresetSchema,
   localeSchema,
   openProjectResultSchema,
+  cardTemplateListSchema,
+  cardTemplateSchema,
   paletteClusterListSchema,
   paletteClusterSchema,
   paletteLibrarySchema,
@@ -35,6 +39,7 @@ import {
   type LoopyApi,
   type Unsubscribe,
 } from '@shared/ipc';
+import { layoutNodeSchema } from '@shared/layout';
 
 function subscribe<T>(channel: string, schema: z.ZodType<T>, listener: (value: T) => void): Unsubscribe {
   const handler = (_event: IpcRendererEvent, payload: unknown) => {
@@ -65,6 +70,11 @@ const api: LoopyApi = {
   getLocale: () => invoke(IpcChannel.shellGetLocale, localeSchema),
   toggleFullscreen: () => invoke(IpcChannel.windowToggleFullscreen, booleanSchema),
   editCommand: (command) => call(IpcChannel.windowEditCommand, command),
+  detachArea: (input) => call(IpcChannel.windowDetachArea, input),
+  getDetachedLayout: () => invoke(IpcChannel.windowDetachedLayout, detachedLayoutSchema),
+  returnLayout: (layout) => call(IpcChannel.windowReturnLayout, layout),
+  onLayoutReturned: (listener) => subscribe(IpcChannel.windowLayoutReturned, layoutNodeSchema, listener),
+  onProjectDataChanged: (listener) => subscribe(IpcChannel.projectDataChanged, dataChangeSchema, listener),
   listThemes: () => invoke(IpcChannel.themesList, themeListSchema),
   saveTheme: (theme) => invoke(IpcChannel.themesSave, themeSchema, theme),
   deleteTheme: (id) => call(IpcChannel.themesDelete, id),
@@ -128,6 +138,10 @@ const api: LoopyApi = {
     invoke(IpcChannel.paletteClustersUpdate, paletteClusterSchema, id, patch),
   deletePaletteCluster: (id, withPalettes) =>
     invoke(IpcChannel.paletteClustersDelete, paletteLibrarySchema, id, withPalettes),
+  listCardTemplates: () => invoke(IpcChannel.cardTemplatesList, cardTemplateListSchema),
+  createCardTemplate: (input) => invoke(IpcChannel.cardTemplatesCreate, cardTemplateSchema, input),
+  updateCardTemplate: (id, patch) => invoke(IpcChannel.cardTemplatesUpdate, cardTemplateSchema, id, patch),
+  deleteCardTemplate: (id) => invoke(IpcChannel.cardTemplatesDelete, cardTemplateListSchema, id),
   getAssets: () => invoke(IpcChannel.assetsSnapshot, assetsSnapshotSchema),
   createAssetFolder: (input) => invoke(IpcChannel.assetsCreateFolder, assetsSnapshotSchema, input),
   updateAssetFolder: (id, patch) => invoke(IpcChannel.assetsUpdateFolder, assetsSnapshotSchema, id, patch),

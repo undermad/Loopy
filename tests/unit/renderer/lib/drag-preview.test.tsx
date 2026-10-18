@@ -32,6 +32,7 @@ const ticket = (id: string, stateId: string | null, position: string) => ({
   createdAt: '2026-10-17T09:00:00.000Z',
   updatedAt: '2026-10-17T09:00:00.000Z',
   resolvedAt: null,
+  links: [],
 });
 snapshot.tickets = [ticket('a', 'todo', 'a'), ticket('b', 'todo', 'b'), ticket('c', null, 'c')];
 

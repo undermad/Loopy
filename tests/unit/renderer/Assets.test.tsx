@@ -140,7 +140,7 @@ describe('AssetsEditor tree and views', () => {
     const heroes = within(tree).getByRole('treeitem', { name: /Heroes/ });
     expect(heroes).toHaveFocus();
     await user.keyboard('{Enter}');
-    expect(patches).toHaveBeenCalledWith({ folderId: 'folder-1' });
+    expect(patches).toHaveBeenCalledWith({ scope: 'files', folderId: 'folder-1' });
     expect(heroes).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{ArrowLeft}');
     expect(images).toHaveFocus();
@@ -155,12 +155,17 @@ describe('AssetsEditor folders', () => {
     render(<Harness />);
     const tree = await screen.findByRole('tree', { name: 'Folders' });
     await user.click(within(tree).getByRole('treeitem', { name: /Images/ }));
-    expect(patches).toHaveBeenCalledWith({ folderId: 'folder-images' });
+    expect(patches).toHaveBeenCalledWith({ scope: 'files', folderId: 'folder-images' });
 
-    await user.click(screen.getByRole('button', { name: 'New folder' }));
+    await user.click(screen.getByRole('button', { name: 'New' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'New folder' }));
     await user.type(await screen.findByLabelText(/Folder name/), 'Heroes');
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'New folder' }));
-    expect(api.createAssetFolder).toHaveBeenCalledWith({ name: 'Heroes', parentId: 'folder-images' });
+    expect(api.createAssetFolder).toHaveBeenCalledWith({
+      name: 'Heroes',
+      parentId: 'folder-images',
+      scope: 'files',
+    });
     expect(await within(tree).findByRole('treeitem', { name: /Heroes/ })).toBeInTheDocument();
   });
 
@@ -183,7 +188,11 @@ describe('AssetsEditor folders', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'New subfolder' }));
     await user.type(await screen.findByLabelText(/Folder name/), 'Enemies');
     await user.click(screen.getByRole('button', { name: 'Create' }));
-    expect(api.createAssetFolder).toHaveBeenCalledWith({ name: 'Enemies', parentId: 'folder-images' });
+    expect(api.createAssetFolder).toHaveBeenCalledWith({
+      name: 'Enemies',
+      parentId: 'folder-images',
+      scope: 'files',
+    });
     const enemies = await within(tree).findByRole('treeitem', { name: /Enemies/ });
     expect(enemies).toHaveAttribute('aria-level', '3');
 
@@ -198,7 +207,7 @@ describe('AssetsEditor folders', () => {
 
     fireEvent.contextMenu(within(tree).getByRole('treeitem', { name: /Enemies/ }));
     fireEvent.keyDown(await screen.findByRole('menuitem', { name: 'Move to…' }), { key: 'ArrowRight' });
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Top level' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'All files' }));
     expect(api.updateAssetFolder).toHaveBeenCalledWith('folder-1', { parentId: null });
     await menuClosed();
 
@@ -207,18 +216,18 @@ describe('AssetsEditor folders', () => {
     fireEvent.contextMenu(moved);
     await user.click(await screen.findByRole('menuitem', { name: 'Delete folder' }));
     expect(
-      await screen.findByText('Delete the folder "Enemies"? Its files and subfolders move to Top level.'),
+      await screen.findByText('Delete the folder "Enemies"? Its files and subfolders move to All files.'),
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Delete' }));
     expect(api.deleteAssetFolder).toHaveBeenCalledWith('folder-1');
-    expect(patches).toHaveBeenLastCalledWith({ folderId: '' });
+    expect(patches).toHaveBeenLastCalledWith({ scope: 'files', folderId: '' });
     expect(within(tree).queryByRole('treeitem', { name: /Enemies/ })).not.toBeInTheDocument();
 
     fireEvent.contextMenu(within(tree).getByRole('treeitem', { name: /All files/ }));
     await user.click(await screen.findByRole('menuitem', { name: 'New folder' }));
     await user.type(await screen.findByLabelText(/Folder name/), 'Misc');
     await user.click(screen.getByRole('button', { name: 'Create' }));
-    expect(api.createAssetFolder).toHaveBeenCalledWith({ name: 'Misc', parentId: null });
+    expect(api.createAssetFolder).toHaveBeenCalledWith({ name: 'Misc', parentId: null, scope: 'files' });
   });
 });
 
@@ -232,7 +241,7 @@ describe('AssetsEditor imports and search', () => {
     await user.click(screen.getByRole('button', { name: 'Import files…' }));
     expect(api.pickAssets).toHaveBeenCalledWith('folder-images');
     expect(await screen.findByRole('button', { name: 'hero.png' })).toHaveAttribute('aria-pressed', 'true');
-    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1' });
+    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1', internalId: '' });
     expect(screen.getByRole('treeitem', { name: /Images/ })).toHaveTextContent('Images1');
     expect(screen.getByRole('img', { name: 'Preview of hero.png' })).toBeInTheDocument();
 
@@ -282,7 +291,7 @@ describe('AssetsEditor imports and search', () => {
     fireEvent.drop(editor, { dataTransfer: { files: [file('hero.png', 'image/png')], types: ['Files'] } });
     expect(await screen.findByRole('button', { name: 'hero.png' })).toBeInTheDocument();
     expect(api.importAssets).toHaveBeenLastCalledWith(expect.objectContaining({ target: 'auto' }) as object);
-    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1', kind: 'image' });
+    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1', internalId: '', kind: 'image' });
 
     const fonts = within(list).getByRole('option', { name: /Fonts/ });
     fireEvent.dragOver(fonts, { dataTransfer: { files: [], types: ['Files'] } });
@@ -301,7 +310,7 @@ describe('AssetsEditor imports and search', () => {
     await screen.findByRole('button', { name: 'hero.png' });
     expect(screen.getByRole('group', { name: 'Files' }).children).toHaveLength(2);
 
-    const search = screen.getByRole('searchbox', { name: 'Search files' });
+    const search = screen.getByRole('searchbox', { name: 'Search assets' });
     await user.type(search, 'menu');
     expect(patches).toHaveBeenLastCalledWith({ search: 'menu' });
     expect(screen.queryByRole('button', { name: 'hero.png' })).not.toBeInTheDocument();

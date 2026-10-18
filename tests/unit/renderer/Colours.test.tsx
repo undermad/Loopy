@@ -156,6 +156,7 @@ describe('ColoursEditor', () => {
     expect(api.updatePalette).not.toHaveBeenCalled();
 
     await user.click(first(screen.getAllByRole('button', { name: 'New palette' }), 0));
+    await user.click(await screen.findByRole('menuitem', { name: 'New palette' }));
     expect(await screen.findByText('Unsaved')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Discard unsaved palette' }));
     expect(screen.queryByText('Unsaved')).not.toBeInTheDocument();

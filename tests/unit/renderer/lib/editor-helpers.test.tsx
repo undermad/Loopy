@@ -2,13 +2,16 @@ import type { Node } from '@xyflow/react';
 import { describe, expect, it } from 'vitest';
 import { arrayMove, stateIdOf } from '@renderer/components/editors/Tickets/dnd';
 import {
-  newEdge,
-  newNote,
   nodeFromFlow,
   readViewport,
+  settleNodeChanges,
   toFlowEdges,
   toFlowNodes,
 } from '@renderer/components/editors/Board/boardFlow';
+import { createEdge, createItem } from '@renderer/lib/board';
+
+const newNote = (boardId: string, x: number, y: number, z: number) =>
+  createItem({ boardId, preset: 'sticky', rect: { x, y }, z });
 
 describe('ticket drag helpers', () => {
   it('moves items and clamps missing sources', () => {
@@ -23,8 +26,9 @@ describe('ticket drag helpers', () => {
 
 describe('board flow helpers', () => {
   it('maps snapshot nodes and edges to React Flow and back', () => {
-    const note = newNote('board', 10, 20, 3);
-    const edge = newEdge('board', note.id, 'other');
+    const frame = createItem({ boardId: 'board', preset: 'container', rect: { x: 0, y: 0 }, z: 5 });
+    const note = { ...newNote('board', 10, 20, 3), parentId: frame.id, data: { locked: true } };
+    const edge = createEdge('board', note.id, 'other', { sourceHandle: 'right', targetHandle: 'left' });
     const snapshot = {
       board: {
         id: 'board',
@@ -35,24 +39,33 @@ describe('board flow helpers', () => {
         gridRef: null,
         unit: 'm' as const,
         unitScale: 100,
+        folderId: null,
         createdAt: '',
         updatedAt: '',
       },
-      nodes: [note],
+      nodes: [note, frame],
       edges: [edge],
     };
-    const changes: string[] = [];
-    const nodes = toFlowNodes(snapshot, (id, text) => changes.push(`${id}:${text}`));
-    expect(nodes[0]).toMatchObject({
+    const nodes = toFlowNodes(snapshot);
+    expect(nodes.map((node) => node.id)).toEqual([frame.id, note.id]);
+    expect(nodes[1]).toMatchObject({
       id: note.id,
-      type: 'note',
+      type: 'text',
+      parentId: frame.id,
       position: { x: 10, y: 20 },
       width: 200,
-      zIndex: 3,
+      draggable: false,
     });
-    (nodes[0]?.data as { onChange: (text: string) => void }).onChange('hello');
-    expect(changes).toEqual([`${note.id}:hello`]);
-    expect(toFlowEdges(snapshot)[0]).toMatchObject({ id: edge.id, source: note.id, target: 'other' });
+    expect(nodes[1]?.zIndex).toBeGreaterThan(nodes[0]?.zIndex ?? 0);
+    expect(nodes[1]?.data.node).toBe(note);
+    expect(toFlowEdges(snapshot)[0]).toMatchObject({
+      id: edge.id,
+      type: 'arrow',
+      source: note.id,
+      target: 'other',
+      sourceHandle: 'right',
+      targetHandle: 'left',
+    });
     expect(nodeFromFlow(note, { position: { x: 1, y: 2 }, width: 300 })).toMatchObject({
       x: 1,
       y: 2,
@@ -69,19 +82,23 @@ describe('board flow helpers', () => {
 });
 
 describe('settleNodeChanges', () => {
-  it('commits moved and resized nodes only when the gesture ends, and collects removals', async () => {
-    const { settleNodeChanges, newNote } = await import('@renderer/components/editors/Board/boardFlow');
+  it('commits moved and resized nodes only when the gesture ends, and collects removals', () => {
     const note = newNote('board', 0, 0, 1);
     const pending = new Map<string, Node>();
     const moving = [{ id: note.id, type: 'position' as const, position: { x: 5, y: 5 }, dragging: true }];
     const nextMoving = [{ id: note.id, position: { x: 5, y: 5 }, data: {} }];
-    expect(settleNodeChanges(moving, nextMoving, [note], pending)).toEqual({ updates: [], removed: [] });
+    expect(settleNodeChanges(moving, nextMoving, [note], pending)).toEqual({
+      updates: [],
+      removed: [],
+      moved: [],
+    });
     expect(pending.size).toBe(1);
 
     const settled = [{ id: note.id, type: 'position' as const, position: { x: 9, y: 9 }, dragging: false }];
     const nextSettled = [{ id: note.id, position: { x: 9, y: 9 }, data: {} }];
     const result = settleNodeChanges(settled, nextSettled, [note], pending);
     expect(result.updates[0]).toMatchObject({ x: 9, y: 9 });
+    expect(result.moved).toEqual([note.id]);
     expect(pending.size).toBe(0);
 
     const resized = [
@@ -97,6 +114,10 @@ describe('settleNodeChanges', () => {
       { id: note.id, type: 'remove' as const },
       { id: 'ghost', type: 'position' as const, position: { x: 0, y: 0 }, dragging: false },
     ];
-    expect(settleNodeChanges(removal, [], [note], pending)).toEqual({ updates: [], removed: [note.id] });
+    expect(settleNodeChanges(removal, [], [note], pending)).toEqual({
+      updates: [],
+      removed: [note.id],
+      moved: ['ghost'],
+    });
   });
 });

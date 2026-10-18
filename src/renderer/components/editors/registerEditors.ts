@@ -1,6 +1,7 @@
 import {
   FolderOpen,
   KanbanSquare,
+  Layers,
   LayoutTemplate,
   Palette,
   PenTool,
@@ -12,6 +13,7 @@ import { AssetsEditor } from './Assets/AssetsEditor';
 import { BoardEditor } from './Board/BoardEditor';
 import { ColoursEditor } from './Colours/ColoursEditor';
 import { EmptyEditor } from './EmptyEditor';
+import { LayersEditor } from './Layers/LayersEditor';
 import { PropertiesEditor } from './Properties/PropertiesEditor';
 import { TicketEditor } from './Tickets/TicketEditor';
 import { TicketsEditor } from './Tickets/TicketsEditor';
@@ -29,14 +31,21 @@ export function registerEditors(): void {
     titleKey: 'types.properties',
     icon: SlidersHorizontal,
     component: PropertiesEditor,
-    category: 'general',
+    category: 'design',
+  });
+  registerEditor({
+    id: 'layers',
+    titleKey: 'types.layers',
+    icon: Layers,
+    component: LayersEditor,
+    category: 'design',
   });
   registerEditor({
     id: 'colours',
     titleKey: 'types.colours',
     icon: Palette,
     component: ColoursEditor,
-    category: 'design',
+    category: 'palette',
     defaultState: () => ({ tab: 'wheel' }),
   });
   registerEditor({
@@ -44,7 +53,7 @@ export function registerEditors(): void {
     titleKey: 'types.assets',
     icon: FolderOpen,
     component: AssetsEditor,
-    category: 'design',
+    category: 'assets',
     defaultState: () => ({ view: 'folders', search: '' }),
   });
   registerEditor({
@@ -53,7 +62,7 @@ export function registerEditors(): void {
     icon: PenTool,
     component: BoardEditor,
     category: 'design',
-    defaultState: () => ({ grid: true, minimap: false }),
+    defaultState: () => ({}),
   });
   registerEditor({
     id: 'tickets',

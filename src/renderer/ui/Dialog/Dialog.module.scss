@@ -41,6 +41,12 @@
   --dialog-width: 760px;
 }
 
+.xl {
+  --dialog-width: 1180px;
+
+  height: calc(100vh - var(--space-8));
+}
+
 .header {
   @include row(var(--space-2));
 

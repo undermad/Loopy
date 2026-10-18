@@ -14,6 +14,11 @@ export const ticketStateSchema = z.object({
   color: hexColorSchema,
 });
 
+export const TICKET_LINK_KINDS = ['board', 'palette', 'asset'] as const;
+export const ticketLinkSchema = z.object({ kind: z.enum(TICKET_LINK_KINDS), id: z.string().min(1) });
+export type TicketLink = z.infer<typeof ticketLinkSchema>;
+export const ticketLinksSchema = z.array(ticketLinkSchema).max(100);
+
 export const ticketSchema = z.object({
   id: z.string().min(1),
   number: z.number().int().positive(),
@@ -29,6 +34,7 @@ export const ticketSchema = z.object({
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
   resolvedAt: z.iso.datetime().nullable(),
+  links: ticketLinksSchema.default([]),
 });
 
 export const sprintSchema = z.object({
@@ -104,6 +110,7 @@ export const ticketPatchSchema = z
     sprintId: z.string().min(1).nullable(),
     estimate: ticketSchema.shape.estimate,
     dueAt: ticketSchema.shape.dueAt,
+    links: ticketLinksSchema,
   })
   .partial();
 

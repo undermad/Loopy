@@ -3,8 +3,9 @@ import type { AreaNode } from '@shared/layout';
 import { getEditor, listEditors } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
 import { neighbours, type Side } from '@renderer/lib/layout';
-import { areaActions, useActiveWorkspace } from '@renderer/lib/workspaces';
-import { DropdownMenu, IconButton } from '@renderer/ui';
+import { areaActions, detachArea, useActiveWorkspace } from '@renderer/lib/workspaces';
+import { DropdownMenu, IconButton, ScrollStrip } from '@renderer/ui';
+import { AreaMoveHandle } from './AreaMoveHandle';
 import styles from './AreaHeader.module.scss';
 
 export interface AreaHeaderProps {
@@ -12,7 +13,7 @@ export interface AreaHeaderProps {
   slotRef: (element: HTMLElement | null) => void;
 }
 
-const CATEGORIES = ['general', 'planning', 'design'] as const;
+const CATEGORIES = ['planning', 'design', 'palette', 'assets', 'general'] as const;
 
 export function AreaHeader({ area, slotRef }: AreaHeaderProps) {
   const { t } = useTranslation('shell');
@@ -27,6 +28,7 @@ export function AreaHeader({ area, slotRef }: AreaHeaderProps) {
 
   return (
     <header className={styles['header']}>
+      <AreaMoveHandle areaId={area.id} />
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <button type="button" className={styles['switcher']} aria-label={t('area.editor')}>
@@ -35,8 +37,12 @@ export function AreaHeader({ area, slotRef }: AreaHeaderProps) {
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content align="start">
-          {CATEGORIES.map((category) => (
+          {CATEGORIES.map((category, index) => (
             <DropdownMenu.Group key={category}>
+              {index > 0 ? <DropdownMenu.Separator /> : null}
+              <DropdownMenu.Label>
+                {category === 'general' ? t('area.general') : t(`layout.presets.${category}`)}
+              </DropdownMenu.Label>
               {listEditors()
                 .filter((editor) => editor.category === category)
                 .map((editor) => (
@@ -55,8 +61,7 @@ export function AreaHeader({ area, slotRef }: AreaHeaderProps) {
         </DropdownMenu.Content>
       </DropdownMenu.Root>
       <span className={styles['title']}>{definition ? title(definition.titleKey) : area.editor}</span>
-      <div className={styles['slot']} ref={slotRef} />
-      <span className={styles['spacer']} />
+      <ScrollStrip className={styles['slot']} ref={slotRef} />
       <IconButton
         label={maximised ? t('area.restore') : t('area.maximise')}
         size="sm"
@@ -122,6 +127,18 @@ export function AreaHeader({ area, slotRef }: AreaHeaderProps) {
               ))}
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
+          <DropdownMenu.Item
+            onSelect={() => {
+              void detachArea(area.id, {
+                x: window.screenX + 80,
+                y: window.screenY + 80,
+                width: 720,
+                height: 520,
+              });
+            }}
+          >
+            {t('area.newWindow')}
+          </DropdownMenu.Item>
           <DropdownMenu.Separator />
           <DropdownMenu.Item
             onSelect={() => {
