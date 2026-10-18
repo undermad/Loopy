@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import type { AssetFolder } from '@shared/assets';
-import { updateBoard } from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
-import { updatePalette } from '@renderer/lib/palettes';
 import { Button, Field, Input, ScrollArea, Select } from '@renderer/ui';
 import { InternalThumbnail } from './InternalGrid';
+import { saveInternal } from './internalActions';
 import { INTERNAL_SCOPES, folderIdOf, folderOptions, folderValue, type InternalItem } from './kinds';
 import styles from './AssetDetails.module.scss';
 
@@ -16,7 +15,7 @@ export interface InternalDetailsProps {
 }
 
 function save(item: InternalItem, patch: { name?: string; folderId?: string | null }): Promise<unknown> {
-  return item.kind === 'board' ? updateBoard(item.id, patch) : updatePalette(item.id, patch);
+  return saveInternal(item.kind, item.id, patch);
 }
 
 function Details({ item, folders, onOpen }: InternalDetailsProps) {

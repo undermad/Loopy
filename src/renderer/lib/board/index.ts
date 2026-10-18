@@ -1,6 +1,10 @@
 export {
   bootBoards,
+  captureBoard,
   commitChanges,
+  getBoardTiles,
+  subscribeBoardTiles,
+  trackBoardWork,
   createBoard,
   deleteBoard,
   loadBoard,
@@ -16,12 +20,13 @@ export {
   undoBoard,
   updateBoard,
 } from './store';
-export type { LiveGeometry } from './store';
+export type { BoardBase, LiveGeometry, TileMap } from './store';
 export {
   absolutePosition,
   absoluteRect,
   bringToFront,
   containerAt,
+  copyTiles,
   createEdge,
   createItem,
   descendants,
@@ -29,6 +34,7 @@ export {
   edgeData,
   effectiveZ,
   fitSize,
+  isDrawing,
   itemAt,
   itemData,
   measureImage,
@@ -50,6 +56,7 @@ export {
   useBoardHistory,
   useBoardSelection,
   useBoardSnapshot,
+  useBoardTiles,
   useBoards,
   useLiveLayers,
   useLiveNode,
@@ -88,7 +95,7 @@ export {
 export type { DockSnap, Segment, DockGroup, GroupTransform } from './docking';
 export { bringForward, layerPosition, layerRows, moveLayer, sendBackward } from './layers';
 export type { LayerRow } from './layers';
-export { historyState, inverseChanges } from './history';
+export { historyState, inverseChanges, tileKey } from './history';
 export {
   BOARD_CLIPBOARD_TYPE,
   copyItems,

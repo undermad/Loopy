@@ -21,4 +21,23 @@ describe('useShortcuts', () => {
     fireEvent.keyDown(window, { key: ',', code: 'Comma', ctrlKey: true });
     expect(preferences).toHaveBeenCalledTimes(1);
   });
+
+  it('opens preferences and the quick switcher while typing', () => {
+    const newProject = vi.fn();
+    const preferences = vi.fn();
+    const quickSwitcher = vi.fn();
+    renderHook(() => {
+      useShortcuts({ newProject, preferences, quickSwitcher });
+    });
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    fireEvent.keyDown(input, { key: ',', code: 'Comma', ctrlKey: true });
+    fireEvent.keyDown(input, { key: 'o', code: 'KeyO', ctrlKey: true });
+    fireEvent.keyDown(input, { key: 'o', code: 'KeyO', ctrlKey: true, repeat: true });
+    fireEvent.keyDown(input, { key: 'n', code: 'KeyN', ctrlKey: true });
+    input.remove();
+    expect(preferences).toHaveBeenCalledTimes(1);
+    expect(quickSwitcher).toHaveBeenCalledTimes(1);
+    expect(newProject).not.toHaveBeenCalled();
+  });
 });

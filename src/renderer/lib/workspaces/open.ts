@@ -11,7 +11,7 @@ export interface OpenTarget {
   workspaceName: string;
 }
 
-export type WorkspaceNames = Record<'design' | 'palette' | 'assets', string>;
+export type WorkspaceNames = Record<'planning' | 'design' | 'palette' | 'assets' | 'ideas', string>;
 
 export function openInEditor(target: OpenTarget): string {
   const { workspaces, activeId } = workspacesStore.getState();
@@ -77,6 +77,13 @@ export function linkTarget(link: TicketLink, names: WorkspaceNames): OpenTarget 
         template: 'assets',
         workspaceName: names.assets,
       };
+    case 'note':
+      return {
+        editor: 'note',
+        state: { noteId: link.id },
+        template: 'ideas',
+        workspaceName: names.ideas,
+      };
   }
 }
 
@@ -87,8 +94,10 @@ export function openLinked(link: TicketLink, names: WorkspaceNames): string {
 export function useWorkspaceNames(): WorkspaceNames {
   const { t } = useTranslation('shell');
   return {
+    planning: t('layout.presets.planning'),
     design: t('layout.presets.design'),
     palette: t('layout.presets.palette'),
     assets: t('layout.presets.assets'),
+    ideas: t('layout.presets.ideas'),
   };
 }

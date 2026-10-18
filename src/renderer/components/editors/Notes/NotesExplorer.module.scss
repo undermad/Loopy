@@ -1,0 +1,187 @@
+@use '../../../styles/mixins' as *;
+
+.explorer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--color-surface);
+}
+
+.loading {
+  display: grid;
+  height: 100%;
+  place-items: center;
+}
+
+.toolbar {
+  @include row(2px);
+
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.search {
+  padding: var(--space-2);
+}
+
+.scroll {
+  min-height: 0;
+  flex: 1;
+}
+
+.section {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.muted {
+  padding: 0 var(--space-3);
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-sm);
+}
+
+.row {
+  @include row(var(--space-1));
+
+  width: 100%;
+  min-height: 26px;
+  padding: 2px var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-fg);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.folder {
+  color: var(--color-fg-muted);
+  font-weight: 600;
+}
+
+.active {
+  background: var(--color-selection);
+}
+
+.dragging {
+  opacity: 0.4;
+}
+
+.over {
+  outline: 1px dashed var(--color-accent);
+}
+
+.icon,
+.chevron {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.name {
+  min-width: 0;
+  overflow: hidden;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+}
+
+.star {
+  width: 13px;
+  height: 13px;
+  color: var(--color-warning);
+  fill: currentcolor;
+}
+
+.hit {
+  @include stack(2px);
+
+  width: 100%;
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-fg);
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    background: var(--color-hover);
+  }
+}
+
+.hitTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.hitLine {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tags {
+  @include row(var(--space-1));
+
+  padding: 0 var(--space-3) var(--space-3);
+  flex-wrap: wrap;
+}
+
+.tag {
+  @include row(2px);
+
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-hover);
+  color: var(--color-fg);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.overlay {
+  @include row(var(--space-1));
+
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  font-size: var(--font-size-sm);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}

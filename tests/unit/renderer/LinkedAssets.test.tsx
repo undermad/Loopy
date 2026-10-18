@@ -20,7 +20,13 @@ import { ToastProvider, TooltipProvider } from '@renderer/ui';
 import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
 
 let api: FakeApi;
-const NAMES = { design: 'Design', palette: 'Palette', assets: 'Assets' };
+const NAMES = {
+  planning: 'Planning',
+  design: 'Design',
+  palette: 'Palette',
+  assets: 'Assets',
+  ideas: 'Idea Map',
+};
 
 function areasOf(node: LayoutNode): { id: string; editor: string; state: Record<string, unknown> }[] {
   return node.kind === 'area' ? [node] : node.children.flatMap(areasOf);
@@ -141,7 +147,10 @@ describe('linked assets on a ticket', () => {
     await user.click(within(boards).getByRole('switch', { name: 'Level map' }));
     await user.click(within(screen.getByRole('group', { name: 'Colour palettes' })).getByRole('switch'));
     expect(screen.queryByRole('group', { name: 'Files' })).toBeInTheDocument();
-    await user.type(screen.getByRole('searchbox', { name: 'Search boards, palettes and files' }), 'zzz');
+    await user.type(
+      screen.getByRole('searchbox', { name: 'Search boards, palettes, notes and files' }),
+      'zzz',
+    );
     expect(screen.getByText('Nothing to link yet')).toBeInTheDocument();
     await user.keyboard('{Escape}');
 

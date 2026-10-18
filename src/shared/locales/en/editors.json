@@ -8,8 +8,13 @@
     "layers": "Layers",
     "colours": "Colours",
     "assets": "Assets",
+    "notes": "Notes",
+    "note": "Note",
+    "graph": "Graph",
+    "backlinks": "Note details",
     "gallery": "Component gallery",
-    "empty": "Empty"
+    "empty": "Empty",
+    "brushes": "Brushes"
   },
   "layers": {
     "label": "Layers",
@@ -163,7 +168,8 @@
     "reverse": "Reverse direction",
     "content": "Content",
     "link": "Link",
-    "linkTarget": "Links to"
+    "linkTarget": "Links to",
+    "drawing": "Drawing"
   },
   "placeholder": {
     "title": "{{editor}} arrives soon",
@@ -274,9 +280,10 @@
     "links": {
       "title": "Linked assets",
       "add": "Link asset",
-      "search": "Search boards, palettes and files",
+      "search": "Search boards, palettes, notes and files",
       "boards": "Boards",
       "palettes": "Colour palettes",
+      "notes": "Notes",
       "files": "Files",
       "none": "Nothing to link yet",
       "remove": "Unlink {{name}}"
@@ -409,6 +416,8 @@
       "editTemplates": "Edit card templates…",
       "noTemplates": "No card templates yet",
       "arrow": "Arrow",
+      "brush": "Brush",
+      "eraser": "Eraser",
       "shortcut": "{{tool}} ({{key}})"
     },
     "menu": {
@@ -543,7 +552,73 @@
     "kinds": {
       "board": "Board",
       "palette": "Colour palette",
-      "asset": "File"
+      "asset": "File",
+      "note": "Note"
     }
+  },
+  "drawing": {
+    "layerName": "Drawing {{count}}",
+    "resolution": "Resolution",
+    "resolutionValue": "{{value}}× board pixels",
+    "tilesLabel": "Stored tiles",
+    "tiles_one": "{{count}} tile",
+    "tiles_other": "{{count}} tiles",
+    "options": "Brush options",
+    "preset": "Preset",
+    "size": "Size",
+    "opacity": "Opacity",
+    "flow": "Flow",
+    "colour": "Brush colour",
+    "settings": "Brush settings",
+    "modified": "Modified",
+    "reset": "Reset to preset",
+    "tool": "Tool",
+    "presets": {
+      "pen": "Pen",
+      "pencil": "Pencil",
+      "marker": "Marker",
+      "hard-round": "Hard round",
+      "soft-round": "Soft round",
+      "airbrush": "Airbrush",
+      "ink": "Ink",
+      "chalk": "Chalk",
+      "splatter": "Splatter",
+      "highlighter": "Highlighter",
+      "hard-eraser": "Hard eraser",
+      "soft-eraser": "Soft eraser"
+    },
+    "sections": {
+      "presets": "Presets",
+      "tip": "Tip",
+      "stroke": "Stroke",
+      "dynamics": "Dynamics",
+      "texture": "Texture"
+    },
+    "fields": {
+      "tip": "Tip shape",
+      "hardness": "Hardness",
+      "roundness": "Roundness",
+      "angle": "Angle",
+      "spacing": "Spacing",
+      "smoothing": "Smoothing",
+      "sizeJitter": "Size jitter",
+      "opacityJitter": "Opacity jitter",
+      "angleJitter": "Angle jitter",
+      "scatter": "Scatter",
+      "count": "Count",
+      "grain": "Grain",
+      "grainScale": "Grain scale",
+      "grainDepth": "Grain depth"
+    },
+    "tips": {
+      "round": "Round",
+      "square": "Square"
+    },
+    "grains": {
+      "none": "None",
+      "paper": "Paper",
+      "rough": "Rough"
+    },
+    "preview": "Stroke preview"
   }
 }

@@ -296,7 +296,8 @@ describe('clipboard', () => {
 
   it('serialises, parses and remembers clips', () => {
     const clip = copyItems(['p'], [parent, kid], []);
-    expect(parseClip(serialiseClip(clip))).toEqual(clip);
+    const { tiles: _tiles, ...stored } = clip;
+    expect(parseClip(serialiseClip(clip))).toEqual(stored);
     expect(parseClip('nope')).toBeNull();
     expect(parseClip('{}')).toBeNull();
     const text = rememberClip(clip, 'fallback');

@@ -99,15 +99,21 @@ describe('ProjectColourPicker', () => {
     expect(within(loose).getByText('Ungrouped')).toBeInTheDocument();
   });
 
-  it('shows a hint when no palettes exist', async () => {
+  it('offers basic colours and a hint when no palettes exist', async () => {
     const user = userEvent.setup();
+    const onChange = vi.fn();
     render(
       <TooltipProvider>
-        <ProjectColourPicker value={{ hex: '#ffffff', ref: null }} onChange={vi.fn()} label="Fill" />
+        <ProjectColourPicker value={{ hex: '#ffffff', ref: null }} onChange={onChange} label="Fill" />
       </TooltipProvider>,
     );
     await user.click(screen.getByRole('button', { name: 'Fill' }));
-    expect(await screen.findByText(/No palettes yet/)).toBeInTheDocument();
+    expect(await screen.findByText(/No project palettes yet/)).toBeInTheDocument();
+    const basic = screen.getByRole('group', { name: 'Basic colours' });
+    expect(within(basic).getByRole('button', { name: '#ffffff' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(within(basic).getByRole('button', { name: '#3b82f6' }));
+    expect(onChange).toHaveBeenCalledWith({ hex: '#3b82f6', ref: null });
+    expect(screen.queryByRole('group', { name: 'Basic colours' })).not.toBeInTheDocument();
   });
 });
 

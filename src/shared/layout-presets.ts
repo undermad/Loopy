@@ -7,7 +7,7 @@ import {
 } from './layout';
 
 export interface WorkspaceTemplate {
-  id: 'planning' | 'design' | 'palette' | 'assets' | 'empty';
+  id: 'planning' | 'design' | 'palette' | 'assets' | 'ideas' | 'empty';
   build: () => LayoutNode;
 }
 
@@ -36,12 +36,26 @@ export const workspaceTemplates: readonly WorkspaceTemplate[] = [
   },
   { id: 'palette', build: () => area('colours') },
   { id: 'assets', build: () => area('assets') },
+  {
+    id: 'ideas',
+    build: () =>
+      split(
+        'row',
+        [
+          area('notes', { search: '' }),
+          area('note'),
+          split('column', [area('graph', { scope: 'local' }), area('backlinks')], [0.5, 0.5]),
+        ],
+        [0.2, 0.55, 0.25],
+      ),
+  },
   { id: 'empty', build: () => area('empty') },
 ];
 
 export function buildWorkspace(templateId: WorkspaceTemplate['id'], name: string): Workspace {
   const template =
-    workspaceTemplates.find((candidate) => candidate.id === templateId) ?? workspaceTemplates[4];
+    workspaceTemplates.find((candidate) => candidate.id === templateId) ??
+    workspaceTemplates.find((candidate) => candidate.id === 'empty');
   if (!template) throw new Error('No workspace templates');
   return { id: crypto.randomUUID(), name, root: template.build() };
 }
@@ -61,6 +75,7 @@ export interface PresetNames {
   design: string;
   palette: string;
   assets: string;
+  ideas: string;
   default: string;
 }
 
@@ -69,6 +84,7 @@ export function builtInLayoutPresets(names: PresetNames): LayoutPreset[] {
   const design = () => buildWorkspace('design', names.design);
   const palette = () => buildWorkspace('palette', names.palette);
   const assets = () => buildWorkspace('assets', names.assets);
+  const ideas = () => buildWorkspace('ideas', names.ideas);
   const preset = (id: string, name: string, workspaces: Workspace[]): LayoutPreset => ({
     schemaVersion: LAYOUT_SCHEMA_VERSION,
     id,
@@ -76,15 +92,16 @@ export function builtInLayoutPresets(names: PresetNames): LayoutPreset[] {
     workspaces,
   });
   return [
-    preset('default', names.default, [planning(), design(), palette(), assets()]),
+    preset('default', names.default, [planning(), design(), palette(), assets(), ideas()]),
     preset('planning', names.planning, [planning()]),
     preset('design', names.design, [design()]),
     preset('palette', names.palette, [palette()]),
     preset('assets', names.assets, [assets()]),
+    preset('ideas', names.ideas, [ideas()]),
   ];
 }
 
-export const BUILT_IN_LAYOUT_IDS = ['default', 'planning', 'design', 'palette', 'assets'] as const;
+export const BUILT_IN_LAYOUT_IDS = ['default', 'planning', 'design', 'palette', 'assets', 'ideas'] as const;
 
 export function isBuiltInLayoutId(id: string): boolean {
   return (BUILT_IN_LAYOUT_IDS as readonly string[]).includes(id);

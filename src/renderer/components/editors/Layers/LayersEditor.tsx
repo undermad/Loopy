@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
+  Brush,
   ChevronDown,
   ChevronRight,
   Eye,
@@ -63,6 +64,7 @@ const ICONS: Record<BoardNodeType, typeof Type> = {
   card: LayoutTemplate,
   file: File,
   link: Link2,
+  drawing: Brush,
 };
 
 function firstLine(text: string): string {
@@ -92,6 +94,7 @@ function useItemLabel(): (node: BoardNode) => string {
       return itemData({ type: 'container', data: node.data }).title || t('board.containerTitle');
     if (node.type === 'image')
       return itemData({ type: 'image', data: node.data }).alt || t('properties.image');
+    if (node.type === 'drawing') return t('properties.drawing');
     const card = itemData({ type: 'card', data: node.data });
     return findCardTemplate(card.templateId)?.name ?? t('properties.card');
   };

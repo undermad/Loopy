@@ -17,6 +17,7 @@ import { useToast } from '@renderer/ui';
 import { useLanguageSync } from '../../bootstrap';
 import { PreferencesDialog } from '../Preferences/PreferencesDialog';
 import { NewProjectDialog } from '../Welcome/NewProjectDialog';
+import { QuickSwitcher } from '../editors/Notes/QuickSwitcher';
 import { WelcomeScreen } from '../Welcome/WelcomeScreen';
 import { AboutDialog } from './AboutDialog';
 import { AreaTree } from './AreaTree';
@@ -45,6 +46,7 @@ export function AppShell({ editCommand }: { editCommand: (command: EditCommand) 
   const statusBar = useStatusBarVisible();
   const hovered = useHoveredAreaId();
   const [dialog, setDialog] = useState<ShellDialog | null>(null);
+  const [switcher, setSwitcher] = useState(false);
   useLanguageSync();
 
   useShortcuts({
@@ -64,6 +66,9 @@ export function AppShell({ editCommand }: { editCommand: (command: EditCommand) 
       if (hovered) areaActions.toggleMaximise(hovered);
     },
     fullscreen: () => void toggleFullscreen(),
+    quickSwitcher: () => {
+      if (project) setSwitcher(true);
+    },
   });
 
   const close = (open: boolean) => {
@@ -80,6 +85,7 @@ export function AppShell({ editCommand }: { editCommand: (command: EditCommand) 
       <NewProjectDialog open={dialog === 'newProject'} onOpenChange={close} />
       <ShortcutsDialog open={dialog === 'shortcuts'} onOpenChange={close} />
       <AboutDialog open={dialog === 'about'} onOpenChange={close} />
+      {project ? <QuickSwitcher open={switcher} onOpenChange={setSwitcher} /> : null}
       {dialog === 'saveLayout' ? (
         <PromptDialog
           open

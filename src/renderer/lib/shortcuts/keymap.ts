@@ -5,7 +5,13 @@ export interface Shortcut {
 }
 
 export type ShortcutId =
-  'newProject' | 'preferences' | 'nextWorkspace' | 'previousWorkspace' | 'maximiseArea' | 'fullscreen';
+  | 'newProject'
+  | 'preferences'
+  | 'nextWorkspace'
+  | 'previousWorkspace'
+  | 'maximiseArea'
+  | 'fullscreen'
+  | 'quickSwitcher';
 
 export const keymap: Record<ShortcutId, Shortcut> = {
   newProject: { id: 'newProject', keys: '$mod+N', labelKey: 'menu.newProject' },
@@ -14,6 +20,7 @@ export const keymap: Record<ShortcutId, Shortcut> = {
   previousWorkspace: { id: 'previousWorkspace', keys: '$mod+PageUp', labelKey: 'workspace.previous' },
   maximiseArea: { id: 'maximiseArea', keys: '$mod+Space', labelKey: 'area.maximise' },
   fullscreen: { id: 'fullscreen', keys: 'F11', labelKey: 'menu.toggleFullscreen' },
+  quickSwitcher: { id: 'quickSwitcher', keys: '$mod+O', labelKey: 'menu.quickSwitcher' },
 };
 
 export const SHORTCUT_IDS = Object.keys(keymap) as ShortcutId[];

@@ -39,6 +39,7 @@ describe('workspaces library', () => {
       'Design',
       'Palette',
       'Assets',
+      'Idea Map',
     ]);
     expect(result.current.active?.name).toBe('Planning');
 
@@ -51,7 +52,7 @@ describe('workspaces library', () => {
       addWorkspace('empty', 'Scratch');
     });
     expect(result.current.active?.name).toBe('Scratch');
-    expect(result.current.all).toHaveLength(5);
+    expect(result.current.all).toHaveLength(6);
 
     const scratchId = must(result.current.active).id;
     act(() => {
@@ -63,6 +64,7 @@ describe('workspaces library', () => {
       'Design',
       'Palette',
       'Assets',
+      'Idea Map',
       'Notes',
       'Notes copy',
     ]);
@@ -72,14 +74,14 @@ describe('workspaces library', () => {
       moveWorkspace(copyId, -3);
       deleteWorkspace(copyId);
     });
-    expect(result.current.all).toHaveLength(5);
+    expect(result.current.all).toHaveLength(6);
     expect(result.current.all[1]?.name).toBe('Design');
 
     await act(async () => {
       await flushWorkspaces();
     });
     const lastCall = vi.mocked(api.setShellState).mock.calls.at(-1)?.[0];
-    expect(lastCall?.workspaces?.items).toHaveLength(5);
+    expect(lastCall?.workspaces?.items).toHaveLength(6);
   });
 
   it('applies area actions to the active workspace', async () => {
@@ -157,20 +159,20 @@ describe('workspaces library', () => {
     const { result } = renderHook(() => useWorkspaces());
 
     const saved = await saveCurrentLayout('Mine');
-    expect(saved.workspaces).toHaveLength(4);
+    expect(saved.workspaces).toHaveLength(5);
     expect(api.saveLayout).toHaveBeenCalledTimes(1);
 
     act(() => {
       setActiveWorkspace(must(result.current[2]).id);
       deleteWorkspace(must(result.current[0]).id);
     });
-    expect(result.current).toHaveLength(3);
+    expect(result.current).toHaveLength(4);
 
     act(() => {
       applyLayout(saved);
     });
-    expect(result.current).toHaveLength(4);
+    expect(result.current).toHaveLength(5);
     expect(result.current[0]?.id).not.toBe(saved.workspaces[0]?.id);
-    expect(currentLayout('Now').workspaces).toHaveLength(4);
+    expect(currentLayout('Now').workspaces).toHaveLength(5);
   });
 });

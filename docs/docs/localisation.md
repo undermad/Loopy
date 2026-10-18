@@ -5,7 +5,7 @@ description: Translation resources, the i18next setup and how to add a language.
 
 # Localisation
 
-Resources live in `src/shared/locales/<language>/<namespace>.json`, one file per namespace: `common`, `settings`, `shell`, `welcome` and `editors`. `src/shared/i18n.ts` bundles them, lists supported languages and resolves the `system` setting against the OS locale. Keys are typed: `src/renderer/lib/i18n/i18next.d.ts` tells i18next the shape of the English bundle, so a misspelt key fails `npm run typecheck`.
+Resources live in `src/shared/locales/<language>/<namespace>.json`, one file per namespace: `common`, `settings`, `shell`, `welcome`, `editors`, `colours`, `assets` and `notes`. Note template bodies live in `notes` so they translate with the rest; `{{title}}`, `{{date}}` and `{{time}}` in them are filled by i18next. `src/shared/i18n.ts` bundles them, lists supported languages and resolves the `system` setting against the OS locale. Keys are typed: `src/renderer/lib/i18n/i18next.d.ts` tells i18next the shape of the English bundle, so a misspelt key fails `npm run typecheck`.
 
 Components call `useTranslation('<namespace>')` from `@renderer/lib/i18n` and never hold English literals. Dates and relative times go through `useFormat`, which wraps `Intl` with the active language.
 

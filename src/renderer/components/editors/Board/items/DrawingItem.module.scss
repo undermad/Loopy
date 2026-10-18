@@ -1,0 +1,16 @@
+.drawing {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.selected {
+  outline: 1px dashed var(--color-accent);
+  outline-offset: 0;
+}
+
+.tile {
+  display: block;
+  position: absolute;
+}

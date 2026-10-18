@@ -47,11 +47,13 @@ import {
   boardListSchema,
   boardSchema,
   boardSnapshotSchema,
+  boardTileListSchema,
   type Board,
   type BoardChanges,
   type BoardInput,
   type BoardPatch,
   type BoardSnapshot,
+  type BoardTile,
 } from './board';
 import {
   ticketsSnapshotSchema,
@@ -70,6 +72,19 @@ import {
   type TicketPatch,
   type TicketsSnapshot,
 } from './tickets';
+import {
+  noteImportResultSchema,
+  noteListSchema,
+  noteSchema,
+  noteVersionListSchema,
+  type Note,
+  type NoteExport,
+  type NoteImport,
+  type NoteImportResult,
+  type NoteInput,
+  type NotePatch,
+  type NoteVersion,
+} from './notes';
 
 export const IpcChannel = {
   getAppVersion: 'app:getVersion',
@@ -139,6 +154,7 @@ export const IpcChannel = {
   boardsDelete: 'boards:delete',
   boardsRead: 'boards:read',
   boardsApplyChanges: 'boards:applyChanges',
+  boardsReadTiles: 'boardTiles:list',
   palettesList: 'palettes:list',
   palettesCreate: 'palettes:create',
   palettesUpdate: 'palettes:update',
@@ -162,6 +178,16 @@ export const IpcChannel = {
   assetsDelete: 'assets:delete',
   assetsExport: 'assets:export',
   assetsSettings: 'assets:settings',
+  notesList: 'notes:list',
+  notesCreate: 'notes:create',
+  notesUpdate: 'notes:update',
+  notesDelete: 'notes:delete',
+  notesImport: 'notes:import',
+  notesPick: 'notes:pick',
+  notesExport: 'notes:export',
+  notesMerge: 'notes:merge',
+  noteVersionsList: 'noteVersions:list',
+  noteVersionsRestore: 'noteVersions:restore',
   colourPickScreen: 'colour:pickScreen',
   pickerStart: 'picker:start',
   pickerDone: 'picker:done',
@@ -237,7 +263,7 @@ export type ShellStatePatch = z.infer<typeof shellStatePatchSchema>;
 export type EditCommand = z.infer<typeof editCommandSchema>;
 export type Unsubscribe = () => void;
 
-export const DATA_DOMAINS = ['tickets', 'boards', 'palettes', 'cards', 'assets'] as const;
+export const DATA_DOMAINS = ['tickets', 'boards', 'palettes', 'cards', 'assets', 'notes'] as const;
 export type DataDomain = (typeof DATA_DOMAINS)[number];
 export const dataChangeSchema = z.object({ domain: z.enum(DATA_DOMAINS) });
 export type DataChange = z.infer<typeof dataChangeSchema>;
@@ -320,6 +346,7 @@ export interface LoopyApi {
   deleteBoard: (id: string) => Promise<Board[]>;
   readBoard: (id: string) => Promise<BoardSnapshot>;
   applyBoardChanges: (id: string, changes: BoardChanges) => Promise<BoardSnapshot>;
+  readBoardTiles: (id: string) => Promise<BoardTile[]>;
   listPalettes: () => Promise<Palette[]>;
   createPalette: (input: PaletteInput) => Promise<Palette>;
   updatePalette: (id: string, patch: PalettePatch) => Promise<Palette>;
@@ -343,8 +370,21 @@ export interface LoopyApi {
   deleteAssets: (ids: string[]) => Promise<AssetsSnapshot>;
   exportAsset: (id: string) => Promise<ExportResult>;
   setAssetSettings: (patch: AssetSettingsPatch) => Promise<AssetsSnapshot>;
+  listNotes: () => Promise<Note[]>;
+  createNote: (input: NoteInput) => Promise<Note>;
+  updateNote: (id: string, patch: NotePatch) => Promise<Note[]>;
+  deleteNotes: (ids: string[]) => Promise<Note[]>;
+  importNotes: (input: NoteImport) => Promise<NoteImportResult>;
+  pickNotes: (mode: NotePickMode, folderId: string | null) => Promise<NoteImportResult>;
+  exportNotes: (input: NoteExport) => Promise<ExportResult>;
+  mergeNotes: (sourceId: string, targetId: string) => Promise<Note[]>;
+  listNoteVersions: (noteId: string) => Promise<NoteVersion[]>;
+  restoreNoteVersion: (versionId: string) => Promise<Note[]>;
   pickScreenColour: () => Promise<string | null>;
 }
+
+export const notePickModeSchema = z.enum(['files', 'folder']);
+export type NotePickMode = z.infer<typeof notePickModeSchema>;
 
 export const entityIdSchema = z.string().min(1);
 export const labelIdsSchema = z.array(entityIdSchema);
@@ -357,6 +397,7 @@ export {
   boardListSchema,
   boardSchema,
   boardSnapshotSchema,
+  boardTileListSchema,
   paletteClusterListSchema,
   paletteClusterSchema,
   cardTemplateListSchema,
@@ -365,4 +406,8 @@ export {
   paletteListSchema,
   paletteSchema,
   ticketsSnapshotSchema,
+  noteImportResultSchema,
+  noteListSchema,
+  noteSchema,
+  noteVersionListSchema,
 };

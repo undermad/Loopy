@@ -1,0 +1,42 @@
+@use '../../../styles/mixins' as *;
+
+.preview {
+  @include stack(var(--space-2));
+
+  position: fixed;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  font-size: var(--font-size-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 50;
+  overflow: auto;
+}
+
+.title {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.muted {
+  color: var(--color-fg-muted);
+}
+
+.image {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+}
+
+.swatches {
+  display: flex;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+
+  span {
+    height: 24px;
+    flex: 1;
+  }
+}

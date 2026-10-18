@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { brushStateSchema } from './brushes';
 
-export const APP_SETTINGS_SCHEMA_VERSION = 3;
+export const APP_SETTINGS_SCHEMA_VERSION = 4;
 
 export const themeModeSchema = z.enum(['system', 'light', 'dark']);
 
@@ -37,6 +38,7 @@ const fieldSchemas = {
   fontSize: z.number().int().min(10).max(24),
   defaultLayoutId: z.string().min(1),
   editors: editorPreferencesSchema,
+  brushes: brushStateSchema,
 };
 
 export const appSettingsSchema = z.object({
@@ -47,6 +49,7 @@ export const appSettingsSchema = z.object({
   fontSize: fieldSchemas.fontSize.default(14),
   defaultLayoutId: fieldSchemas.defaultLayoutId.default('default'),
   editors: fieldSchemas.editors.prefault({}),
+  brushes: fieldSchemas.brushes.prefault({}),
 });
 
 export const appSettingsPatchSchema = z.object(fieldSchemas).partial();

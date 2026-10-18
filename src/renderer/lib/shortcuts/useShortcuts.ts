@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { tinykeys } from 'tinykeys';
 import { SHORTCUT_IDS, keymap, type ShortcutId } from './keymap';
 
+const ALWAYS: ReadonlySet<ShortcutId> = new Set(['preferences', 'quickSwitcher']);
+
 export type ShortcutHandlers = Partial<Record<ShortcutId, (event: KeyboardEvent) => void>>;
 
 function isEditable(target: EventTarget | null): boolean {
@@ -22,11 +24,11 @@ export function useShortcuts(handlers: ShortcutHandlers, enabled = true): void {
     for (const id of SHORTCUT_IDS) {
       bindings[keymap[id].keys] = (event: KeyboardEvent) => {
         const handler = latest.current[id];
-        if (!handler || (isEditable(event.target) && id !== 'preferences')) return;
+        if (!handler || (isEditable(event.target) && !ALWAYS.has(id))) return;
         event.preventDefault();
         handler(event);
       };
     }
-    return tinykeys(window, bindings);
+    return tinykeys(window, bindings, { ignore: (event) => event.repeat || event.isComposing });
   }, [enabled]);
 }

@@ -50,6 +50,7 @@ import {
   childSelection,
   commitChanges,
   containerAt,
+  copyTiles,
   createEdge,
   createItem,
   descendants,
@@ -67,6 +68,8 @@ import {
   findDock,
   getBoardNodes,
   getBoardSelection,
+  getBoardTiles,
+  isDrawing,
   isReachable,
   itemAt,
   fitSize,
@@ -116,6 +119,7 @@ import {
   type Segment,
 } from '@renderer/lib/board';
 import { findCardTemplate, useCardTemplates } from '@renderer/lib/cards';
+import { drawingAt, getBrushState, updateBrush } from '@renderer/lib/drawing';
 import { readableTextColour } from '@renderer/lib/colour';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useEditTarget } from '@renderer/lib/commands';
@@ -136,14 +140,17 @@ import { BoardActionsContext, type BoardActions, type DropTarget } from './Board
 import { BoardContextMenu, type BoardMenuActions } from './BoardContextMenu';
 import { BoardHeader, type BoardPanel } from './BoardHeader';
 import { BoardToolbar } from './BoardToolbar';
+import { BrushOptionsBar } from './BrushOptionsBar';
 import { CreationOverlay, type Placement } from './CreationOverlay';
 import { DockGroupFrame } from './DockGroupFrame';
+import { DrawingOverlay } from './DrawingOverlay';
 import { QUICK_MENU_SIZE, QuickCreateMenu, type QuickChoice } from './QuickCreateMenu';
 import { Grid } from './Grid';
 import { SelectionGuard } from './SelectionGuard';
 import { TemplateEditorDialog } from './cards/TemplateEditorDialog';
 import { CardItem } from './items/CardItem';
 import { ContainerItem } from './items/ContainerItem';
+import { DrawingItem } from './items/DrawingItem';
 import { FileItem } from './items/FileItem';
 import { LinkItem } from './items/LinkItem';
 import { ImageItem } from './items/ImageItem';
@@ -159,9 +166,11 @@ const nodeTypes = {
   card: CardItem,
   file: FileItem,
   link: LinkItem,
+  drawing: DrawingItem,
 };
 const edgeTypes = { arrow: ArrowEdge };
 export const PROPERTIES_WIDTH = 320;
+const BRUSHES_WIDTH = 300;
 const PANEL_PLACEMENT: Record<BoardPanel, { width: number; placement: PanelPlacement }> = {
   assets: { width: 300, placement: { side: 'before' } },
   layers: { width: 280, placement: { anchor: 'properties', direction: 'column' } },
@@ -255,7 +264,10 @@ function isTyping(target: EventTarget): boolean {
 interface CanvasProps extends Pick<EditorProps, 'state' | 'setState'> {
   boardId: string;
   onEditTemplate: (templateId: string | null) => void;
+  onOpenBrushes: () => void;
 }
+
+const SIZE_STEP = 1.15;
 
 const STACK_GAP = 16;
 
@@ -279,7 +291,7 @@ function readTrail(state: Record<string, unknown>, boards: { id: string }[]): st
   );
 }
 
-function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
+function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: CanvasProps) {
   const { t } = useTranslation('editors');
   const names = useWorkspaceNames();
   const boardList = useBoards();
@@ -299,7 +311,9 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
   const snap = flag(state, 'snap', preferences.snap);
   const wheel = preferences.wheel;
   const tool = readTool(state);
+  const brushTool = tool === 'brush' || tool === 'eraser' ? tool : null;
   const shape = readShape(state);
+  const rememberedLayer = typeof state['drawingLayer'] === 'string' ? state['drawingLayer'] : null;
   const templateId = typeof state['cardTemplate'] === 'string' ? state['cardTemplate'] : null;
   const pending = useRef(new Map<string, Node>());
   const surface = useRef<HTMLDivElement>(null);
@@ -316,6 +330,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
   const [transforming, setTransforming] = useState(false);
   const [preview, setPreview] = useState<BoardNode[] | null>(null);
   const [quick, setQuick] = useState<QuickOpen | null>(null);
+  const [hotDrawing, setHotDrawing] = useState<string | null>(null);
   const screenPointer = useRef<Point | null>(null);
   const pressSelection = useRef<string[]>([]);
   const dragSession = useRef<DragSession | null>(null);
@@ -463,7 +478,8 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
     return baseNodes.map((node) => {
       const { pointerEvents: _ignored, ...style } = node.style ?? {};
       const parentId = node.parentId ?? null;
-      const inert = !deep && !isReachable({ parentId }, entered);
+      const flat = node.type === 'drawing' && node.id !== hotDrawing;
+      const inert = flat || (!deep && !isReachable({ parentId }, entered));
       const source = reordered ? layered.find((candidate) => candidate.id === node.id) : undefined;
       const turned = preview?.find((candidate) => candidate.id === node.id);
       return {
@@ -481,7 +497,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
         style: inert ? { ...style, pointerEvents: 'none' } : style,
       };
     });
-  }, [allNodes, baseNodes, deep, liveLayers, preview, selectedIds]);
+  }, [allNodes, baseNodes, deep, hotDrawing, liveLayers, preview, selectedIds]);
 
   const edges = useMemo(
     () =>
@@ -506,14 +522,18 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
         let delta = { x: primary.position.x - start.x, y: primary.position.y - start.y };
         const moving = new Set([...session.ids, ...session.followers]);
         const rect = absoluteRect({ ...source, x: start.x + delta.x, y: start.y + delta.y }, snapshot.nodes);
-        const candidates = session.alt
-          ? []
-          : snapshot.nodes
-              .filter(
-                (node) =>
-                  !moving.has(node.id) && node.parentId === source.parentId && node.data['hidden'] !== true,
-              )
-              .map((node) => ({ id: node.id, rect: absoluteRect(node, snapshot.nodes) }));
+        const candidates =
+          session.alt || isDrawing(source)
+            ? []
+            : snapshot.nodes
+                .filter(
+                  (node) =>
+                    !moving.has(node.id) &&
+                    !isDrawing(node) &&
+                    node.parentId === source.parentId &&
+                    node.data['hidden'] !== true,
+                )
+                .map((node) => ({ id: node.id, rect: absoluteRect(node, snapshot.nodes) }));
         const snapped = findDock(rect, candidates, DOCK_DISTANCE / zoom);
         if (snapped) delta = { x: delta.x + snapped.dx, y: delta.y + snapped.dy };
         let lines: Guide[] = [];
@@ -623,7 +643,8 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
       if (Object.keys(live).length > 0) setLiveGeometry(live);
       const after = snapshot.nodes.map((node) => updates.find((update) => update.id === node.id) ?? node);
       const settled = updates.map((node) => {
-        if (!moved.includes(node.id) || (node.parentId && moved.includes(node.parentId))) return node;
+        if (isDrawing(node) || !moved.includes(node.id) || (node.parentId && moved.includes(node.parentId)))
+          return node;
         const rect = absoluteRect(node, after);
         const centre = { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
         const target = containerAt(centre, after, [node.id])?.id ?? null;
@@ -906,13 +927,21 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
 
   const pointer = useRef<Point | null>(null);
 
+  const trackHotDrawing = useCallback(
+    (point: Point) => {
+      const hot = allNodes.some(isDrawing) ? (drawingAt(point, allNodes)?.id ?? null) : null;
+      setHotDrawing((current) => (current === hot ? current : hot));
+    },
+    [allNodes],
+  );
+
   const pastePoint = useCallback((): Point | null => pointer.current, []);
 
   const pasteClip = useCallback(
     (clip: BoardClip, at: Point | null) => {
       const pasted = pasteItems(clip, boardId, at, allNodes);
       if (pasted.nodes.length === 0) return;
-      commit({ upsertNodes: pasted.nodes, upsertEdges: pasted.edges });
+      commit({ upsertNodes: pasted.nodes, upsertEdges: pasted.edges, upsertTiles: pasted.tiles });
       select(pasted.ids);
     },
     [allNodes, boardId, commit, select],
@@ -929,7 +958,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
   const copySelection = useCallback((): { text: string; json: string } | null => {
     const ids = getBoardSelection(boardId).nodeIds;
     if (!snapshot || ids.length === 0) return null;
-    const clip = copyItems(ids, snapshot.nodes, snapshot.edges);
+    const clip = copyItems(ids, snapshot.nodes, snapshot.edges, getBoardTiles(boardId));
     const text = rememberClip(clip, t('board.copied', { count: clip.nodes.length }));
     return { text, json: serialiseClip(clip) };
   }, [boardId, snapshot, t]);
@@ -992,7 +1021,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
       const data = event.clipboardData;
       const json = data.getData(BOARD_CLIPBOARD_TYPE);
       const text = data.getData('text/plain');
-      const clip = (json ? parseClip(json) : null) ?? recallClip(text);
+      const clip = recallClip(text) ?? (json ? parseClip(json) : null);
       const files = [...data.files];
       if (!clip && files.length === 0 && !text.trim()) return;
       event.preventDefault();
@@ -1037,6 +1066,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
     quick === null &&
     editingId === null &&
     selectedNodes.length === 1 &&
+    !selectedNodes.some(isDrawing) &&
     selectedIds.length === 1
       ? (selectedNodes[0] ?? null)
       : null;
@@ -1166,10 +1196,14 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
     (ids: string[]) => {
       if (!snapshot || ids.length === 0) return;
       const copies = duplicateItems(ids, snapshot.nodes, snapshot.edges);
-      commit({ upsertNodes: copies.nodes, upsertEdges: copies.edges });
+      commit({
+        upsertNodes: copies.nodes,
+        upsertEdges: copies.edges,
+        upsertTiles: copyTiles(copies.sources, getBoardTiles(boardId)),
+      });
       select(copies.ids);
     },
-    [commit, select, snapshot],
+    [boardId, commit, select, snapshot],
   );
 
   const menuActions = useMemo<BoardMenuActions>(
@@ -1286,6 +1320,12 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
       commit({ upsertNodes: selectedNodes.map((node) => withData(node, { locked: lock })) });
       return;
     }
+    if (brushTool && !mod && (event.key === '[' || event.key === ']')) {
+      const size = getBrushState()[brushTool].settings.size;
+      const next = event.key === ']' ? size * SIZE_STEP : size / SIZE_STEP;
+      updateBrush(brushTool, { size: Math.min(1000, Math.max(0.5, Math.round(next * 10) / 10)) });
+      return;
+    }
     if (!mod && event.key === ']' && ids.length > 0) {
       commit({ upsertNodes: bringToFront(ids, allNodes) });
       return;
@@ -1321,7 +1361,8 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
         {...boardScopeProps}
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        onPointerDownCapture={() => {
+        onPointerDownCapture={(event) => {
+          if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
           pressSelection.current = getBoardSelection(boardId).nodeIds;
           if (!surface.current?.contains(document.activeElement))
             surface.current?.focus({ preventScroll: true });
@@ -1329,6 +1370,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
         onPointerMove={(event) => {
           pointer.current = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
           screenPointer.current = { x: event.clientX, y: event.clientY };
+          if (tool === 'select' && event.buttons === 0) trackHotDrawing(pointer.current);
         }}
         onPointerLeave={() => {
           pointer.current = null;
@@ -1560,6 +1602,22 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
             </ViewportPortal>
             {grid ? <Grid board={{ ...snapshot.board, gridColor }} /> : null}
             {minimap ? <MiniMap pannable zoomable className={styles['minimap']} /> : null}
+            {brushTool ? (
+              <DrawingOverlay
+                boardId={boardId}
+                tool={brushTool}
+                nodes={allNodes}
+                selectedIds={selectedIds}
+                rememberedLayer={rememberedLayer}
+                wheel={wheel}
+                minZoom={MIN_ZOOM}
+                maxZoom={MAX_ZOOM}
+                layerName={(count) => t('drawing.layerName', { count })}
+                onLayer={(id) => {
+                  setState({ drawingLayer: id });
+                }}
+              />
+            ) : null}
             {creating || tool === 'arrow' ? (
               <CreationOverlay
                 mode={tool === 'arrow' ? 'connect' : 'place'}
@@ -1578,6 +1636,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
             ) : null}
           </ReactFlow>
         </BoardContextMenu>
+        {brushTool ? <BrushOptionsBar tool={brushTool} onOpenSettings={onOpenBrushes} /> : null}
         {quick ? (
           <QuickCreateMenu
             x={quick.left}
@@ -1642,6 +1701,7 @@ function BoardArea({ areaId, state, setState }: EditorProps) {
   const propertiesOpen = usePanelOpen('properties');
   const assetsOpen = usePanelOpen('assets');
   const layersOpen = usePanelOpen('layers');
+  const brushesOpen = usePanelOpen('brushes');
   const editorRef = useRef<HTMLDivElement>(null);
   const [templateEditor, setTemplateEditor] = useState<{ templateId: string | null; key: number } | null>(
     null,
@@ -1699,6 +1759,11 @@ function BoardArea({ areaId, state, setState }: EditorProps) {
           state={state}
           setState={setState}
           onEditTemplate={openTemplateEditor}
+          onOpenBrushes={() => {
+            if (brushesOpen) return;
+            const width = editorRef.current?.getBoundingClientRect().width ?? 0;
+            panelActions.toggle(areaId, 'brushes', width, BRUSHES_WIDTH);
+          }}
         />
       ) : (
         <EmptyState icon={<PenTool />} title={t('board.empty')} description={t('board.emptyHint')} />

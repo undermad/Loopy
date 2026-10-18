@@ -4,6 +4,7 @@ import type { TicketLink } from '@shared/tickets';
 import { useAssetsSnapshot } from '@renderer/lib/assets';
 import { useBoards } from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
+import { useNotes } from '@renderer/lib/notes';
 import { usePalettes } from '@renderer/lib/palettes';
 import { ticketActions } from '@renderer/lib/tickets';
 import { openLinked, useWorkspaceNames, type WorkspaceNames } from '@renderer/lib/workspaces';
@@ -53,6 +54,7 @@ export function LinkedAssets({ ticketId, links }: { ticketId: string; links: Tic
   const names = useWorkspaceNames();
   const boards = useBoards() ?? [];
   const palettes = usePalettes() ?? [];
+  const notes = useNotes();
   const { assets } = useAssetsSnapshot();
   const [query, setQuery] = useState('');
 
@@ -75,6 +77,12 @@ export function LinkedAssets({ ticketId, links }: { ticketId: string; links: Tic
       links: palettes
         .filter((palette) => matches(palette.name))
         .map((palette) => ({ link: { kind: 'palette', id: palette.id }, name: palette.name })),
+    },
+    {
+      title: t('ticket.links.notes'),
+      links: notes
+        .filter((note) => matches(note.title))
+        .map((note) => ({ link: { kind: 'note', id: note.id }, name: note.title })),
     },
     {
       title: t('ticket.links.files'),

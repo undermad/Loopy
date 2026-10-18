@@ -5,6 +5,7 @@
     "window": "Window",
     "help": "Help",
     "newProject": "New project…",
+    "quickSwitcher": "Open note…",
     "openProject": "Open…",
     "openRecent": "Open recent",
     "noRecent": "No recent projects",
@@ -52,6 +53,7 @@
       "design": "Design",
       "palette": "Palette",
       "assets": "Assets",
+      "ideas": "Idea Map",
       "empty": "Empty"
     }
   },
@@ -105,7 +107,8 @@
       "planning": "Planning",
       "design": "Design",
       "palette": "Palette",
-      "assets": "Assets"
+      "assets": "Assets",
+      "ideas": "Idea Map"
     },
     "current": "Current layout",
     "builtIn": "Built in",
@@ -134,6 +137,7 @@
       "app": "Application",
       "workspaces": "Workspaces and areas",
       "edit": "Editing",
+      "notes": "Notes",
       "boardTools": "Board tools",
       "boardItems": "Board items",
       "boardArrange": "Board alignment",
@@ -143,6 +147,10 @@
     "items": {
       "newProject": "New project",
       "preferences": "Preferences",
+      "quickSwitcher": "Open a note",
+      "noteLink": "Link a note, board, palette, file or ticket",
+      "noteSearch": "Find in the note",
+      "noteFollow": "Follow a link while editing",
       "fullscreen": "Toggle full screen",
       "nextWorkspace": "Next workspace",
       "previousWorkspace": "Previous workspace",
