@@ -15,6 +15,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "package": "npm run build && electron-builder --dir",
+    "dist:win": "npm run build && electron-builder --win --publish never",
     "lint": "eslint . && stylelint \"src/**/*.scss\"",
     "lint:fix": "eslint . --fix && stylelint \"src/**/*.scss\" --fix",
     "format": "prettier --write .",

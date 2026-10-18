@@ -7,7 +7,7 @@ description: One paragraph per tool and why it is in the repository.
 
 **electron-vite** builds main, preload and renderer from one config and gives the renderer hot module replacement. It replaces hand-written Vite configs per process.
 
-**electron-builder** packages the app. Only directory mode is wired today; installers and signing come with the first release.
+**electron-builder** packages the app: an unpacked directory with `npm run package`, a per-user NSIS installer with `npm run dist:win`. Signing, auto-update and macOS and Linux installers come later; see ADR 0021.
 
 **TypeScript 6** with strict options, `noUncheckedIndexedAccess` and `noPropertyAccessFromIndexSignature`. TypeScript 7 waits for typescript-eslint support.
 

@@ -1,5 +1,23 @@
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseEnv } from '../../../src/main/env';
+import { parseEnv, userDataOverride } from '../../../src/main/env';
+
+describe('userDataOverride', () => {
+  const appData = join('C:', 'Users', 'me', 'AppData', 'Roaming');
+
+  it('uses LOOPY_USER_DATA when it is set', () => {
+    expect(userDataOverride({ LOOPY_USER_DATA: 'D:/data' }, { packaged: true, appData })).toBe('D:/data');
+    expect(userDataOverride({ LOOPY_USER_DATA: 'D:/data' }, { packaged: false, appData })).toBe('D:/data');
+  });
+
+  it('keeps unpacked builds out of the installed app data', () => {
+    expect(userDataOverride({}, { packaged: false, appData })).toBe(join(appData, 'loopy-dev'));
+  });
+
+  it('keeps the default for the installed app', () => {
+    expect(userDataOverride({}, { packaged: true, appData })).toBeNull();
+  });
+});
 
 describe('parseEnv', () => {
   it('applies defaults when variables are missing', () => {

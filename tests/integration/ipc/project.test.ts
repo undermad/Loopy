@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -32,24 +32,123 @@ afterEach(async () => {
   await rm(directory, { recursive: true, force: true });
 });
 
-async function setup(dialogs: Partial<FileDialogs> = {}) {
+async function setup(dialogs: Partial<FileDialogs> = {}, replace = true) {
   const paths = storagePaths(directory);
   const ipc = fakeIpc();
   const broadcast = vi.fn();
   const revealInFolder = vi.fn();
+  const confirmReplace = vi.fn((_name: string) => Promise.resolve(replace));
   const service = registerProjectHandlers(ipc, {
     paths,
     deviceState: await createDeviceStateService(createDeviceStateStore(paths.deviceState)),
     broadcast,
     revealInFolder,
+    confirmReplace,
     dialogs: {
       showSaveDialog: vi.fn(() => Promise.resolve({ canceled: true })),
       showOpenDialog: vi.fn(() => Promise.resolve({ canceled: true, filePaths: [] })),
       ...dialogs,
     },
   });
-  return { paths, ipc, broadcast, revealInFolder, service };
+  return { paths, ipc, broadcast, revealInFolder, confirmReplace, service };
 }
+
+async function projectPair(paths: ReturnType<typeof storagePaths>) {
+  const id = crypto.randomUUID();
+  const external = join(directory, 'external', 'shared.loopy');
+  (await createProject(paths.projectFile(id), 'Local', new Date(), id)).close();
+  (await createProject(external, 'External', new Date(), id)).close();
+  const past = new Date(Date.now() - 60_000);
+  await utimes(external, past, past);
+  return { id, external };
+}
+
+describe('opening a project file from the operating system', () => {
+  it('opens a file that is already in the library without copying it', async () => {
+    const { paths, service } = await setup();
+    const id = crypto.randomUUID();
+    (await createProject(paths.projectFile(id), 'Library', new Date(), id)).close();
+
+    try {
+      const result = await service.openFile(paths.projectFile(id));
+      expect(result).toMatchObject({ status: 'opened', project: { id, name: 'Library' } });
+      expect(service.state().current?.id).toBe(id);
+      const files = (await readdir(paths.projects)).filter((name) => name.endsWith('.loopy'));
+      expect(files).toEqual([`${id}.loopy`]);
+    } finally {
+      await service.close();
+    }
+  });
+
+  it('imports an external file and makes it the current project', async () => {
+    const external = join(directory, 'downloads', 'Quest.loopy');
+    (await createProject(external, 'Quest')).close();
+    const { paths, broadcast, service } = await setup();
+
+    try {
+      const result = await service.openFile(external);
+      expect(result).toMatchObject({ status: 'imported', project: { name: 'Quest' } });
+      const id = service.state().current?.id;
+      await expect(readdir(paths.projects)).resolves.toContain(`${id}.loopy`);
+      expect(broadcast.mock.lastCall?.[0]).toBe(IpcChannel.projectChanged);
+      expect(broadcast.mock.lastCall?.[1]).toMatchObject({ current: { name: 'Quest' } });
+    } finally {
+      await service.close();
+    }
+  });
+
+  it('reports a missing file instead of throwing', async () => {
+    const { service } = await setup();
+
+    await expect(service.openFile(join(directory, 'gone.loopy'))).resolves.toEqual({
+      status: 'failed',
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('keeps a newer local copy when the user declines to replace it', async () => {
+    const { paths, confirmReplace, service } = await setup({}, false);
+    const { id, external } = await projectPair(paths);
+
+    try {
+      const result = await service.openFile(external);
+      expect(confirmReplace).toHaveBeenCalledWith('Local');
+      expect(result).toMatchObject({ status: 'opened', project: { id, name: 'Local' } });
+    } finally {
+      await service.close();
+    }
+  });
+
+  it('replaces a newer local copy when the user agrees', async () => {
+    const { paths, confirmReplace, service } = await setup({}, true);
+    const { id, external } = await projectPair(paths);
+
+    try {
+      const result = await service.openFile(external);
+      expect(confirmReplace).toHaveBeenCalledWith('Local');
+      expect(result).toMatchObject({ status: 'imported', project: { id, name: 'External' } });
+    } finally {
+      await service.close();
+    }
+  });
+
+  it('asks before File, Import replaces a newer local copy', async () => {
+    const paths = storagePaths(directory);
+    const { external } = await projectPair(paths);
+    const { ipc, confirmReplace, service } = await setup(
+      { showOpenDialog: () => Promise.resolve({ canceled: false, filePaths: [external] }) },
+      false,
+    );
+
+    try {
+      const result = await ipc.call<{ status: string }>(IpcChannel.projectImport);
+      expect(confirmReplace).toHaveBeenCalledWith('Local');
+      expect(result.status).toBe('cancelled');
+    } finally {
+      await service.close();
+    }
+  });
+});
 
 describe('project IPC handlers', () => {
   it('creates, lists, opens, closes and deletes projects while tracking recent projects', async () => {

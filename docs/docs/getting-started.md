@@ -31,6 +31,7 @@ The main process reads `.env` at startup and validates it with a zod schema in `
 | Variable          | Default | Purpose                                               |
 | ----------------- | ------- | ----------------------------------------------------- |
 | `LOOPY_LOG_LEVEL` | `info`  | Minimum log level: `debug`, `info`, `warn` or `error` |
+| `LOOPY_USER_DATA` | none    | Directory for settings, state and projects            |
 
 `.env` is ignored by git and rejected by a pre-commit guard. Add new variables to `.env.example` and to the schema in the same commit.
 
@@ -41,7 +42,19 @@ npm run build
 npm run package
 ```
 
-`build` writes main, preload and renderer bundles to `out/`. `package` runs electron-builder in directory mode and writes an unpacked app to `dist/`. Installers and code signing are not configured yet.
+`build` writes main, preload and renderer bundles to `out/`. `package` runs electron-builder in directory mode and writes an unpacked app to `dist/win-unpacked`.
+
+## Install on Windows
+
+```bash
+npm run dist:win
+```
+
+The script writes `dist/Loopy-Setup-<version>.exe`. Run it to install Loopy for the current user, with no administrator prompt. It adds Start menu and desktop shortcuts, an entry in Installed apps, and registers `.loopy` files.
+
+The installer is not signed, so SmartScreen warns on first run. Choose More info, then Run anyway.
+
+Uninstalling keeps `%APPDATA%\Loopy`, so projects and settings survive a reinstall. `npm run dev` uses `%APPDATA%\loopy-dev` and never touches them; the architecture page lists the directories.
 
 ## Documentation site
 

@@ -53,12 +53,12 @@ npm runs a dependency's install script only when the package is listed in `allow
 
 ## What CI runs
 
-| Workflow     | When                                    | Checks                                                                                                                |
-| ------------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `ci`         | every pull request and push to `main`   | lint, format, types, knip, actionlint, unit and integration tests, build, E2E and accessibility on Ubuntu and Windows |
-| `coverage`   | every pull request                      | coverage with thresholds, summary comment on the pull request                                                         |
-| `security`   | pull requests, pushes to `main`, weekly | gitleaks over full history, `npm audit`, CodeQL                                                                       |
-| `post-merge` | push to `main`                          | full test run and packaging on Windows, macOS and Linux                                                               |
-| `docs`       | changes under `docs/`                   | build the site, check links, deploy to GitHub Pages from `main`                                                       |
+| Workflow     | When                                    | Checks                                                                                                                                                                         |
+| ------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ci`         | every pull request and push to `main`   | lint, format, types, knip, actionlint, unit and integration tests, build, E2E and accessibility on Ubuntu and Windows, Windows installer uploaded as `loopy-windows-installer` |
+| `coverage`   | every pull request                      | coverage with thresholds, summary comment on the pull request                                                                                                                  |
+| `security`   | pull requests, pushes to `main`, weekly | gitleaks over full history, `npm audit`, CodeQL                                                                                                                                |
+| `post-merge` | push to `main`                          | full test run and packaging on Windows, macOS and Linux                                                                                                                        |
+| `docs`       | changes under `docs/`                   | build the site, check links, deploy to GitHub Pages from `main`                                                                                                                |
 
 Dependabot opens grouped minor and patch updates weekly for npm (root and `docs/`) and for GitHub Actions. Majors arrive as separate pull requests.

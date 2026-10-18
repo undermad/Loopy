@@ -13,7 +13,9 @@ import {
 } from 'electron';
 import { ASSET_PROTOCOL } from '@shared/assets';
 import { assetSchemePrivileges, handleAssetRequest } from './asset-protocol';
-import { parseEnv } from './env';
+import { parseEnv, userDataOverride } from './env';
+import { openFailedDialog, projectPathFromArgv, replaceDialog } from './open-file';
+import { resolveLanguage } from '@shared/i18n';
 import { registerAppHandlers } from './ipc/app';
 import { registerAssetsHandlers } from './ipc/assets';
 import { registerBoardsHandlers } from './ipc/boards';
@@ -57,7 +59,10 @@ import { syncingIpc, type DataNotifier } from './ipc/sync';
 loadDotenv({ quiet: true });
 const env = parseEnv(process.env);
 const logger = createLogger(env.LOOPY_LOG_LEVEL);
-if (env.LOOPY_USER_DATA) app.setPath('userData', env.LOOPY_USER_DATA);
+const userData = userDataOverride(env, { packaged: app.isPackaged, appData: app.getPath('appData') });
+if (userData) app.setPath('userData', userData);
+const primaryInstance = app.requestSingleInstanceLock();
+if (!primaryInstance) app.quit();
 protocol.registerSchemesAsPrivileged([assetSchemePrivileges, pickerSchemePrivileges]);
 
 function pickerWindow(window: BrowserWindow): Omit<PickerWindow, 'webContentsId'> {
@@ -100,7 +105,7 @@ async function start(): Promise<void> {
   });
 
   registerAppHandlers(ipcMain, { appVersion, electronVersion: process.versions.electron });
-  await registerSettingsHandlers(ipcMain, {
+  const settings = await registerSettingsHandlers(ipcMain, {
     store: createAppSettingsStore(paths.settings),
     broadcast,
     onLoadError: (error) => {
@@ -143,7 +148,15 @@ async function start(): Promise<void> {
     revealInFolder: (path) => {
       shell.showItemInFolder(path);
     },
+    confirmReplace: async (name) => {
+      const options = replaceDialog(language(), name);
+      const result = mainWindow
+        ? await dialog.showMessageBox(mainWindow, options)
+        : await dialog.showMessageBox(options);
+      return result.response === 1;
+    },
   });
+  const language = () => resolveLanguage(settings.current().language, app.getLocale());
   registerTicketsHandlers(syncingIpc(ipcMain, 'tickets', notify), { project: () => projects.current() });
   registerBoardsHandlers(syncingIpc(ipcMain, 'boards', notify), { project: () => projects.current() });
   registerPalettesHandlers(syncingIpc(ipcMain, 'palettes', notify), { project: () => projects.current() });
@@ -246,12 +259,30 @@ async function start(): Promise<void> {
   });
   logger.info(`Loopy ${appVersion} started`);
 
+  const openFromArgv = async (argv: readonly string[]) => {
+    const path = projectPathFromArgv(argv);
+    if (!path) return;
+    const result = await projects.openFile(path);
+    if (result.status !== 'failed') return;
+    logger.warn(`Could not open ${path}: ${result.code}`);
+    const options = openFailedDialog(language(), path);
+    await (mainWindow ? dialog.showMessageBox(mainWindow, options) : dialog.showMessageBox(options));
+  };
+  app.on('second-instance', (_event, argv) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+    void openFromArgv(argv);
+  });
+  void openFromArgv(process.argv);
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
   });
 }
 
-void app.whenReady().then(start);
+if (primaryInstance) void app.whenReady().then(start);
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
