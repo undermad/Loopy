@@ -161,3 +161,26 @@ test('shows a far zoomed out drawing from reduced tiles', async ({ window }) => 
   await expect.poll(async () => (await node.boundingBox())?.width ?? 1000).toBeLessThan(60);
   await expect.poll(() => inkCoverage(window)).toBeGreaterThan(0);
 });
+
+test('keeps the brush colour picker open while picking a colour', async ({ window }) => {
+  await openBoard(window, 'Palette test');
+  await window.getByRole('button', { name: 'Brush (B)' }).click();
+  const options = window.getByRole('toolbar', { name: 'Brush options' });
+  await options.getByRole('button', { name: 'Colour' }).click();
+  const picker = window.getByRole('dialog', { name: 'Colour' });
+  await expect(picker).toBeVisible();
+  await expect(picker.getByRole('group', { name: 'Basic colours' })).toBeVisible();
+
+  const hex = picker.getByRole('textbox', { name: 'Colour' });
+  await hex.click();
+  await hex.fill('ff0000');
+  await hex.press('Tab');
+  await expect(picker).toBeVisible();
+
+  await picker.getByRole('group', { name: 'Basic colours' }).getByRole('button', { name: '#3b82f6' }).click();
+  await expect(picker).toBeHidden();
+  await options.getByRole('button', { name: 'Colour' }).click();
+  await expect(
+    window.getByRole('dialog', { name: 'Colour' }).getByRole('button', { name: '#3b82f6' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+});

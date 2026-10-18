@@ -8,6 +8,21 @@ import { ColorSwatch, IconButton, Popover, cx } from '@renderer/ui';
 import type { Size } from '@renderer/ui/types';
 import styles from './ProjectColourPicker.module.scss';
 
+const BASIC_COLOURS = [
+  '#000000',
+  '#ffffff',
+  '#6b7280',
+  '#ef4444',
+  '#f97316',
+  '#eab308',
+  '#22c55e',
+  '#14b8a6',
+  '#3b82f6',
+  '#6366f1',
+  '#a855f7',
+  '#ec4899',
+];
+
 export interface ProjectColourPickerProps {
   value: ColourValue;
   onChange: (value: ColourValue) => void;
@@ -105,6 +120,29 @@ export function ProjectColourPicker({
             >
               <Pipette aria-hidden="true" />
             </IconButton>
+          </div>
+        </div>
+        <div role="group" aria-label={t('picker.basic')} className={cx(styles['palette'], styles['basic'])}>
+          <span className={styles['paletteName']}>{t('picker.basic')}</span>
+          <div className={styles['swatches']}>
+            {BASIC_COLOURS.map((hex) => {
+              const selected = value.ref === null && value.hex.toLowerCase() === hex;
+              return (
+                <button
+                  key={hex}
+                  type="button"
+                  aria-label={hex}
+                  aria-pressed={selected}
+                  title={hex}
+                  className={cx(styles['swatch'], selected && styles['selected'])}
+                  style={{ background: hex }}
+                  onClick={() => {
+                    onChange({ hex, ref: null });
+                    setOpen(false);
+                  }}
+                />
+              );
+            })}
           </div>
         </div>
         {groups.length > 0 ? (

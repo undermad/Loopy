@@ -149,7 +149,8 @@
   },
   "picker": {
     "custom": "Custom colour",
-    "noPalettes": "No palettes yet. Create one in the Colours editor."
+    "basic": "Basic colours",
+    "noPalettes": "No project palettes yet. Create one in the Colours editor to pick linked colours here."
   },
   "explore": {
     "title": "Explore palettes",

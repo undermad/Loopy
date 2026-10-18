@@ -1361,7 +1361,8 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
         {...boardScopeProps}
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        onPointerDownCapture={() => {
+        onPointerDownCapture={(event) => {
+          if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
           pressSelection.current = getBoardSelection(boardId).nodeIds;
           if (!surface.current?.contains(document.activeElement))
             surface.current?.focus({ preventScroll: true });
