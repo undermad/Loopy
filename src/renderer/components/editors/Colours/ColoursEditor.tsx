@@ -166,7 +166,7 @@ export function ColoursEditor({ state, setState }: EditorProps) {
                   paletteId,
                   clusterId: null,
                   clusterEdit: false,
-                  tab: tab === 'explore' || tab === 'cluster' ? 'wheel' : tab,
+                  tab: tab === 'explore' ? 'wheel' : tab,
                 });
               }}
               onSelectCluster={(id) => {

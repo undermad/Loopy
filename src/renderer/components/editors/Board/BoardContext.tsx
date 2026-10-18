@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { BoardEdge, BoardNode } from '@shared/board';
+import type { BoardEdge, BoardLink, BoardNode } from '@shared/board';
 import type { Rect } from '@renderer/lib/board';
 
 export interface DropTarget {
@@ -25,6 +25,7 @@ export interface BoardActions {
   previewGeometry: (id: string, rect: Rect | null) => void;
   setTransforming: (active: boolean) => void;
   gridStep: (zoom: number) => number;
+  openLink: (link: BoardLink) => void;
 }
 
 export const BoardActionsContext = createContext<BoardActions | null>(null);

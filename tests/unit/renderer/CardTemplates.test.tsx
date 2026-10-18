@@ -60,6 +60,7 @@ function Providers({
               previewGeometry: vi.fn(),
               setTransforming: vi.fn(),
               gridStep: () => 10,
+              openLink: vi.fn(),
             }}
           >
             {children}

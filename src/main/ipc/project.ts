@@ -103,7 +103,7 @@ export function registerProjectHandlers(
     for (const entry of entries) {
       if (extname(entry) !== `.${PROJECT_FILE_EXTENSION}`) continue;
       const path = deps.paths.projectFile(basename(entry, `.${PROJECT_FILE_EXTENSION}`));
-      let info: ProjectInfo | null = null;
+      let info: ProjectInfo | null;
       if (currentInfo && current?.path === path) {
         info = currentInfo;
       } else {

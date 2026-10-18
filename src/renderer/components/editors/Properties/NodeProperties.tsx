@@ -33,10 +33,12 @@ import {
   rotationOf,
   toUnits,
   undock,
+  useBoards,
   useLiveNode,
   withData,
 } from '@renderer/lib/board';
 import { useCardTemplate, useCardTemplates } from '@renderer/lib/cards';
+import { usePalettes } from '@renderer/lib/palettes';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Button, Field, Input, Select, Switch, TextArea, ToggleGroup } from '@renderer/ui';
 import { CardView } from '../Board/cards/CardView';
@@ -603,12 +605,52 @@ function FileSection({ node }: { node: BoardNode }) {
   );
 }
 
+function LinkSection({ node }: { node: BoardNode }) {
+  const { t } = useTranslation('editors');
+  const { target } = itemData({ type: 'link', data: node.data });
+  const boards = useBoards() ?? [];
+  const palettes = usePalettes() ?? [];
+  const value = target ? `${target.kind}:${target.id}` : NONE;
+  return (
+    <Field label={t('properties.linkTarget')}>
+      <Select
+        size="sm"
+        value={value}
+        aria-label={t('properties.linkTarget')}
+        options={[
+          { value: NONE, label: t('assetLink.missing') },
+          ...boards
+            .filter((board) => board.id !== node.boardId)
+            .map((board) => ({
+              value: `board:${board.id}`,
+              label: `${t('assetLink.kinds.board')}: ${board.name}`,
+            })),
+          ...palettes.map((palette) => ({
+            value: `palette:${palette.id}`,
+            label: `${t('assetLink.kinds.palette')}: ${palette.name}`,
+          })),
+        ]}
+        onValueChange={(next) => {
+          const [kind, ...rest] = next.split(':');
+          const id = rest.join(':');
+          save(
+            withData(node, {
+              target: next === NONE || (kind !== 'board' && kind !== 'palette') ? null : { kind, id },
+            }),
+          );
+        }}
+      />
+    </Field>
+  );
+}
+
 const TYPE_SECTIONS: Record<BoardNodeType, ComponentType<{ node: BoardNode }>> = {
   text: TextSection,
   image: ImageSection,
   container: ContainerSection,
   card: CardSection,
   file: FileSection,
+  link: LinkSection,
 };
 
 function CardStyleSection({ node }: { node: BoardNode }) {

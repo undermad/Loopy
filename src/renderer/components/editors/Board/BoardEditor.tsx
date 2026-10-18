@@ -25,13 +25,14 @@ import {
   type NodePositionChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { PenTool, Plus, Unlink } from 'lucide-react';
+import { ArrowLeft, PenTool, Plus, Unlink } from 'lucide-react';
 import {
   EDGE_HANDLES,
   type BoardChanges,
   type BoardEdge,
   type BoardNode,
   type EdgeHandle,
+  type BoardLink,
 } from '@shared/board';
 import { assetUrl, type Asset } from '@shared/assets';
 import {
@@ -121,7 +122,13 @@ import { useEditTarget } from '@renderer/lib/commands';
 import { useSettings } from '@renderer/lib/settings';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useColourFromRef } from '@renderer/lib/palettes';
-import { panelActions, usePanelOpen, type PanelPlacement } from '@renderer/lib/workspaces';
+import {
+  openLinked,
+  panelActions,
+  usePanelOpen,
+  useWorkspaceNames,
+  type PanelPlacement,
+} from '@renderer/lib/workspaces';
 import { EmptyState, Spinner, cx, useToast } from '@renderer/ui';
 import { AreaHeaderContent } from '../../Shell/AreaHeaderContent';
 import { ArrowEdge } from './ArrowEdge';
@@ -138,6 +145,7 @@ import { TemplateEditorDialog } from './cards/TemplateEditorDialog';
 import { CardItem } from './items/CardItem';
 import { ContainerItem } from './items/ContainerItem';
 import { FileItem } from './items/FileItem';
+import { LinkItem } from './items/LinkItem';
 import { ImageItem } from './items/ImageItem';
 import { TextItem } from './items/TextItem';
 import { readViewport, settleNodeChanges, toFlowEdges, toFlowNodes } from './boardFlow';
@@ -150,6 +158,7 @@ const nodeTypes = {
   container: ContainerItem,
   card: CardItem,
   file: FileItem,
+  link: LinkItem,
 };
 const edgeTypes = { arrow: ArrowEdge };
 export const PROPERTIES_WIDTH = 320;
@@ -248,8 +257,34 @@ interface CanvasProps extends Pick<EditorProps, 'state' | 'setState'> {
   onEditTemplate: (templateId: string | null) => void;
 }
 
+const STACK_GAP = 16;
+
+interface StackEntry {
+  preset: ItemPreset;
+  data: Record<string, unknown>;
+  size: { width: number; height: number };
+}
+
+function fileSize(asset: Pick<Asset, 'kind' | 'width' | 'height'>): { width: number; height: number } {
+  if (asset.kind === 'video') return fitSize(asset.width ?? 640, asset.height ?? 360, 360);
+  if (asset.kind === 'audio') return { width: 300, height: 112 };
+  return presetSize('file');
+}
+
+function readTrail(state: Record<string, unknown>, boards: { id: string }[]): string[] {
+  const value = state['boardTrail'];
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (id): id is string => typeof id === 'string' && boards.some((board) => board.id === id),
+  );
+}
+
 function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
   const { t } = useTranslation('editors');
+  const names = useWorkspaceNames();
+  const boardList = useBoards();
+  const trail = useMemo(() => readTrail(state, boardList ?? []), [boardList, state]);
+  const backTo = boardList?.find((board) => board.id === trail.at(-1)) ?? null;
   const toast = useToast();
   const snapshot = useBoardSnapshot(boardId);
   const flow = useReactFlow();
@@ -381,6 +416,15 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
       },
       setTransforming,
       gridStep: (scale) => (snapshot ? gridStep(snapshot.board, scale) : 24),
+      openLink: (link) => {
+        if (link.kind !== 'board') {
+          openLinked(link, names);
+          return;
+        }
+        if (link.id === boardId) return;
+        setBoardSelection(boardId, []);
+        setState({ boardId: link.id, boardTrail: [...trail, boardId] });
+      },
     }),
     [
       allNodes,
@@ -395,6 +439,9 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
       snapping,
       snapshot,
       wholeGroupIds,
+      names,
+      setState,
+      trail,
     ],
   );
 
@@ -659,6 +706,39 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
     [boardId, commit, select, snap, snapshot, step],
   );
 
+  const placeStack = useCallback(
+    (entries: StackEntry[], point: Point) => {
+      const first = entries[0];
+      if (!snapshot || !first) return;
+      const left = point.x - first.size.width / 2;
+      let top = point.y - first.size.height / 2;
+      let z = nextZ(snapshot.nodes);
+      const created: BoardNode[] = [];
+      for (const entry of entries) {
+        let rect: Rect = { x: left, y: top, ...entry.size };
+        if (snap) {
+          rect = {
+            x: snapToStep(rect.x, step),
+            y: snapToStep(rect.y, step),
+            width: Math.max(step, snapToStep(rect.width, step)),
+            height: Math.max(step, snapToStep(rect.height, step)),
+          };
+        }
+        const item = createItem({ boardId, preset: entry.preset, rect, z, data: entry.data });
+        z += 1;
+        const parent = containerAt(
+          { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 },
+          snapshot.nodes,
+        );
+        created.push(parent ? reparent(item, parent.id, [...snapshot.nodes, item]) : item);
+        top = rect.y + rect.height + STACK_GAP;
+      }
+      commit({ upsertNodes: created });
+      select(created.map((node) => node.id));
+    },
+    [boardId, commit, select, snap, snapshot, step],
+  );
+
   const viewportCentre = useCallback((): Point => {
     const bounds = surface.current?.getBoundingClientRect();
     return flow.screenToFlowPosition({
@@ -714,13 +794,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
 
   const placeFile = useCallback(
     (asset: Pick<Asset, 'id' | 'kind' | 'width' | 'height'>, point: Point) => {
-      const size =
-        asset.kind === 'video'
-          ? fitSize(asset.width ?? 640, asset.height ?? 360, 360)
-          : asset.kind === 'audio'
-            ? { width: 300, height: 112 }
-            : presetSize('file');
-      place('file', { point }, { assetId: asset.id }, size);
+      place('file', { point }, { assetId: asset.id }, fileSize(asset));
     },
     [place],
   );
@@ -738,11 +812,12 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
   }, []);
 
   const dropAssets = useCallback(
-    (ids: string[], x: number, y: number) => {
+    (ids: string[], x: number, y: number, links: BoardLink[] = []) => {
       const point = flow.screenToFlowPosition({ x, y });
+      const placeable = links.filter((link) => !(link.kind === 'board' && link.id === boardId));
       const list = ids.flatMap((id) => assetList.filter((asset) => asset.id === id));
       const first = list[0];
-      if (list.length === 1 && first?.kind === 'image') {
+      if (placeable.length === 0 && list.length === 1 && first?.kind === 'image') {
         const target = itemAt(point, allNodes);
         if (target?.type === 'image') {
           commit({ upsertNodes: [withData(target, { assetId: first.id, alt: first.name })] });
@@ -757,13 +832,27 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
           return;
         }
       }
-      list.forEach((asset, index) => {
-        const at = { x: point.x + index * 24, y: point.y + index * 24 };
-        if (asset.kind === 'image') placeImage(asset, at);
-        else placeFile(asset, at);
-      });
+      placeStack(
+        [
+          ...list.map((asset): StackEntry =>
+            asset.kind === 'image'
+              ? {
+                  preset: 'image',
+                  data: { assetId: asset.id, alt: asset.name },
+                  size: fitSize(asset.width ?? 0, asset.height ?? 0),
+                }
+              : { preset: 'file', data: { assetId: asset.id }, size: fileSize(asset) },
+          ),
+          ...placeable.map((link): StackEntry => ({
+            preset: 'link',
+            data: { target: link },
+            size: presetSize('link'),
+          })),
+        ],
+        point,
+      );
     },
-    [allNodes, assetList, commit, flow, imageFieldAt, placeFile, placeImage, select],
+    [allNodes, assetList, boardId, commit, flow, imageFieldAt, placeStack, select],
   );
 
   const importAndPlace = useCallback(
@@ -935,7 +1024,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
       return;
     }
     showDropTarget(null);
-    if (detail.phase === 'drop') dropAssets(detail.ids, detail.x, detail.y);
+    if (detail.phase === 'drop') dropAssets(detail.ids, detail.x, detail.y, detail.links);
   });
 
   const selectedNodes = allNodes.filter((node) => selectedIds.includes(node.id));
@@ -1500,30 +1589,46 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
             onClose={closeQuick}
           />
         ) : null}
-        <BoardToolbar
-          tool={tool}
-          shape={shape}
-          templates={templates}
-          templateId={templateId}
-          images={images}
-          onTool={setTool}
-          onShape={(next) => {
-            setState({ shape: next });
-          }}
-          onTemplate={(id) => {
-            setState({ cardTemplate: id });
-          }}
-          onPlaceImage={(asset) => {
-            placeImage(asset);
-          }}
-          onImportImages={() => void importImages()}
-          onNewTemplate={() => {
-            onEditTemplate(null);
-          }}
-          onEditTemplates={() => {
-            onEditTemplate(templateId ?? templates[0]?.id ?? null);
-          }}
-        />
+        <div className={styles['toolDock']}>
+          <BoardToolbar
+            tool={tool}
+            shape={shape}
+            templates={templates}
+            templateId={templateId}
+            images={images}
+            onTool={setTool}
+            onShape={(next) => {
+              setState({ shape: next });
+            }}
+            onTemplate={(id) => {
+              setState({ cardTemplate: id });
+            }}
+            onPlaceImage={(asset) => {
+              placeImage(asset);
+            }}
+            onImportImages={() => void importImages()}
+            onNewTemplate={() => {
+              onEditTemplate(null);
+            }}
+            onEditTemplates={() => {
+              onEditTemplate(templateId ?? templates[0]?.id ?? null);
+            }}
+          />
+          {backTo ? (
+            <button
+              type="button"
+              className={styles['back']}
+              title={t('board.backTitle')}
+              onClick={() => {
+                setBoardSelection(boardId, []);
+                setState({ boardId: backTo.id, boardTrail: trail.slice(0, -1) });
+              }}
+            >
+              <ArrowLeft aria-hidden="true" />
+              <span>{t('board.back', { name: backTo.name })}</span>
+            </button>
+          ) : null}
+        </div>
       </div>
     </BoardActionsContext>
   );
@@ -1573,7 +1678,7 @@ function BoardArea({ areaId, state, setState }: EditorProps) {
           snap={flag(state, 'snap', preferences.snap)}
           panels={{ assets: assetsOpen, layers: layersOpen, properties: propertiesOpen }}
           onSelect={(boardId) => {
-            setState({ boardId });
+            setState({ boardId, boardTrail: [] });
           }}
           onToggle={(key, value) => {
             setState({ [key]: value });

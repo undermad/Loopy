@@ -62,6 +62,10 @@ describe('ProjectColourPicker', () => {
     await user.click(screen.getByRole('button', { name: 'Fill' }));
     expect(await screen.findByRole('button', { name: 'Sea: Deep' })).toHaveAttribute('aria-pressed', 'true');
     const hex = screen.getByRole('textbox', { name: 'Fill' });
+    expect(
+      hex.compareDocumentPosition(screen.getByRole('button', { name: 'Sea: Deep' })) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(hex).toHaveValue('#112233');
     await act(async () => {
       await updatePalette(palette.id, { colours: [{ id: colour.id, name: 'Deep', hex: '#445566' }] });
@@ -155,6 +159,7 @@ describe('note fill', () => {
                 previewGeometry: vi.fn(),
                 setTransforming: vi.fn(),
                 gridStep: () => 10,
+                openLink: vi.fn(),
               }}
             >
               <TextItem

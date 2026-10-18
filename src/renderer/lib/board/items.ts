@@ -12,7 +12,7 @@ import {
 import type { ColourValue } from '@shared/colours';
 
 export type ItemPreset =
-  'text' | 'sticky' | 'rectangle' | 'ellipse' | 'diamond' | 'image' | 'container' | 'card' | 'file';
+  'text' | 'sticky' | 'rectangle' | 'ellipse' | 'diamond' | 'image' | 'container' | 'card' | 'file' | 'link';
 
 export interface Rect {
   x: number;
@@ -61,6 +61,7 @@ const PRESETS: Record<ItemPreset, PresetDefinition> = {
   container: { type: 'container', width: 480, height: 320, style: {}, data: { title: '' } },
   card: { type: 'card', width: 320, height: 360, style: {} },
   file: { type: 'file', width: 260, height: 72, style: {} },
+  link: { type: 'link', width: 240, height: 56, style: {} },
 };
 
 export function presetSize(preset: ItemPreset): { width: number; height: number } {
@@ -128,6 +129,7 @@ const TYPE_STYLE: Record<BoardNodeType, Partial<ResolvedStyle>> = {
     radius: 8,
     padding: 8,
   },
+  link: { padding: 0 },
 };
 
 export function resolveItemStyle(type: BoardNodeType, ...layers: (ItemStyle | undefined)[]): ResolvedStyle {

@@ -27,6 +27,7 @@ import {
   Image,
   Layers,
   LayoutTemplate,
+  Link2,
   Lock,
   LockOpen,
   Type,
@@ -45,9 +46,11 @@ import {
   useBoardSnapshot,
   withData,
   type LayerRow,
+  useBoards,
 } from '@renderer/lib/board';
 import { useAssetsSnapshot } from '@renderer/lib/assets';
 import { findCardTemplate } from '@renderer/lib/cards';
+import { usePalettes } from '@renderer/lib/palettes';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
 import { EmptyState, IconButton, ScrollArea, cx } from '@renderer/ui';
@@ -59,6 +62,7 @@ const ICONS: Record<BoardNodeType, typeof Type> = {
   container: Frame,
   card: LayoutTemplate,
   file: File,
+  link: Link2,
 };
 
 function firstLine(text: string): string {
@@ -68,9 +72,16 @@ function firstLine(text: string): string {
 function useItemLabel(): (node: BoardNode) => string {
   const { t } = useTranslation('editors');
   const assets = useAssetsSnapshot().assets;
+  const boards = useBoards() ?? [];
+  const palettes = usePalettes() ?? [];
   return (node) => {
     const data = itemData(node);
     if (data.name) return data.name;
+    if (node.type === 'link') {
+      const { target } = itemData({ type: 'link', data: node.data });
+      const source = target?.kind === 'board' ? boards : palettes;
+      return source.find((item) => item.id === target?.id)?.name ?? t('properties.link');
+    }
     if (node.type === 'file') {
       const { assetId } = itemData({ type: 'file', data: node.data });
       return assets.find((asset) => asset.id === assetId)?.name ?? t('properties.file');

@@ -157,7 +157,8 @@ describe('AssetsEditor folders', () => {
     await user.click(within(tree).getByRole('treeitem', { name: /Images/ }));
     expect(patches).toHaveBeenCalledWith({ scope: 'files', folderId: 'folder-images' });
 
-    await user.click(screen.getByRole('button', { name: 'New folder' }));
+    await user.click(screen.getByRole('button', { name: 'New' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'New folder' }));
     await user.type(await screen.findByLabelText(/Folder name/), 'Heroes');
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'New folder' }));
     expect(api.createAssetFolder).toHaveBeenCalledWith({
@@ -240,7 +241,7 @@ describe('AssetsEditor imports and search', () => {
     await user.click(screen.getByRole('button', { name: 'Import files…' }));
     expect(api.pickAssets).toHaveBeenCalledWith('folder-images');
     expect(await screen.findByRole('button', { name: 'hero.png' })).toHaveAttribute('aria-pressed', 'true');
-    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1' });
+    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1', internalId: '' });
     expect(screen.getByRole('treeitem', { name: /Images/ })).toHaveTextContent('Images1');
     expect(screen.getByRole('img', { name: 'Preview of hero.png' })).toBeInTheDocument();
 
@@ -290,7 +291,7 @@ describe('AssetsEditor imports and search', () => {
     fireEvent.drop(editor, { dataTransfer: { files: [file('hero.png', 'image/png')], types: ['Files'] } });
     expect(await screen.findByRole('button', { name: 'hero.png' })).toBeInTheDocument();
     expect(api.importAssets).toHaveBeenLastCalledWith(expect.objectContaining({ target: 'auto' }) as object);
-    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1', kind: 'image' });
+    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1', internalId: '', kind: 'image' });
 
     const fonts = within(list).getByRole('option', { name: /Fonts/ });
     fireEvent.dragOver(fonts, { dataTransfer: { files: [], types: ['Files'] } });

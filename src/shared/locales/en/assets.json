@@ -96,5 +96,26 @@
     "root": "Top level",
     "kindFolders": "Folder per file type",
     "kindFolder": "Folder for {{kind}}"
+  },
+  "treeFiles": "Show files in the folder tree",
+  "item": {
+    "open": "Open",
+    "rename": "Rename",
+    "name": "Name",
+    "delete": {
+      "board": "Delete board",
+      "palette": "Delete colour palette"
+    },
+    "deleteMany": "Delete {{count}} items",
+    "deleteConfirm": "Delete \"{{name}}\"? This cannot be undone.",
+    "deleteManyConfirm": "Delete {{count}} items? This cannot be undone.",
+    "dragging": "{{count}} items"
+  },
+  "create": {
+    "label": "New",
+    "board": "New board",
+    "palette": "New colour palette",
+    "boardName": "New board",
+    "paletteName": "New palette"
   }
 }

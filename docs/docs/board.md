@@ -117,7 +117,15 @@ The Layers panel lists the open board's items, top first, with children indented
 
 Drag a tile from the Assets panel, or files from the system, onto the canvas. An image becomes an image item sized to its proportions. Video plays in a file item, audio gets a player, and any other file shows its icon, name, kind and size. Dropping one image onto an image item replaces its picture, and dropping it onto a card's image field fills that field. A drop inside a container lands in the container, which is highlighted while you drag.
 
-The Assets editor uses dnd-kit inside its own area, so `reportAssetDrag` in `src/renderer/lib/assets` passes the pointer to any element marked with `assetDropZoneProps`. A drop there wins over the folder under the pointer.
+The Assets editor uses dnd-kit inside its own area, so `reportAssetDrag` in `src/renderer/lib/assets` passes the pointer to any element marked with `assetDropZoneProps`. A drop there wins over the folder under the pointer. Internal assets travel as `links`, a list of `{ kind, id }`.
+
+## Links to boards and palettes
+
+Drag a board or colour palette card from the Assets editor onto the canvas to place a link item. It shows the same card as a ticket's linked asset: the board icon or the palette's colours, the name and the type. A board cannot link to itself, so dropping the open board does nothing. Dropping several assets at once stacks them one under another, 16 units apart, left edges aligned with the first item under the pointer, and selects them all.
+
+Select a link item, then click its card to open it. Dragging the card moves the item instead. A palette opens like a ticket link: in an open Colours editor, or in the Palette workspace. A board opens in the same board area and remembers the board you came from. A back button below the tools returns to it. Links can go several boards deep, and the button steps back one board at a time. Picking a board from the header clears the trail.
+
+The item type is `link`, with `target` in its data. Properties can point it at another board or palette. The trail is the area state `boardTrail`, a list of board ids, so each board area keeps its own. `AssetLinkCard` in `src/renderer/components/AssetLinkCard` draws the card for boards and tickets.
 
 ## Items
 

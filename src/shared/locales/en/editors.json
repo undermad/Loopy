@@ -161,7 +161,9 @@
     },
     "animated": "Animated",
     "reverse": "Reverse direction",
-    "content": "Content"
+    "content": "Content",
+    "link": "Link",
+    "linkTarget": "Links to"
   },
   "placeholder": {
     "title": "{{editor}} arrives soon",
@@ -277,15 +279,7 @@
       "palettes": "Colour palettes",
       "files": "Files",
       "none": "Nothing to link yet",
-      "open": "Open {{name}}",
-      "remove": "Unlink {{name}}",
-      "missing": "Missing asset",
-      "missingHint": "This asset was deleted",
-      "kinds": {
-        "board": "Board",
-        "palette": "Colour palette",
-        "asset": "File"
-      }
+      "remove": "Unlink {{name}}"
     },
     "addLabel": "Add label",
     "newLabel": "New label",
@@ -428,7 +422,9 @@
       "detach": "Detach",
       "editTemplate": "Edit card template",
       "delete": "Delete"
-    }
+    },
+    "back": "Back to {{name}}",
+    "backTitle": "Back to the board you came from"
   },
   "richText": {
     "editor": "Text editor",
@@ -539,5 +535,15 @@
     "menu": "Template menu",
     "place": "Place card",
     "kind": "Field type"
+  },
+  "assetLink": {
+    "open": "Open {{name}}",
+    "missing": "Missing asset",
+    "missingHint": "This asset was deleted",
+    "kinds": {
+      "board": "Board",
+      "palette": "Colour palette",
+      "asset": "File"
+    }
   }
 }

@@ -1,50 +1,51 @@
 import { useState } from 'react';
-import { Link2, Palette, PenTool, Unlink, X } from 'lucide-react';
-import { assetUrl, type Asset } from '@shared/assets';
+import { Link2, X } from 'lucide-react';
 import type { TicketLink } from '@shared/tickets';
 import { useAssetsSnapshot } from '@renderer/lib/assets';
 import { useBoards } from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
 import { usePalettes } from '@renderer/lib/palettes';
 import { ticketActions } from '@renderer/lib/tickets';
-import { openLinked, useWorkspaceNames } from '@renderer/lib/workspaces';
-import { Button, IconButton, Input, Popover, ScrollArea, Switch, cx } from '@renderer/ui';
-import { KIND_ICONS } from '../Assets/kinds';
+import { openLinked, useWorkspaceNames, type WorkspaceNames } from '@renderer/lib/workspaces';
+import { Button, IconButton, Input, Popover, ScrollArea, Switch } from '@renderer/ui';
+import { AssetLinkCard, useResolvedLink } from '../../AssetLinkCard/AssetLinkCard';
 import styles from './LinkedAssets.module.scss';
-
-interface Resolved {
-  link: TicketLink;
-  name: string;
-  detail: string;
-  colours: string[];
-  asset: Asset | null;
-  missing: boolean;
-}
 
 function sameLink(a: TicketLink, b: TicketLink): boolean {
   return a.kind === b.kind && a.id === b.id;
 }
 
-function LinkIcon({ item }: { item: Resolved }) {
-  if (item.link.kind === 'palette' && item.colours.length > 0) {
-    return (
-      <span className={styles['swatches']} aria-hidden="true">
-        {item.colours.slice(0, 5).map((hex, index) => (
-          <span key={`${hex}-${String(index)}`} style={{ background: hex }} />
-        ))}
-      </span>
-    );
-  }
-  if (item.asset?.kind === 'image') {
-    return <img src={assetUrl(item.asset.id)} alt="" className={styles['image']} />;
-  }
-  const Icon =
-    item.link.kind === 'board'
-      ? PenTool
-      : item.link.kind === 'palette'
-        ? Palette
-        : KIND_ICONS[item.asset?.kind ?? 'other'];
-  return <Icon aria-hidden="true" />;
+function LinkRow({
+  link,
+  names,
+  onRemove,
+}: {
+  link: TicketLink;
+  names: WorkspaceNames;
+  onRemove: () => void;
+}) {
+  const { t } = useTranslation('editors');
+  const { name } = useResolvedLink(link);
+  return (
+    <li className={styles['item']}>
+      <AssetLinkCard
+        link={link}
+        className={styles['card']}
+        onOpen={(target) => {
+          openLinked(target, names);
+        }}
+      />
+      <IconButton
+        label={t('ticket.links.remove', { name })}
+        size="sm"
+        tooltip={false}
+        className={styles['remove']}
+        onClick={onRemove}
+      >
+        <X aria-hidden="true" />
+      </IconButton>
+    </li>
+  );
 }
 
 export function LinkedAssets({ ticketId, links }: { ticketId: string; links: TicketLink[] }) {
@@ -55,46 +56,9 @@ export function LinkedAssets({ ticketId, links }: { ticketId: string; links: Tic
   const { assets } = useAssetsSnapshot();
   const [query, setQuery] = useState('');
 
-  function resolve(link: TicketLink): Resolved {
-    if (link.kind === 'board') {
-      const board = boards.find((item) => item.id === link.id);
-      return {
-        link,
-        name: board?.name ?? t('ticket.links.missing'),
-        detail: t('ticket.links.kinds.board'),
-        colours: [],
-        asset: null,
-        missing: !board,
-      };
-    }
-    if (link.kind === 'palette') {
-      const palette = palettes.find((item) => item.id === link.id);
-      return {
-        link,
-        name: palette?.name ?? t('ticket.links.missing'),
-        detail: t('ticket.links.kinds.palette'),
-        colours: palette?.colours.map((colour) => colour.hex) ?? [],
-        asset: null,
-        missing: !palette,
-      };
-    }
-    const asset = assets.find((item) => item.id === link.id) ?? null;
-    return {
-      link,
-      name: asset?.name ?? t('ticket.links.missing'),
-      detail: t('ticket.links.kinds.asset'),
-      colours: [],
-      asset,
-      missing: !asset,
-    };
-  }
-
-  function save(next: TicketLink[]) {
-    void ticketActions.update(ticketId, { links: next });
-  }
-
   function toggle(link: TicketLink, on: boolean) {
-    save(on ? [...links, link] : links.filter((item) => !sameLink(item, link)));
+    const next = on ? [...links, link] : links.filter((item) => !sameLink(item, link));
+    void ticketActions.update(ticketId, { links: next });
   }
 
   const needle = query.trim().toLowerCase();
@@ -124,40 +88,15 @@ export function LinkedAssets({ ticketId, links }: { ticketId: string; links: Tic
     <div className={styles['links']}>
       {links.length > 0 ? (
         <ul className={styles['list']} aria-label={t('ticket.links.title')}>
-          {links.map(resolve).map((item) => (
-            <li key={`${item.link.kind}:${item.link.id}`} className={styles['item']}>
-              <button
-                type="button"
-                className={cx(styles['chip'], item.missing && styles['missing'])}
-                data-kind={item.link.kind}
-                disabled={item.missing}
-                title={
-                  item.missing ? t('ticket.links.missingHint') : t('ticket.links.open', { name: item.name })
-                }
-                onClick={() => {
-                  openLinked(item.link, names);
-                }}
-              >
-                <span className={styles['icon']}>
-                  {item.missing ? <Unlink aria-hidden="true" /> : <LinkIcon item={item} />}
-                </span>
-                <span className={styles['text']}>
-                  <span className={styles['name']}>{item.name}</span>
-                  <span className={styles['detail']}>{item.detail}</span>
-                </span>
-              </button>
-              <IconButton
-                label={t('ticket.links.remove', { name: item.name })}
-                size="sm"
-                tooltip={false}
-                className={styles['remove']}
-                onClick={() => {
-                  toggle(item.link, false);
-                }}
-              >
-                <X aria-hidden="true" />
-              </IconButton>
-            </li>
+          {links.map((link) => (
+            <LinkRow
+              key={`${link.kind}:${link.id}`}
+              link={link}
+              names={names}
+              onRemove={() => {
+                toggle(link, false);
+              }}
+            />
           ))}
         </ul>
       ) : null}

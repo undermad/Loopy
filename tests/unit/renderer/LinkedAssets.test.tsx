@@ -1,9 +1,9 @@
 import { act, fireEvent, render, renderHook, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LayoutNode } from '@shared/layout';
 import { TicketEditor } from '@renderer/components/editors/Tickets/TicketEditor';
-import { importFiles } from '@renderer/lib/assets';
+import { importFiles, reportAssetDrag } from '@renderer/lib/assets';
 import { createBoard } from '@renderer/lib/board';
 import { createPalette } from '@renderer/lib/palettes';
 import { selectTicket, ticketActions } from '@renderer/lib/tickets';
@@ -177,5 +177,36 @@ describe('linked assets on a ticket', () => {
     const chip = screen.getByRole('button', { name: /^Missing asset/ });
     expect(chip).toBeDisabled();
     expect(chip).toHaveAttribute('title', 'This asset was deleted');
+  });
+
+  it('links files, boards and palettes dropped on the ticket window', async () => {
+    const board = await createBoard({ name: 'Level map' });
+    const { ids } = await importFiles(
+      [new File([new Uint8Array([1])], 'notes.txt', { type: 'text/plain' })],
+      null,
+    );
+    await ticketActions.create({ title: 'Build the level', stateId: 'todo' });
+    selectTicket('ticket-1');
+    render(<Harness />);
+    const zone = document.querySelector<HTMLElement>('[data-asset-drop]');
+    if (!zone) throw new Error('missing zone');
+    const spy = vi.spyOn(document, 'elementsFromPoint').mockReturnValue([zone]);
+    const section = screen.getByRole('region', { name: 'Linked assets' });
+
+    act(() => {
+      reportAssetDrag(ids, 50, 50, 'move', [{ kind: 'board', id: board.id }]);
+    });
+    expect(section.className).toMatch(/linkTarget/);
+    act(() => {
+      reportAssetDrag(ids, 50, 50, 'drop', [{ kind: 'board', id: board.id }]);
+    });
+    expect(section.className).not.toMatch(/linkTarget/);
+    expect(api.updateTicket).toHaveBeenLastCalledWith('ticket-1', {
+      links: [
+        { kind: 'asset', id: ids[0] },
+        { kind: 'board', id: board.id },
+      ],
+    });
+    spy.mockRestore();
   });
 });

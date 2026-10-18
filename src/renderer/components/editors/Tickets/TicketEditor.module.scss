@@ -67,3 +67,19 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+.zone {
+  height: 100%;
+  min-height: 0;
+}
+
+.linking {
+  outline: 2px dashed var(--color-accent);
+  outline-offset: -4px;
+}
+
+.linkTarget {
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 10%, transparent);
+}

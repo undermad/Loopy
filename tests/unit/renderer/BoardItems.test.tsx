@@ -36,6 +36,7 @@ function actions(overrides: Partial<BoardActions> = {}): BoardActions {
     previewGeometry: vi.fn(),
     setTransforming: vi.fn(),
     gridStep: () => 10,
+    openLink: vi.fn(),
     ...overrides,
   };
 }

@@ -76,6 +76,17 @@ beforeEach(async () => {
 });
 
 describe('palette clusters', () => {
+  it('stays on the cluster tab when another palette is picked', async () => {
+    const user = userEvent.setup();
+    const fire = await palette('Fire', '#e2361b');
+    await palette('Sea', '#1b6ee2');
+    render(<Harness initial={{ tab: 'cluster', paletteId: fire.id }} />);
+    expect(await screen.findByRole('heading', { name: 'Palette cluster' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Select palette Sea' }));
+    expect(screen.getByRole('radio', { name: 'Cluster' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('heading', { name: 'Palette cluster' })).toBeInTheDocument();
+  });
+
   it('asks for a seed when no saved palette is selected', async () => {
     render(<Harness initial={{ tab: 'cluster' }} />);
     expect(await screen.findByText('Select a seed palette')).toBeInTheDocument();

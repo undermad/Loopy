@@ -34,3 +34,8 @@
     background: color-mix(in srgb, var(--color-fg) 40%, transparent);
   }
 }
+
+.fit {
+  width: 0;
+  min-width: 100%;
+}

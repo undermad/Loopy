@@ -22,3 +22,5 @@ export type { FolderNode } from './tree';
 export { useAsset, useAssetsLoaded, useAssetsSnapshot } from './hooks';
 export { assetDropZoneProps, reportAssetDrag, useAssetDropZone } from './drag';
 export type { AssetDragDetail } from './drag';
+export { isRenameClick, pickSelection, recordClick } from './selection';
+export type { ClickRecord } from './selection';

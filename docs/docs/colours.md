@@ -76,7 +76,7 @@ A cluster groups palettes that belong together, such as one palette per magic sc
 
 The seed's hue is the saturation-weighted circular mean of its colours. A grey seed is tinted, because turning a grey changes nothing. Once a scheme runs out of angles, or when the seed already sits in a cluster, the remaining hues go into the widest free gap on the wheel. Fill the gaps does only that, which is how you extend a cluster.
 
-Select a cluster in the library to open it in the Cluster tab. It is read-only, like a palette: its palettes with their colours and its base hues on the wheel, and Open on any palette. Modify opens a draft where you rename the cluster, switch palettes out of it, and plan new ones on the wheel; planned palettes start switched off, so a rename adds nothing. Save changes applies all of it and Cancel drops it. The library's + menu offers New palette and New cluster from the selected palette.
+Select a cluster in the library to open it in the Cluster tab. Picking a palette while the Cluster tab is open keeps the tab and plans a cluster from that palette. It is read-only, like a palette: its palettes with their colours and its base hues on the wheel, and Open on any palette. Modify opens a draft where you rename the cluster, switch palettes out of it, and plan new ones on the wheel; planned palettes start switched off, so a rename adds nothing. Save changes applies all of it and Cancel drops it. The library's + menu offers New palette and New cluster from the selected palette.
 
 Each planned palette is named after its hue family. You can rename it, leave it out, or turn it by dragging its marker on the wheel. Create cluster stores the seed and the new palettes together. On a seed that is already in a cluster, the button adds them to that cluster.
 
@@ -84,7 +84,7 @@ Schemes live in `CLUSTER_SCHEMES` and `clusterOffsets` in `src/renderer/lib/colo
 
 The library groups palettes under their clusters, with ungrouped palettes last. A cluster header collapses its palettes and has a menu to rename it, add palettes to it, delete it and keep the palettes, or delete it with them. Each palette menu can generate a cluster from that palette and move it to a cluster, to a new one or out of its cluster. Search matches palette and cluster names.
 
-Every other place that offers palette colours groups them the same way: the project colour picker, the swatch popover and From palette menu of a colour input, and Add whole palette in the contrast checker. Each cluster is a labelled group with its palettes in cluster order, and ungrouped palettes come last under Ungrouped. Without clusters the lists stay flat. `usePaletteGroups` in `src/renderer/lib/palettes` returns these groups, skipping empty ones; `groupByCluster` is the same rule for any list that wraps palettes, such as the library with its drafts.
+Every other place that offers palette colours groups them the same way: the project colour picker, which shows the custom colour first and the palettes below it, the swatch popover and From palette menu of a colour input, and Add whole palette in the contrast checker. Each cluster is a labelled group with its palettes in cluster order, and ungrouped palettes come last under Ungrouped. Without clusters the lists stay flat. `usePaletteGroups` in `src/renderer/lib/palettes` returns these groups, skipping empty ones; `groupByCluster` is the same rule for any list that wraps palettes, such as the library with its drafts.
 
 ## Editing
 

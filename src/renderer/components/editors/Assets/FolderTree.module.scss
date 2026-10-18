@@ -100,3 +100,12 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+.file {
+  color: var(--color-fg-muted);
+  touch-action: none;
+}
+
+.dragging {
+  opacity: 0.4;
+}

@@ -1,5 +1,6 @@
 import { Archive, Box, File, FileText, Film, Image, Music, Type } from 'lucide-react';
 import { type AssetFolder, type AssetKind, type AssetScope } from '@shared/assets';
+import type { BoardLink } from '@shared/board';
 import { folderPath } from '@renderer/lib/assets';
 
 export const KIND_ICONS: Record<AssetKind, typeof File> = {
@@ -18,6 +19,7 @@ export const ROOT_VALUE = 'root';
 export interface AssetDragData {
   type: 'asset';
   ids: string[];
+  links: BoardLink[];
 }
 
 export interface FolderDropData {
@@ -34,12 +36,6 @@ export interface InternalItem {
   name: string;
   folderId: string | null;
   colours: string[];
-}
-
-export interface InternalDragData {
-  type: 'internal';
-  kind: InternalKind;
-  id: string;
 }
 
 export const INTERNAL_SCOPES: Record<InternalKind, Exclude<AssetScope, 'files'>> = {

@@ -199,7 +199,7 @@ describe('AssetsEditor card menu and options', () => {
     expect(input).toHaveValue('theme.mp3');
     await user.clear(input);
     await user.type(input, 'menu.mp3');
-    await user.click(screen.getByRole('button', { name: 'Rename' }));
+    await user.keyboard('{Enter}');
     expect(api.updateAsset).toHaveBeenCalledWith('asset-2', { name: 'menu.mp3' });
 
     const renamed = await screen.findByRole('button', { name: 'menu.mp3' });

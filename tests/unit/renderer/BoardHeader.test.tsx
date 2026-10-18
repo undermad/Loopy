@@ -44,7 +44,7 @@ describe('BoardHeader', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Board' }));
     await user.click(await screen.findByRole('menuitemradio', { name: 'Levels' }));
-    expect(setState).toHaveBeenCalledWith({ boardId: 'board-2' });
+    expect(setState).toHaveBeenCalledWith({ boardId: 'board-2', boardTrail: [] });
 
     await user.click(screen.getByRole('button', { name: 'Minimap' }));
     expect(setState).toHaveBeenCalledWith({ minimap: true });
@@ -77,7 +77,7 @@ describe('BoardHeader', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'Delete board' }));
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
     expect(api.deleteBoard).toHaveBeenCalledWith('board-1');
-    expect(setState).toHaveBeenCalledWith({ boardId: 'board-2' });
+    expect(setState).toHaveBeenCalledWith({ boardId: 'board-2', boardTrail: [] });
   });
 });
 
@@ -91,6 +91,6 @@ describe('BoardHeader with a single board', () => {
       await user.click(await screen.findByRole('button', { name: 'Delete' }));
     }
     expect(await screen.findByText('No boards yet')).toBeInTheDocument();
-    expect(setState).toHaveBeenLastCalledWith({ boardId: '' });
+    expect(setState).toHaveBeenLastCalledWith({ boardId: '', boardTrail: [] });
   });
 });

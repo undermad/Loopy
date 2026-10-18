@@ -22,16 +22,22 @@ describe('asset drags across areas', () => {
     });
 
     expect(reportAssetDrag(['a'], 10, 20, 'move')).toBe(true);
-    expect(handler).toHaveBeenLastCalledWith({ ids: ['a'], x: 10, y: 20, phase: 'move' });
+    expect(handler).toHaveBeenLastCalledWith({ ids: ['a'], links: [], x: 10, y: 20, phase: 'move' });
     under.mockReturnValue([]);
     expect(reportAssetDrag(['a'], 400, 20, 'move')).toBe(false);
-    expect(handler).toHaveBeenLastCalledWith({ ids: ['a'], x: 400, y: 20, phase: 'leave' });
+    expect(handler).toHaveBeenLastCalledWith({ ids: ['a'], links: [], x: 400, y: 20, phase: 'leave' });
     under.mockReturnValue([inside]);
     expect(reportAssetDrag(['a'], 12, 22, 'drop')).toBe(true);
-    expect(handler).toHaveBeenLastCalledWith({ ids: ['a'], x: 12, y: 22, phase: 'drop' });
+    expect(handler).toHaveBeenLastCalledWith({ ids: ['a'], links: [], x: 12, y: 22, phase: 'drop' });
     reportAssetDrag(['a'], 12, 22, 'move');
     expect(reportAssetDrag([], Number.NaN, Number.NaN, 'cancel')).toBe(false);
-    expect(handler).toHaveBeenLastCalledWith({ ids: [], x: Number.NaN, y: Number.NaN, phase: 'leave' });
+    expect(handler).toHaveBeenLastCalledWith({
+      ids: [],
+      links: [],
+      x: Number.NaN,
+      y: Number.NaN,
+      phase: 'leave',
+    });
 
     const other = document.createElement('div');
     other.setAttribute(Object.keys(assetDropZoneProps)[0] ?? '', '');

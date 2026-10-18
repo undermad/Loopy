@@ -1,9 +1,11 @@
 import { useEffect, useRef, type RefObject } from 'react';
+import type { BoardLink } from '@shared/board';
 
 export type AssetDragPhase = 'move' | 'leave' | 'drop';
 
 export interface AssetDragDetail {
   ids: string[];
+  links: BoardLink[];
   x: number;
   y: number;
   phase: AssetDragPhase;
@@ -31,10 +33,11 @@ export function reportAssetDrag(
   x: number,
   y: number,
   phase: 'move' | 'drop' | 'cancel',
+  links: BoardLink[] = [],
 ): boolean {
   const zone = phase === 'cancel' || !Number.isFinite(x) ? null : zoneAt(x, y);
-  if (current && current !== zone) send(current, { ids, x, y, phase: 'leave' });
-  if (zone && phase !== 'cancel') send(zone, { ids, x, y, phase });
+  if (current && current !== zone) send(current, { ids, links, x, y, phase: 'leave' });
+  if (zone && phase !== 'cancel') send(zone, { ids, links, x, y, phase });
   current = phase === 'move' ? zone : null;
   return zone !== null;
 }
