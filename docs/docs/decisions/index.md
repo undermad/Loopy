@@ -29,3 +29,4 @@ Hard-to-reverse choices are recorded here, one file each, with Context, Decision
 | [0018](./0018-i18next.md)               | i18next for translations                          |
 | [0019](./0019-tiptap.md)                | TipTap for rich text                              |
 | [0020](./0020-notes-editor.md)          | CodeMirror, react-markdown and d3-force for notes |
+| [0021](./0021-nsis-installer.md)        | Per-user NSIS installer for Windows               |
