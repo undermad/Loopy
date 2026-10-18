@@ -123,7 +123,7 @@ export function prepareMarkdown(body: string): string {
   const end = frontmatterEnd(body);
   const blankLines = (text: string) => text.replace(/[^\n]/g, '');
   let text = blankLines(body.slice(0, end)) + body.slice(end);
-  const masked = maskCode(text);
+  const masked = maskCode(text, true);
   const comments = [...masked.matchAll(/%%[\s\S]*?%%/g)];
   for (const match of comments.reverse()) {
     const from = match.index;

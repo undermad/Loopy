@@ -122,6 +122,7 @@ describe('note structure', () => {
 describe('note titles', () => {
   it('sanitises and de-duplicates titles', () => {
     expect(sanitiseNoteTitle('Boss: Phase/1.md')).toBe('Boss Phase 1');
+    expect(sanitiseNoteTitle('Beta.markdown')).toBe('Beta');
     expect(sanitiseNoteTitle('   ')).toBe('Untitled');
     expect(uniqueNoteTitle('Idea', ['idea', 'Idea 2'])).toBe('Idea 3');
   });

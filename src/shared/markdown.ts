@@ -86,7 +86,7 @@ export function frontmatterEnd(body: string): number {
   return match ? match[0].length : 0;
 }
 
-export function maskCode(body: string): string {
+export function maskCode(body: string, keepComments = false): string {
   const lines = body.split('\n');
   let fence: string | null = null;
   const out = lines.map((line) => {
@@ -99,7 +99,8 @@ export function maskCode(body: string): string {
       fence = open[1] ?? '```';
       return blank(line);
     }
-    return line.replace(/(`+)[^`\n]*?\1/g, (code) => blank(code)).replace(/%%[^%\n]*%%/g, (c) => blank(c));
+    const withoutCode = line.replace(/(`+)[^`\n]*?\1/g, (code) => blank(code));
+    return keepComments ? withoutCode : withoutCode.replace(/%%[^%\n]*%%/g, (c) => blank(c));
   });
   return out.join('\n');
 }

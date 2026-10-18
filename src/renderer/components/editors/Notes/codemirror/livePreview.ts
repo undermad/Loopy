@@ -272,6 +272,7 @@ function build(view: EditorView, host: PreviewHost): DecorationSet {
       from,
       to,
       enter: (node) => {
+        if (node.to <= front) return false;
         const name = node.name;
         if (/^ATXHeading[1-6]$/.test(name)) {
           const line = state.doc.lineAt(node.from);

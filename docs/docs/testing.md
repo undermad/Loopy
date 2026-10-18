@@ -25,7 +25,7 @@ description: The test levels, how to run them and how to add a test at each leve
 | `npm run test:unit`                 | unit and component only, also the pre-push hook                                                      |
 | `npm run test:unit:watch`           | the same in watch mode                                                                               |
 | `npm run test:integration`          | IPC contract and persistence                                                                         |
-| `npm run test:coverage`             | everything in Vitest with coverage; fails under 80 percent lines, branches, functions and statements |
+| `npm run test:coverage`             | everything in Vitest with coverage; fails under 85 percent lines, branches, functions and statements |
 | `npm run build && npm run test:e2e` | Playwright against `out/`                                                                            |
 | `npm run test:all`                  | all of the above in order                                                                            |
 

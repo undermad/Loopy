@@ -77,7 +77,7 @@ export type NoteExport = z.input<typeof noteExportSchema>;
 
 export function sanitiseNoteTitle(raw: string): string {
   const cleaned = raw
-    .replace(/\.md$/i, '')
+    .replace(/\.(md|markdown)$/i, '')
     .replace(/[[\]|#^\\/:*?"<>]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()

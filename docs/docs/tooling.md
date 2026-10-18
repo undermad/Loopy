@@ -11,7 +11,7 @@ description: One paragraph per tool and why it is in the repository.
 
 **TypeScript 6** with strict options, `noUncheckedIndexedAccess` and `noPropertyAccessFromIndexSignature`. TypeScript 7 waits for typescript-eslint support.
 
-**Vitest** runs unit, component and integration tests in three projects with v8 coverage and an 80 percent threshold.
+**Vitest** runs unit, component and integration tests in three projects with v8 coverage and an 85 percent threshold.
 
 **Playwright** drives the built Electron app for E2E tests. **axe-core** runs inside it for accessibility checks.
 
