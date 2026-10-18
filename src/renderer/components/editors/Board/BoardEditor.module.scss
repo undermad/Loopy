@@ -136,3 +136,36 @@
   min-height: 0;
   flex: 1;
 }
+
+.headerGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.headerSeparator {
+  width: 1px;
+  height: 16px;
+  margin: 0 var(--space-1);
+  background: var(--color-border);
+  flex: none;
+}
+
+.headerSpacer {
+  min-width: var(--space-3);
+  flex: 1 1 0;
+}
+
+.groupFrame {
+  position: absolute;
+  outline: 2px solid var(--color-accent);
+  z-index: 10001;
+  outline-offset: 2px;
+  pointer-events: none;
+  transform-origin: center;
+
+  > * {
+    pointer-events: auto;
+  }
+}

@@ -4,6 +4,7 @@ import { Position, ReactFlowProvider, type NodeProps } from '@xyflow/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BoardEdge, BoardNode } from '@shared/board';
 import { ArrowEdge } from '@renderer/components/editors/Board/ArrowEdge';
+import { DockGroupFrame } from '@renderer/components/editors/Board/DockGroupFrame';
 import { BoardActionsContext, type BoardActions } from '@renderer/components/editors/Board/BoardContext';
 import { CardItem } from '@renderer/components/editors/Board/items/CardItem';
 import { ContainerItem } from '@renderer/components/editors/Board/items/ContainerItem';
@@ -27,6 +28,14 @@ function actions(overrides: Partial<BoardActions> = {}): BoardActions {
     openTemplateEditor: vi.fn(),
     dropTarget: null,
     dockedPeers: new Set(),
+    wholeGroup: new Set(),
+    snapping: false,
+    keepRatio: false,
+    previewRotation: vi.fn(),
+    rotateItem: vi.fn(),
+    previewGeometry: vi.fn(),
+    setTransforming: vi.fn(),
+    gridStep: () => 10,
     ...overrides,
   };
 }
@@ -265,5 +274,157 @@ describe('text and card items', () => {
     renderItem(CardItem, { ...card, data: { templateId: 'gone', values: { name: 'Old' } } }, actions());
     expect(screen.getByText("This card's template was deleted")).toBeInTheDocument();
     expect(screen.getByText('Old')).toBeInTheDocument();
+  });
+});
+
+describe('rotate handles', () => {
+  it('rotates from outside a corner, snaps with Ctrl or snapping and commits on release', () => {
+    const note = {
+      ...createItem({ boardId: 'b', preset: 'sticky', rect: { x: 0, y: 0 }, z: 1, data: { text: 'Spin' } }),
+      id: 'spin',
+    };
+    const value = actions();
+    const view = renderItem(TextItem, note, value, true);
+    const handles = view.container.querySelectorAll<HTMLElement>('[data-rotate]');
+    expect(handles).toHaveLength(4);
+    const handle = handles[0];
+    if (!handle) throw new Error('missing handle');
+    const body = () => view.container.querySelector<HTMLElement>('[data-rotation]');
+
+    fireEvent.pointerDown(handle, { button: 0, clientX: 10, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 0, clientY: 10, pointerId: 1 });
+    expect(body()?.style.transform).toBe('rotate(90deg)');
+    fireEvent.pointerMove(handle, { clientX: 10, clientY: 1.8, pointerId: 1 });
+    fireEvent.keyDown(window, { key: 'Control', ctrlKey: true });
+    expect(body()?.style.transform).toBe('rotate(15deg)');
+    fireEvent.keyUp(window, { key: 'Control' });
+    fireEvent.pointerUp(handle, { clientX: 0, clientY: 10, pointerId: 1 });
+    expect(value.rotateItem).toHaveBeenCalledWith(note, 90);
+    expect(value.previewRotation).toHaveBeenLastCalledWith('spin', null);
+    view.unmount();
+
+    const snapping = actions({ snapping: true });
+    const turned = renderItem(TextItem, { ...note, data: { ...note.data, rotation: 30 } }, snapping, true);
+    const corner = turned.container.querySelector<HTMLElement>('[data-rotate]');
+    if (!corner) throw new Error('missing handle');
+    fireEvent.pointerDown(corner, { button: 2, clientX: 10, clientY: 0, pointerId: 2 });
+    fireEvent.pointerMove(corner, { clientX: 0, clientY: 10, pointerId: 2 });
+    expect(turned.container.querySelector<HTMLElement>('[data-rotation]')?.style.transform).toBe(
+      'rotate(30deg)',
+    );
+    fireEvent.pointerDown(corner, { button: 0, clientX: 10, clientY: 0, pointerId: 3 });
+    fireEvent.pointerMove(corner, { clientX: 10, clientY: 0.4, pointerId: 3 });
+    fireEvent.pointerCancel(corner, { pointerId: 3 });
+    fireEvent.pointerDown(corner, { button: 0, clientX: 10, clientY: 0, pointerId: 4 });
+    fireEvent.pointerUp(corner, { clientX: 10, clientY: 0, pointerId: 4 });
+    expect(snapping.rotateItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('resize handles', () => {
+  it('previews, keeps the ratio with Shift, snaps with Ctrl and commits on release', () => {
+    const note = {
+      ...createItem({ boardId: 'b', preset: 'sticky', rect: { x: 0, y: 0 }, z: 1, data: { text: 'Grow' } }),
+      id: 'grow',
+      width: 100,
+      height: 50,
+    };
+    const value = actions();
+    const view = renderItem(TextItem, note, value, true);
+    const handle = (name: string) => {
+      const found = view.container.querySelector<HTMLElement>(`[data-resize="${name}"]`);
+      if (!found) throw new Error(`missing ${name}`);
+      return found;
+    };
+    expect(view.container.querySelectorAll('[data-resize]')).toHaveLength(8);
+    expect(handle('e').style.cursor).toBe('ew-resize');
+
+    fireEvent.pointerDown(handle('se'), { button: 2, clientX: 0, clientY: 0, pointerId: 1 });
+    fireEvent.pointerMove(handle('se'), { clientX: 30, clientY: 30, pointerId: 1 });
+    expect(value.previewGeometry).not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(handle('se'), { button: 0, clientX: 0, clientY: 0, pointerId: 2 });
+    expect(value.setTransforming).toHaveBeenCalledWith(true);
+    fireEvent.pointerMove(handle('se'), { clientX: 23, clientY: 7, pointerId: 2 });
+    expect(value.previewGeometry).toHaveBeenLastCalledWith('grow', { x: 0, y: 0, width: 123, height: 57 });
+    fireEvent.pointerMove(handle('se'), { clientX: 23, clientY: 7, pointerId: 2, ctrlKey: true });
+    expect(value.previewGeometry).toHaveBeenLastCalledWith('grow', { x: 0, y: 0, width: 120, height: 60 });
+    fireEvent.pointerMove(handle('se'), { clientX: 100, clientY: 0, pointerId: 2, shiftKey: true });
+    expect(value.previewGeometry).toHaveBeenLastCalledWith('grow', { x: 0, y: 0, width: 200, height: 100 });
+    fireEvent.pointerMove(handle('se'), { clientX: 1, clientY: 1, pointerId: 9 });
+    fireEvent.pointerUp(handle('se'), { clientX: 100, clientY: 0, pointerId: 2, shiftKey: true });
+    expect(value.previewGeometry).toHaveBeenLastCalledWith('grow', null);
+    expect(value.setTransforming).toHaveBeenLastCalledWith(false);
+    expect(value.updateNode).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'grow', x: 0, y: 0, width: 200, height: 100 }),
+    );
+
+    fireEvent.pointerDown(handle('w'), { button: 0, clientX: 0, clientY: 0, pointerId: 3 });
+    fireEvent.pointerUp(handle('w'), { clientX: 0, clientY: 0, pointerId: 3 });
+    fireEvent.pointerDown(handle('n'), { button: 0, clientX: 0, clientY: 0, pointerId: 4 });
+    fireEvent.pointerCancel(handle('n'), { pointerId: 4 });
+    fireEvent.pointerUp(handle('n'), { clientX: 0, clientY: -20, pointerId: 4 });
+    expect(value.updateNode).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides resizing for docked and locked items', () => {
+    const base = createItem({
+      boardId: 'b',
+      preset: 'sticky',
+      rect: { x: 0, y: 0 },
+      z: 1,
+      data: { text: 'Fixed' },
+    });
+    const docked = renderItem(TextItem, { ...base, data: { ...base.data, dock: 'd1' } }, actions(), true);
+    expect(docked.container.querySelector('[data-resize]')).toBeNull();
+    docked.unmount();
+    const locked = renderItem(TextItem, { ...base, data: { ...base.data, locked: true } }, actions(), true);
+    expect(locked.container.querySelector('[data-resize]')).toBeNull();
+  });
+});
+
+describe('dock group frame', () => {
+  it('spans the group and resizes or rotates it as a whole', () => {
+    const onStart = vi.fn();
+    const onPreview = vi.fn();
+    const onCommit = vi.fn();
+    const group = { dock: 'd', ids: ['a', 'b'], rotation: 30, rect: { x: 0, y: 0, width: 200, height: 80 } };
+    const view = render(
+      <ReactFlowProvider>
+        <DockGroupFrame
+          group={group}
+          label="Docked group"
+          snapping={false}
+          keepRatio={false}
+          gridStep={() => 10}
+          onStart={onStart}
+          onPreview={onPreview}
+          onCommit={onCommit}
+        />
+      </ReactFlowProvider>,
+    );
+    const frame = screen.getByRole('group', { name: 'Docked group' });
+    expect(frame.style.width).toBe('200px');
+    expect(frame.style.transform).toBe('rotate(30deg)');
+    const east = view.container.querySelector<HTMLElement>('[data-resize="e"]');
+    const corner = view.container.querySelector<HTMLElement>('[data-rotate]');
+    if (!east || !corner) throw new Error('missing handles');
+
+    fireEvent.pointerDown(east, { button: 0, clientX: 0, clientY: 0, pointerId: 1 });
+    expect(onStart).toHaveBeenCalled();
+    fireEvent.pointerMove(east, { clientX: 20, clientY: 0, pointerId: 1 });
+    expect(onPreview).toHaveBeenLastCalledWith({
+      rect: expect.objectContaining({ width: expect.closeTo(217.32, 1) as unknown }) as unknown,
+      rotation: 30,
+    });
+    fireEvent.pointerUp(east, { clientX: 20, clientY: 0, pointerId: 1 });
+    expect(onPreview).toHaveBeenLastCalledWith(null);
+    expect(onCommit).toHaveBeenLastCalledWith(expect.objectContaining({ rotation: 30 }));
+
+    fireEvent.pointerDown(corner, { button: 0, clientX: 10, clientY: 0, pointerId: 2 });
+    fireEvent.pointerMove(corner, { clientX: 0, clientY: 10, pointerId: 2 });
+    expect(onPreview).toHaveBeenLastCalledWith({ rect: group.rect, rotation: 120 });
+    fireEvent.pointerUp(corner, { clientX: 0, clientY: 10, pointerId: 2 });
+    expect(onCommit).toHaveBeenLastCalledWith({ rect: group.rect, rotation: 120 });
   });
 });

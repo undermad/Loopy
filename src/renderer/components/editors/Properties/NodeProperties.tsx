@@ -27,7 +27,10 @@ import {
   dockCluster,
   fromUnits,
   itemData,
+  normaliseAngle,
   resolveItemStyle,
+  rotateCluster,
+  rotationOf,
   toUnits,
   undock,
   useLiveNode,
@@ -67,9 +70,18 @@ function setStyle(node: BoardNode, key: keyof ItemStyle, value: ItemStyle[keyof 
   save(withData(node, { style }));
 }
 
-function TransformSection({ board, node: stored }: { board: Board; node: BoardNode }) {
+function TransformSection({
+  board,
+  node: stored,
+  nodes,
+}: {
+  board: Board;
+  node: BoardNode;
+  nodes: BoardNode[];
+}) {
   const { t } = useTranslation('editors');
   const node = useLiveNode(stored);
+  const docked = typeof node.data['dock'] === 'string';
   const patch = (changes: Partial<Pick<BoardNode, 'x' | 'y' | 'width' | 'height'>>) => {
     save({ ...node, ...changes });
   };
@@ -94,10 +106,22 @@ function TransformSection({ board, node: stored }: { board: Board; node: BoardNo
           }}
         />
       </div>
+      <NumberField
+        label={t('properties.rotation')}
+        value={rotationOf(node.data)}
+        step={1}
+        digits={1}
+        onCommit={(value) => {
+          void commitChanges(node.boardId, {
+            upsertNodes: rotateCluster(node.id, normaliseAngle(value), nodes),
+          });
+        }}
+      />
       <h3 className={styles['heading']}>{t('properties.size')}</h3>
       <div className={styles['pair']}>
         <NumberField
           label={label('width')}
+          disabled={docked}
           value={toUnits(node.width, board)}
           min={toUnits(MIN_ITEM_SIZE.width, board)}
           onCommit={(value) => {
@@ -106,6 +130,7 @@ function TransformSection({ board, node: stored }: { board: Board; node: BoardNo
         />
         <NumberField
           label={label('height')}
+          disabled={docked}
           value={toUnits(node.height, board)}
           min={toUnits(MIN_ITEM_SIZE.height, board)}
           onCommit={(value) => {
@@ -604,7 +629,7 @@ export function NodeProperties({ board, node, nodes }: NodePropertiesProps) {
     <section className={styles['section']} aria-label={t(`properties.${node.type}`)}>
       <h3 className={styles['heading']}>{t(`properties.${node.type}`)}</h3>
       <ItemSection node={node} nodes={nodes} />
-      <TransformSection board={board} node={node} />
+      <TransformSection board={board} node={node} nodes={nodes} />
       <ArrangeSection boardId={board.id} ids={[node.id]} nodes={nodes} />
       <TypeSection node={node} />
       {node.type === 'card' ? <CardStyleSection node={node} /> : <StyleSection node={node} />}

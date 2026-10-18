@@ -2,6 +2,7 @@ import { getSystemLocale, useTranslation } from '@renderer/lib/i18n';
 import { updateSettings, useSettings } from '@renderer/lib/settings';
 import { useThemes } from '@renderer/lib/theme';
 import { Dialog, Field, NumberInput, Select, Tabs, ToggleGroup } from '@renderer/ui';
+import { EditorPreferencesPanel } from './EditorPreferences';
 import type { LanguageSetting, ThemeMode } from '@shared/app-settings';
 import { SUPPORTED_LANGUAGES } from '@shared/i18n';
 import { ThemesTab } from './ThemesTab';
@@ -55,6 +56,7 @@ export function PreferencesDialog({ open, onOpenChange }: PreferencesDialogProps
             <Tabs.Trigger value="appearance">{t('tabs.appearance')}</Tabs.Trigger>
             <Tabs.Trigger value="themes">{t('tabs.themes')}</Tabs.Trigger>
             <Tabs.Trigger value="language">{t('tabs.language')}</Tabs.Trigger>
+            <Tabs.Trigger value="editors">{t('tabs.editors')}</Tabs.Trigger>
           </Tabs.List>
           <Tabs.Content value="appearance" className={styles['panel']}>
             <Field label={t('appearance.mode')}>
@@ -94,6 +96,9 @@ export function PreferencesDialog({ open, onOpenChange }: PreferencesDialogProps
                 onValueChange={(language) => void updateSettings({ language: language as LanguageSetting })}
               />
             </Field>
+          </Tabs.Content>
+          <Tabs.Content value="editors" className={styles['panel']}>
+            <EditorPreferencesPanel />
           </Tabs.Content>
         </Tabs.Root>
       </Dialog.Content>

@@ -181,4 +181,24 @@ describe('migration 4', () => {
     expect(() => db.prepare("UPDATE tickets SET type = 'idea' WHERE id = 't1'").run()).toThrow();
     db.close();
   });
+
+  it('stores links to boards, palettes and assets without duplicates', async () => {
+    const call = setup();
+    const created = await call(IpcChannel.ticketsCreate, { title: 'Linked' });
+    const ticket = created.tickets[0];
+    expect(ticket?.links).toEqual([]);
+    const links = [
+      { kind: 'board', id: 'b1' },
+      { kind: 'palette', id: 'p1' },
+      { kind: 'board', id: 'b1' },
+    ];
+    const updated = await call(IpcChannel.ticketsUpdate, ticket?.id, { links });
+    expect(updated.tickets[0]?.links).toEqual([
+      { kind: 'board', id: 'b1' },
+      { kind: 'palette', id: 'p1' },
+    ]);
+    await expect(
+      call(IpcChannel.ticketsUpdate, ticket?.id, { links: [{ kind: 'sound', id: 'x' }] }),
+    ).rejects.toThrow();
+  });
 });

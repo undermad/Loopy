@@ -7,7 +7,7 @@ export interface EditorProps {
   setState: (patch: Record<string, unknown>) => void;
 }
 
-export type EditorCategory = 'general' | 'planning' | 'design';
+export type EditorCategory = 'planning' | 'design' | 'palette' | 'assets' | 'general';
 
 export interface EditorDefinition {
   id: string;

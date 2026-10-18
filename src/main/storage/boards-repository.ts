@@ -15,6 +15,7 @@ import {
   type BoardNode,
   type BoardSnapshot,
 } from '@shared/board';
+import { assertFolderScope } from './assets-repository';
 
 function now(): string {
   return new Date().toISOString();
@@ -33,7 +34,7 @@ function transaction<T>(db: DatabaseSync, work: () => T): T {
 }
 
 const BOARD_COLUMNS =
-  'id, name, background_color AS backgroundColor, grid_color AS gridColor, background_ref AS backgroundRef, grid_ref AS gridRef, unit, unit_scale AS unitScale, created_at AS createdAt, updated_at AS updatedAt';
+  'id, name, background_color AS backgroundColor, grid_color AS gridColor, background_ref AS backgroundRef, grid_ref AS gridRef, unit, unit_scale AS unitScale, folder_id AS folderId, created_at AS createdAt, updated_at AS updatedAt';
 
 function parseJson(value: unknown): unknown {
   return typeof value === 'string' ? JSON.parse(value) : {};
@@ -120,6 +121,11 @@ export function updateBoard(db: DatabaseSync, id: string, raw: unknown): Board {
   if (patch.unitScale !== undefined) {
     sets.push('unit_scale = ?');
     values.push(patch.unitScale);
+  }
+  if (patch.folderId !== undefined) {
+    assertFolderScope(db, patch.folderId, 'boards');
+    sets.push('folder_id = ?');
+    values.push(patch.folderId);
   }
   db.prepare(`UPDATE boards SET ${sets.join(', ')} WHERE id = ?`).run(...values, id);
   return readBoardRow(db, id);

@@ -89,7 +89,7 @@ describe('AssetsEditor details panel', () => {
     const user = userEvent.setup();
     render(<Harness />);
     await user.click(await screen.findByRole('button', { name: 'hero.png' }));
-    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1' });
+    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1', internalId: '' });
     const panel = screen.getByRole('complementary', { name: 'Details panel' });
     expect(within(panel).getByText('image/png')).toBeInTheDocument();
     expect(within(panel).getByText('16 × 16')).toBeInTheDocument();
@@ -143,7 +143,7 @@ describe('AssetsEditor details panel', () => {
     expect(screen.queryByRole('complementary', { name: 'Details panel' })).not.toBeInTheDocument();
 
     await user.dblClick(screen.getByRole('button', { name: 'notes.txt' }));
-    expect(patches).toHaveBeenLastCalledWith({ selectedId: 'asset-3', details: true });
+    expect(patches).toHaveBeenLastCalledWith({ selectedId: 'asset-3', details: true, internalId: '' });
     expect(screen.getByRole('complementary', { name: 'Details panel' })).toBeInTheDocument();
   });
 
@@ -229,7 +229,7 @@ describe('AssetsEditor card menu and options', () => {
     card.focus();
     await user.keyboard('{Enter}');
     expect(card).toHaveAttribute('aria-pressed', 'true');
-    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1' });
+    expect(patches).toHaveBeenCalledWith({ selectedId: 'asset-1', internalId: '' });
   });
 
   it('changes where dropped files go and the folder per kind', async () => {

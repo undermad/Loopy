@@ -1,3 +1,4 @@
+import { renderHook, act } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { BoardEdge, BoardNode, BoardSnapshot } from '@shared/board';
 import {
@@ -22,10 +23,23 @@ import {
   layerRows,
   loadBoard,
   moveLayer,
+  normaliseAngle,
+  rotateBy,
+  rotationOf,
+  setLiveLayers,
+  snapAngle,
   parentSelection,
   parseClip,
   pasteItems,
   quickCreate,
+  resizeCursor,
+  resizeRect,
+  clusterSelection,
+  rotateCluster,
+  dockGroup,
+  selectedDockGroup,
+  transformGroup,
+  settleDocks,
   recallClip,
   redoBoard,
   rememberClip,
@@ -36,6 +50,7 @@ import {
   splitSeam,
   undock,
   undoBoard,
+  useLiveLayers,
 } from '@renderer/lib/board';
 import { bootTestApp, makeProject } from '../helpers/api';
 
@@ -362,5 +377,177 @@ describe('history', () => {
     await commitChanges(board.id, { upsertNodes: [{ ...item, x: 5 }] });
     expect(historyState(board.id).canRedo).toBe(false);
     expect(await redoBoard(board.id)).toBe(false);
+  });
+});
+
+describe('rotation', () => {
+  it('normalises, snaps and measures angles', () => {
+    expect(normaliseAngle(-90)).toBe(270);
+    expect(normaliseAngle(725)).toBe(5);
+    expect(snapAngle(10)).toBe(15);
+    expect(snapAngle(7)).toBe(0);
+    expect(snapAngle(352)).toBe(345);
+    expect(snapAngle(358)).toBe(0);
+    const centre = { x: 0, y: 0 };
+    expect(rotateBy(0, centre, { x: 10, y: 0 }, { x: 0, y: 10 }, false)).toBe(90);
+    expect(rotateBy(10, centre, { x: 10, y: 0 }, { x: 10, y: 0.5 }, true)).toBe(15);
+    expect(rotationOf({ rotation: 30 })).toBe(30);
+    expect(rotationOf({ rotation: 'x' })).toBe(0);
+  });
+});
+
+describe('live layers', () => {
+  it('shares a previewed layer order until it is cleared', () => {
+    const { result } = renderHook(() => useLiveLayers());
+    act(() => {
+      setLiveLayers([node('a', 0, 0, { z: 4 })]);
+    });
+    expect(result.current).toEqual({ a: 4 });
+    act(() => {
+      setLiveLayers(null);
+    });
+    expect(result.current).toEqual({});
+  });
+});
+
+describe('docks follow touch', () => {
+  const docked = (id: string, x: number, y = 0, extra: Partial<BoardNode> = {}) =>
+    node(id, x, y, { data: { dock: 'd' }, ...extra });
+
+  it('splits a dock into touching groups and clears lone items', () => {
+    const row = [docked('a', 0), docked('b', 100), docked('c', 200), docked('far', 900)];
+    const settled = settleDocks(row, ['d']);
+    const dockOf = (id: string) => settled.find((item) => item.id === id)?.data['dock'];
+    expect(dockOf('far')).toBeNull();
+    expect(dockOf('a')).toBeUndefined();
+    const gap = settleDocks([docked('a', 0), docked('c', 200), docked('e', 300)], ['d']);
+    expect(gap.find((item) => item.id === 'a')?.data['dock']).toBeNull();
+    expect(gap.some((item) => item.id === 'c')).toBe(false);
+  });
+
+  it('unlinks the outer items when the middle one is removed', async () => {
+    const api = await bootTestApp();
+    const project = makeProject('Docks');
+    api.projects = [project];
+    api.current = project;
+    api.emitProject();
+    const board = await createBoard({ name: 'Docks' });
+    await loadBoard(board.id);
+    const place = (item: BoardNode) => ({ ...item, boardId: board.id });
+    await commitChanges(board.id, {
+      upsertNodes: [place(docked('a', 0)), place(docked('b', 100)), place(docked('c', 200))],
+    });
+    expect(getBoardNodes(board.id).every((item) => item.data['dock'] === 'd')).toBe(true);
+    await commitChanges(board.id, { removeNodeIds: ['b'] });
+    expect(getBoardNodes(board.id).map((item) => item.data['dock'])).toEqual([null, null]);
+    expect(await undoBoard(board.id)).toBe(true);
+    expect(getBoardNodes(board.id).every((item) => item.data['dock'] === 'd')).toBe(true);
+    await commitChanges(board.id, { upsertNodes: [place({ ...docked('c', 200), x: 260 })] });
+    expect(getBoardNodes(board.id).find((item) => item.id === 'c')?.data['dock']).toBeNull();
+  });
+
+  it('resizes along the own axes of an item and anchors the opposite edge', () => {
+    const rect = { x: 0, y: 0, width: 100, height: 80 };
+    expect(resizeRect(rect, 0, 'e', { x: 20, y: 5 })).toEqual({ x: 0, y: 0, width: 120, height: 80 });
+    expect(resizeRect(rect, 0, 'nw', { x: 10, y: 10 })).toEqual({ x: 10, y: 10, width: 90, height: 70 });
+    expect(resizeRect(rect, 0, 'se', { x: 50, y: 0 }, { keepRatio: true })).toEqual({
+      x: 0,
+      y: 0,
+      width: 150,
+      height: 120,
+    });
+    expect(resizeRect(rect, 0, 'e', { x: 13, y: 0 }, { step: 10 })).toEqual({
+      x: 0,
+      y: 0,
+      width: 110,
+      height: 80,
+    });
+    expect(resizeRect(rect, 0, 'w', { x: 500, y: 0 }).width).toBeGreaterThan(0);
+    const turned = resizeRect(rect, 90, 'e', { x: 0, y: 40 });
+    expect(turned.width).toBeCloseTo(140);
+    expect(turned.x).toBeCloseTo(-20);
+    expect(turned.y).toBeCloseTo(20);
+    expect(resizeCursor('e', 0)).toBe('ew-resize');
+    expect(resizeCursor('e', 90)).toBe('ns-resize');
+    expect(resizeCursor('ne', 0)).toBe('nesw-resize');
+  });
+
+  it('selects a docked group first and then one of its items', () => {
+    const group = [docked('a', 0), docked('b', 100), node('free', 500, 0)];
+    expect(clusterSelection('a', [], group)).toEqual(['a', 'b']);
+    expect(clusterSelection('b', ['a', 'b'], group)).toEqual(['b']);
+    expect(clusterSelection('b', ['a'], group)).toEqual(['b']);
+    expect(clusterSelection('free', ['a'], group)).toEqual(['free']);
+  });
+
+  it('rotates a docked group rigidly and keeps its seams', () => {
+    const pair = [docked('a', 0), docked('b', 100)];
+    const turned = rotateCluster('a', 90, pair);
+    expect(turned.map((item) => item.data['rotation'])).toEqual([90, 90]);
+    expect(turned[0]?.x).toBeCloseTo(50);
+    expect(turned[0]?.y).toBeCloseTo(-50);
+    expect(turned[1]?.x).toBeCloseTo(50);
+    expect(turned[1]?.y).toBeCloseTo(50);
+    expect(seams(['a', 'b'], turned)).toHaveLength(1);
+    expect(settleDocks(turned, ['d'])).toEqual([]);
+    expect(rotateCluster('solo', 30, [node('solo', 0, 0)])[0]?.data['rotation']).toBe(30);
+    expect(rotateCluster('missing', 30, [])).toEqual([]);
+  });
+
+  it('frames a docked group and scales or turns it as a whole', () => {
+    const pair = [docked('a', 0), docked('b', 100), node('free', 500, 0)];
+    const group = dockGroup('d', pair);
+    expect(group).toEqual({
+      dock: 'd',
+      ids: ['a', 'b'],
+      rotation: 0,
+      rect: { x: 0, y: 0, width: 200, height: 80 },
+    });
+    expect(dockGroup('none', pair)).toBeNull();
+    expect(selectedDockGroup(['b', 'a'], pair)).toEqual(group);
+    expect(selectedDockGroup(['a'], pair)).toBeNull();
+    expect(selectedDockGroup(['free'], pair)).toBeNull();
+    if (!group) throw new Error('missing group');
+
+    const grown = transformGroup(group, { rect: { x: 0, y: 0, width: 400, height: 160 }, rotation: 0 }, pair);
+    expect(grown.map((item) => [item.id, item.x, item.y, item.width, item.height])).toEqual([
+      ['a', 0, 0, 200, 160],
+      ['b', 200, 0, 200, 160],
+    ]);
+    expect(seams(['a', 'b'], grown)).toHaveLength(1);
+
+    const turned = transformGroup(group, { rect: group.rect, rotation: 90 }, pair);
+    expect(turned[0]?.x).toBeCloseTo(50);
+    expect(turned[0]?.y).toBeCloseTo(-50);
+    expect(turned[1]?.y).toBeCloseTo(50);
+    const after = dockGroup('d', turned);
+    expect(after?.rotation).toBe(90);
+    expect(after?.rect.width).toBeCloseTo(200);
+    expect(after?.rect.x).toBeCloseTo(0);
+
+    const mixed = [docked('a', 0), docked('b', 100, 0, { data: { dock: 'd', rotation: 90 } })];
+    const tilted = dockGroup('d', mixed);
+    expect(tilted?.rotation).toBe(0);
+    expect(tilted?.rect.width).toBeCloseTo(190);
+    expect(tilted?.rect.height).toBeCloseTo(100);
+    if (!tilted) throw new Error('missing group');
+    const wide = transformGroup(tilted, { rect: { ...tilted.rect, width: 380 }, rotation: 0 }, mixed);
+    expect(wide[1]?.width).toBeCloseTo(100);
+    expect(wide[1]?.height).toBeCloseTo(160);
+  });
+
+  it('turns everything inside a container with it', () => {
+    const turned = rotateCluster('f', 90, nested);
+    const byId = new Map(turned.map((item) => [item.id, item]));
+    expect([...byId.keys()].sort()).toEqual(['c', 'f', 'inner', 'k']);
+    expect(byId.get('f')).toMatchObject({ x: 0, y: 0, width: 400, height: 300 });
+    expect(byId.get('c')?.x).toBeCloseTo(250);
+    expect(byId.get('c')?.y).toBeCloseTo(-30);
+    expect(byId.get('inner')?.x).toBeCloseTo(100);
+    expect(byId.get('inner')?.y).toBeCloseTo(150);
+    expect(byId.get('k')?.x).toBeCloseTo(50);
+    expect(byId.get('k')?.y).toBeCloseTo(20);
+    expect(turned.every((item) => item.data['rotation'] === 90)).toBe(true);
+    expect(rotateCluster('f', 0, nested).map((item) => item.id)).toEqual(['f']);
   });
 });

@@ -1,6 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useImperativeHandle, useMemo, useState, type Ref } from 'react';
 import { Layers, RotateCcw } from 'lucide-react';
-import { HARMONIES, PALETTE_CLUSTER_MAX_NEW, type Palette, type PaletteColour } from '@shared/colours';
+import {
+  HARMONIES,
+  PALETTE_CLUSTER_MAX_NEW,
+  type Palette,
+  type PaletteColour,
+  type PaletteInput,
+} from '@shared/colours';
 import {
   CLUSTER_SCHEMES,
   clusterMember,
@@ -47,7 +53,7 @@ const STRUCTURES: ClusterStructure[] = [
 
 const DEFAULT_RULES: StoredRules = { scheme: 'auto', count: 2, structure: 'keep', balance: 60 };
 
-function readRules(state: Record<string, unknown>): StoredRules {
+export function readRules(state: Record<string, unknown>): StoredRules {
   const raw = state['cluster'];
   if (typeof raw !== 'object' || raw === null) return DEFAULT_RULES;
   const record = raw as Record<string, unknown>;
@@ -108,14 +114,20 @@ export function ClusterTab({ seed, state, setState, onCreated }: Props) {
   );
 }
 
+export interface PlannerHandle {
+  inputs: () => PaletteInput[];
+}
+
 interface PlannerProps {
   seed: Palette;
   rules: StoredRules;
   onRules: (patch: Partial<StoredRules>) => void;
   onCreated: (paletteId: string) => void;
+  embedded?: boolean;
+  ref?: Ref<PlannerHandle>;
 }
 
-function ClusterPlanner({ seed, rules, onRules, onCreated }: PlannerProps) {
+export function ClusterPlanner({ seed, rules, onRules, onCreated, embedded = false, ref }: PlannerProps) {
   const { t } = useTranslation('colours');
   const toast = useToast();
   const palettes = usePalettes();
@@ -159,9 +171,9 @@ function ClusterPlanner({ seed, rules, onRules, onCreated }: PlannerProps) {
         for (let suffix = 2; used.has(name); suffix += 1) name = `${family} ${String(suffix)}`;
       }
       used.add(name);
-      return { ...member, name, nudge, included: edit.included ?? true };
+      return { ...member, name, nudge, included: edit.included ?? !embedded };
     });
-  }, [edits, members, rules, seed, seedHexes, t]);
+  }, [edits, embedded, members, rules, seed, seedHexes, t]);
 
   const markers: PaletteColour[] = [
     { id: seed.id, name: seed.name, hex: baseHex({ hexes: seedHexes, baseIndex: seed.baseIndex }) },
@@ -191,20 +203,26 @@ function ClusterPlanner({ seed, rules, onRules, onCreated }: PlannerProps) {
     edit(index, { nudge: signed(target - (member.offset - member.nudge)) });
   }
 
+  function plannedInputs(): PaletteInput[] {
+    return included.map((member) => ({
+      name: member.name.trim() || t(`cluster.family.${member.family}`),
+      harmony: member.harmony,
+      baseIndex: member.baseIndex,
+      source: 'wheel' as const,
+      colours: member.hexes.map((hex, index) => ({
+        hex,
+        name: rules.structure === 'keep' ? (seed.colours[index]?.name ?? '') : '',
+      })),
+    }));
+  }
+
+  useImperativeHandle(ref, () => ({ inputs: plannedInputs }));
+
   async function create() {
     if (included.length === 0 || busy) return;
     setBusy(true);
     try {
-      const inputs = included.map((member) => ({
-        name: member.name.trim() || t(`cluster.family.${member.family}`),
-        harmony: member.harmony,
-        baseIndex: member.baseIndex,
-        source: 'wheel' as const,
-        colours: member.hexes.map((hex, index) => ({
-          hex,
-          name: rules.structure === 'keep' ? (seed.colours[index]?.name ?? '') : '',
-        })),
-      }));
+      const inputs = plannedInputs();
       if (cluster) {
         let first: Palette | null = null;
         for (const input of inputs) {
@@ -229,13 +247,15 @@ function ClusterPlanner({ seed, rules, onRules, onCreated }: PlannerProps) {
 
   return (
     <div className={editorStyles['tab']}>
-      <div className={styles['header']}>
-        <h2 className={styles['title']}>{t('cluster.title')}</h2>
-        <p className={editorStyles['muted']}>{t('cluster.intro')}</p>
-      </div>
+      {embedded ? null : (
+        <div className={styles['header']}>
+          <h2 className={styles['title']}>{t('cluster.title')}</h2>
+          <p className={editorStyles['muted']}>{t('cluster.intro')}</p>
+        </div>
+      )}
       <div className={styles['layout']}>
         <div className={styles['rules']}>
-          {cluster ? (
+          {embedded ? null : cluster ? (
             <p className={styles['context']}>{t('cluster.inCluster', { name: cluster.name })}</p>
           ) : (
             <Field label={t('library.clusterName')}>
@@ -318,19 +338,23 @@ function ClusterPlanner({ seed, rules, onRules, onCreated }: PlannerProps) {
         </div>
       </div>
       <section className={styles['members']} aria-label={t('cluster.title')}>
-        <div className={styles['member']}>
-          <span className={styles['role']}>{t('cluster.seed')}</span>
-          <span className={styles['memberName']}>{seed.name}</span>
-          <Strip hexes={seedHexes} />
-        </div>
-        {members.length > 0 ? <h3 className={editorStyles['heading']}>{t('cluster.existing')}</h3> : null}
-        {members.map((member) => (
-          <div key={member.id} className={styles['member']}>
-            <span className={styles['role']} />
-            <span className={styles['memberName']}>{member.name}</span>
-            <Strip hexes={member.colours.map((colour) => colour.hex)} />
-          </div>
-        ))}
+        {embedded ? null : (
+          <>
+            <div className={styles['member']}>
+              <span className={styles['role']}>{t('cluster.seed')}</span>
+              <span className={styles['memberName']}>{seed.name}</span>
+              <Strip hexes={seedHexes} />
+            </div>
+            {members.length > 0 ? <h3 className={editorStyles['heading']}>{t('cluster.existing')}</h3> : null}
+            {members.map((member) => (
+              <div key={member.id} className={styles['member']}>
+                <span className={styles['role']} />
+                <span className={styles['memberName']}>{member.name}</span>
+                <Strip hexes={member.colours.map((colour) => colour.hex)} />
+              </div>
+            ))}
+          </>
+        )}
         {planned.map((member, index) => (
           <div key={index} className={styles['member']} data-excluded={member.included ? undefined : 'true'}>
             <Switch
@@ -366,7 +390,7 @@ function ClusterPlanner({ seed, rules, onRules, onCreated }: PlannerProps) {
           </div>
         ))}
       </section>
-      <div className={editorStyles['toolbar']}>
+      <div className={editorStyles['toolbar']} hidden={embedded}>
         <Button
           variant="primary"
           size="sm"
@@ -382,7 +406,7 @@ function ClusterPlanner({ seed, rules, onRules, onCreated }: PlannerProps) {
   );
 }
 
-function Strip({ hexes }: { hexes: string[] }) {
+export function Strip({ hexes }: { hexes: string[] }) {
   return (
     <span className={styles['strip']} aria-hidden="true">
       {hexes.map((hex, index) => (

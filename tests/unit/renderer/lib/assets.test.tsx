@@ -81,6 +81,7 @@ describe('asset helpers', () => {
     const folder = (id: string, parentId: string | null, name: string) => ({
       id,
       parentId,
+      scope: 'files' as const,
       name,
       createdAt: stamp,
       updatedAt: stamp,

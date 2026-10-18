@@ -221,6 +221,10 @@ export const projectMigrations: SqlMigrations = [
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );`,
+  `ALTER TABLE asset_folders ADD COLUMN scope TEXT NOT NULL DEFAULT 'files' CHECK (scope IN ('files', 'boards', 'palettes'));
+  ALTER TABLE boards ADD COLUMN folder_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL;
+  ALTER TABLE palettes ADD COLUMN folder_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL;`,
+  `ALTER TABLE tickets ADD COLUMN links TEXT NOT NULL DEFAULT '[]';`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

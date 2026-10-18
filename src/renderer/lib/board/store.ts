@@ -2,6 +2,7 @@ import { createStore } from 'zustand/vanilla';
 import type { Board, BoardChanges, BoardInput, BoardNode, BoardPatch, BoardSnapshot } from '@shared/board';
 import type { LoopyApi } from '@shared/ipc';
 import { subscribeCurrentProject } from '@renderer/lib/project';
+import { dockOf, settleDocks } from './docking';
 import { clearHistory, recordChanges, takeRedo, takeUndo } from './history';
 
 export type BoardApi = Pick<
@@ -24,6 +25,7 @@ export interface BoardState {
   activeBoardId: string | null;
   selection: BoardSelection | null;
   live: Record<string, LiveGeometry>;
+  liveLayers: Record<string, number>;
   history: number;
 }
 
@@ -33,6 +35,7 @@ const EMPTY: Omit<BoardState, 'api'> = {
   activeBoardId: null,
   selection: null,
   live: {},
+  liveLayers: {},
   history: 0,
 };
 
@@ -45,6 +48,10 @@ export function setLiveGeometry(updates: Record<string, LiveGeometry | null>): v
 }
 
 export const boardStore = createStore<BoardState>(() => ({ ...EMPTY, api: null }));
+
+export function setLiveLayers(nodes: BoardNode[] | null): void {
+  boardStore.setState({ liveLayers: Object.fromEntries((nodes ?? []).map((node) => [node.id, node.z])) });
+}
 
 export function setActiveBoard(boardId: string | null): void {
   if (boardStore.getState().activeBoardId !== boardId) boardStore.setState({ activeBoardId: boardId });
@@ -106,6 +113,11 @@ function storeSnapshot(snapshot: BoardSnapshot): void {
   });
 }
 
+export async function refreshBoards(): Promise<void> {
+  await loadBoards();
+  await Promise.all(Object.keys(boardStore.getState().snapshots).map((id) => loadBoard(id)));
+}
+
 export async function loadBoard(id: string): Promise<BoardSnapshot> {
   const snapshot = await requireApi().readBoard(id);
   storeSnapshot(snapshot);
@@ -142,18 +154,46 @@ export async function deleteBoard(id: string): Promise<Board[]> {
   return boards;
 }
 
+function nextNodes(current: BoardNode[], changes: BoardChanges): BoardNode[] {
+  const removeNodes = new Set(changes.removeNodeIds ?? []);
+  const nodeUpdates = new Map((changes.upsertNodes ?? []).map((node) => [node.id, node]));
+  const nodes: BoardNode[] = current
+    .filter((node) => !removeNodes.has(node.id))
+    .map((node) => nodeUpdates.get(node.id) ?? node);
+  for (const node of nodeUpdates.values())
+    if (!nodes.some((candidate) => candidate.id === node.id)) nodes.push(node);
+  return nodes;
+}
+
+function withSettledDocks(current: BoardNode[], changes: BoardChanges): BoardChanges {
+  const byId = new Map(current.map((node) => [node.id, node]));
+  const docks = new Set<string>();
+  const note = (node: BoardNode | undefined) => {
+    const dock = node ? dockOf(node) : null;
+    if (dock) docks.add(dock);
+  };
+  for (const id of changes.removeNodeIds ?? []) note(byId.get(id));
+  for (const node of changes.upsertNodes ?? []) {
+    note(node);
+    note(byId.get(node.id));
+  }
+  if (docks.size === 0) return changes;
+  const fixes = settleDocks(nextNodes(current, changes), docks);
+  if (fixes.length === 0) return changes;
+  const fixed = new Map(fixes.map((node) => [node.id, node]));
+  const upsertNodes = (changes.upsertNodes ?? []).map((node) => fixed.get(node.id) ?? node);
+  for (const node of fixes)
+    if (!upsertNodes.some((candidate) => candidate.id === node.id)) upsertNodes.push(node);
+  return { ...changes, upsertNodes };
+}
+
 export function applyLocalChanges(boardId: string, changes: BoardChanges): void {
   const { snapshots } = boardStore.getState();
   const existing = snapshots[boardId];
   if (!existing) return;
   const removeNodes = new Set(changes.removeNodeIds ?? []);
   const removeEdges = new Set(changes.removeEdgeIds ?? []);
-  const nodeUpdates = new Map((changes.upsertNodes ?? []).map((node) => [node.id, node]));
-  const nodes: BoardNode[] = existing.nodes
-    .filter((node) => !removeNodes.has(node.id))
-    .map((node) => nodeUpdates.get(node.id) ?? node);
-  for (const node of nodeUpdates.values())
-    if (!nodes.some((candidate) => candidate.id === node.id)) nodes.push(node);
+  const nodes = nextNodes(existing.nodes, changes);
   const edgeUpdates = new Map((changes.upsertEdges ?? []).map((edge) => [edge.id, edge]));
   const edges = existing.edges
     .filter(
@@ -168,10 +208,11 @@ export function applyLocalChanges(boardId: string, changes: BoardChanges): void 
 
 export async function commitChanges(
   boardId: string,
-  changes: BoardChanges,
+  requested: BoardChanges,
   options: { history?: boolean } = {},
 ): Promise<void> {
   const before = boardStore.getState().snapshots[boardId];
+  const changes = before ? withSettledDocks(before.nodes, requested) : requested;
   if (before && options.history !== false) {
     recordChanges(boardId, changes, before);
     boardStore.setState((state) => ({ history: state.history + 1 }));

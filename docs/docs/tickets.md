@@ -9,17 +9,17 @@ The Tickets editor is a Jira-style board with far less of Jira: a board for the 
 
 ## Model
 
-Project migration 2 adds the first four tables; migration 7 adds sprints, comments, templates and three ticket columns.
+Project migration 2 adds the first four tables; migration 7 adds sprints, comments, templates and three ticket columns. Migration 12 adds `links`, a JSON list of linked assets.
 
-| Table              | Holds                                                                                                                                               |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ticket_states`    | Columns: name, position key, category `todo`, `doing` or `done`, colour. Three ship by default                                                      |
-| `tickets`          | Number, title, HTML description, type, priority, nullable `state_id` and `sprint_id`, `estimate` in points, `due_at` date, position key, timestamps |
-| `labels`           | Name and colour, unique by name                                                                                                                     |
-| `ticket_labels`    | Ticket to label links, removed with either side                                                                                                     |
-| `sprints`          | Name, goal, status `planned`, `active` or `completed`, position key, started and completed timestamps                                               |
-| `ticket_comments`  | HTML body per ticket, removed with the ticket                                                                                                       |
-| `ticket_templates` | Name plus the title, description, type, priority, estimate and label ids a new ticket starts from                                                   |
+| Table              | Holds                                                                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ticket_states`    | Columns: name, position key, category `todo`, `doing` or `done`, colour. Three ship by default                                                               |
+| `tickets`          | Number, title, HTML description, type, priority, nullable `state_id` and `sprint_id`, `estimate` in points, `due_at` date, position key, timestamps, `links` |
+| `labels`           | Name and colour, unique by name                                                                                                                              |
+| `ticket_labels`    | Ticket to label links, removed with either side                                                                                                              |
+| `sprints`          | Name, goal, status `planned`, `active` or `completed`, position key, started and completed timestamps                                                        |
+| `ticket_comments`  | HTML body per ticket, removed with the ticket                                                                                                                |
+| `ticket_templates` | Name plus the title, description, type, priority, estimate and label ids a new ticket starts from                                                            |
 
 A ticket's key is the first three letters of the project name plus its number, so `SPA-12` in a project called Space Game. Moving a ticket into a `done` state sets `resolved_at`; moving it out clears it. A ticket with no sprint is in the backlog whatever its state; a ticket that joins a sprint while it has no state gets the first `todo` state, so it has a column on the board.
 
@@ -67,6 +67,12 @@ The completed view groups completed sprints, newest first, each collapsible with
 ### Ticket window
 
 The Ticket editor follows the selected ticket. Selecting a card opens it: the Tickets editor splits its area to the right at 420 px when no Ticket area is open in the workspace, and the header button toggles it, through the same panel helper in `src/renderer/lib/workspaces` the board uses for Properties. The window edits the title inline, the description in a rich text editor, and state, sprint, type, priority, estimate, due date and labels in a details grid; it lists comments with inline editing and a compose box, saves the ticket as a template, shows created, updated and resolved times and deletes behind a confirmation.
+
+### Linked assets
+
+Linked assets ties boards, colour palettes and files to a ticket. Link asset opens a searchable list grouped by Boards, Colour palettes and Files; a switch links or unlinks each one. Each link shows as a card with the asset's icon or preview, its name and its type. Clicking a card opens the asset as described on the assets page: in an open editor of that kind if there is one, otherwise in its home workspace. A link whose asset was deleted shows as Missing asset and stays until it is unlinked.
+
+A link is `{ kind, id }` with kind `board`, `palette` or `asset`. `tickets:update` takes the whole list as `links` and drops duplicates.
 
 ### Rich text
 

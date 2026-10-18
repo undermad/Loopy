@@ -205,3 +205,22 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+.clusterCaret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-fg-muted);
+  cursor: pointer;
+  flex: none;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}

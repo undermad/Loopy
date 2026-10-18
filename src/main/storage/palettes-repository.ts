@@ -14,6 +14,7 @@ import {
   type PaletteColourInput,
   type PaletteLibrary,
 } from '@shared/colours';
+import { assertFolderScope } from './assets-repository';
 import { transaction } from './tickets-repository';
 
 function now(): string {
@@ -21,7 +22,7 @@ function now(): string {
 }
 
 const PALETTE_COLUMNS =
-  'id, name, harmony, base_index AS baseIndex, source, cluster_id AS clusterId, cluster_position AS clusterPosition, created_at AS createdAt, updated_at AS updatedAt';
+  'id, name, harmony, base_index AS baseIndex, source, cluster_id AS clusterId, cluster_position AS clusterPosition, folder_id AS folderId, created_at AS createdAt, updated_at AS updatedAt';
 
 const CLUSTER_COLUMNS = 'id, name, created_at AS createdAt, updated_at AS updatedAt';
 
@@ -124,7 +125,7 @@ export function updatePalette(db: DatabaseSync, id: string, raw: unknown): Palet
     const current = readPalette(db, id);
     const colourCount = patch.colours?.length ?? current.colours.length;
     const sets = ['updated_at = ?'];
-    const values: (string | number)[] = [now()];
+    const values: (string | number | null)[] = [now()];
     if (patch.name !== undefined) {
       sets.push('name = ?');
       values.push(patch.name);
@@ -132,6 +133,11 @@ export function updatePalette(db: DatabaseSync, id: string, raw: unknown): Palet
     if (patch.harmony !== undefined) {
       sets.push('harmony = ?');
       values.push(patch.harmony);
+    }
+    if (patch.folderId !== undefined) {
+      assertFolderScope(db, patch.folderId, 'palettes');
+      sets.push('folder_id = ?');
+      values.push(patch.folderId);
     }
     const baseIndex = Math.min(patch.baseIndex ?? current.baseIndex, colourCount - 1);
     sets.push('base_index = ?');

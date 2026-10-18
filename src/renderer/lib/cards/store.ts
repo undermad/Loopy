@@ -24,7 +24,7 @@ function requireApi(): CardTemplatesApi {
 
 let loadToken = 0;
 
-async function loadCardTemplates(): Promise<CardTemplate[]> {
+export async function loadCardTemplates(): Promise<CardTemplate[]> {
   loadToken += 1;
   const token = loadToken;
   const templates = await requireApi().listCardTemplates();

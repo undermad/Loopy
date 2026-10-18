@@ -4,7 +4,24 @@
   "tabs": {
     "appearance": "Appearance",
     "themes": "Themes",
-    "language": "Language"
+    "language": "Language",
+    "editors": "Editors"
+  },
+  "editors": {
+    "hint": "Defaults for every area. An area's own header buttons override them for that area.",
+    "board": "Board",
+    "grid": "Show the grid",
+    "snap": "Snap to the grid",
+    "minimap": "Show the minimap",
+    "quickButtons": "Show + buttons around the selected item",
+    "wheel": "Mouse wheel",
+    "wheelZoom": "Zooms",
+    "wheelPan": "Pans",
+    "assets": "Assets",
+    "layout": "Layout",
+    "layoutGrid": "Grid",
+    "layoutList": "List",
+    "details": "Show the details panel"
   },
   "appearance": {
     "mode": "Mode",

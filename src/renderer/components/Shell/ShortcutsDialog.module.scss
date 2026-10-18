@@ -1,21 +1,47 @@
+.grid {
+  display: grid;
+  gap: var(--space-4) var(--space-6);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.category {
+  min-width: 0;
+}
+
+.heading {
+  margin: 0 0 var(--space-1);
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .table {
   width: 100%;
   font-size: var(--font-size-sm);
   border-collapse: collapse;
 
-  th,
   td {
     padding: var(--space-1) 0;
     border-bottom: 1px solid var(--color-border);
     text-align: left;
   }
+}
 
-  th {
-    color: var(--color-fg-muted);
-    font-weight: 500;
-  }
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.keys {
+  text-align: right !important;
+  white-space: nowrap;
 }
 
 .key {
-  margin-right: var(--space-1);
+  margin-left: var(--space-1);
 }

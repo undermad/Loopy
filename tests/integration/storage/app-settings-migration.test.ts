@@ -24,13 +24,27 @@ describe('app settings migration from version 1', () => {
     );
 
     await expect(createAppSettingsStore(path).load()).resolves.toEqual({
-      schemaVersion: 2,
+      schemaVersion: 3,
       theme: { mode: 'dark', light: 'light', dark: 'dark' },
       language: 'system',
       uiFont: 'Georgia',
       fontSize: 16,
       defaultLayoutId: 'default',
+      editors: {
+        board: { grid: true, snap: false, minimap: false, wheel: 'zoom', quickButtons: true },
+        assets: { layout: 'grid', details: true },
+      },
     });
+  });
+
+  it('adds editor defaults when upgrading from version 2', async () => {
+    const path = join(directory, 'settings.json');
+    await writeFile(path, JSON.stringify({ schemaVersion: 2, fontSize: 18 }), 'utf8');
+
+    const settings = await createAppSettingsStore(path).load();
+    expect(settings).toMatchObject({ schemaVersion: 3, fontSize: 18 });
+    expect(settings.editors.board.wheel).toBe('zoom');
+    expect(settings.editors.assets.layout).toBe('grid');
   });
 
   it('maps an unknown old theme value to system mode', async () => {

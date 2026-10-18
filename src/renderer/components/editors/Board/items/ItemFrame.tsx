@@ -1,12 +1,14 @@
-import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
-import { Handle, NodeResizer, Position } from '@xyflow/react';
+import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { Handle, Position } from '@xyflow/react';
 import { Lock } from 'lucide-react';
-import { MIN_ITEM_SIZE, type BoardNode, type ItemStyle } from '@shared/board';
-import { resolveItemStyle, type ResolvedStyle } from '@renderer/lib/board';
+import type { BoardNode, ItemStyle } from '@shared/board';
+import { resolveItemStyle, rotationOf, type ResolvedStyle } from '@renderer/lib/board';
 import { readableTextColour } from '@renderer/lib/colour';
 import { useResolvedColour } from '@renderer/lib/palettes';
 import { cx } from '@renderer/ui';
 import { useBoardActions } from '../BoardContext';
+import { ItemResizer } from './ItemResizer';
+import { RotateHandles } from './RotateHandles';
 import styles from './ItemFrame.module.scss';
 
 export interface FrameColours {
@@ -132,17 +134,15 @@ export function ItemFrame({
   const text = textOverride ?? (fill ? readableTextColour(fill) : actions.textColour);
   const locked = node.data['locked'] === true;
   const justify = { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[style.verticalAlign];
+  const [liveRotation, setLiveRotation] = useState<number | null>(null);
+  const stored = rotationOf(node.data);
+  const rotation = liveRotation ?? stored;
+  const docked = typeof node.data['dock'] === 'string';
+  const editable = selected && !locked && !docked;
 
   return (
     <div
-      className={cx(
-        styles['frame'],
-        selected && styles['selected'],
-        dragging && styles['dragging'],
-        locked && styles['locked'],
-        !selected && actions.dockedPeers.has(node.id) && styles['dockedPeer'],
-        className,
-      )}
+      className={cx(styles['frame'], dragging && styles['dragging'], locked && styles['locked'], className)}
       style={{ opacity: style.opacity }}
       aria-label={label}
       role="group"
@@ -152,39 +152,75 @@ export function ItemFrame({
       onDoubleClick={onDoubleClick}
       onKeyDown={onKeyDown}
     >
-      <NodeResizer
-        isVisible={selected && !locked}
-        minWidth={MIN_ITEM_SIZE.width}
-        minHeight={MIN_ITEM_SIZE.height}
-        lineClassName={styles['resizeLine'] ?? ''}
-        handleClassName={styles['resizeHandle'] ?? ''}
-      />
-      <Shape style={style} width={width} height={height} fill={fill} stroke={stroke} />
       <div
-        className={styles['content']}
-        style={{
-          ...clipFor(style, width, height),
-          padding: style.padding,
-          color: text,
-          fontSize: style.fontSize,
-          fontWeight: { normal: 400, medium: 500, bold: 700 }[style.fontWeight],
-          textAlign: style.align,
-          justifyContent: justify,
-        }}
+        className={cx(
+          styles['rotor'],
+          selected && !actions.wholeGroup.has(node.id) && styles['selected'],
+          !selected && actions.dockedPeers.has(node.id) && styles['dockedPeer'],
+        )}
+        style={rotation ? { transform: `rotate(${String(rotation)}deg)` } : undefined}
+        data-rotation={rotation || undefined}
       >
-        {children({ style, fill, stroke, text })}
+        <Shape style={style} width={width} height={height} fill={fill} stroke={stroke} />
+        <div
+          className={styles['content']}
+          style={{
+            ...clipFor(style, width, height),
+            padding: style.padding,
+            color: text,
+            fontSize: style.fontSize,
+            fontWeight: { normal: 400, medium: 500, bold: 700 }[style.fontWeight],
+            textAlign: style.align,
+            justifyContent: justify,
+          }}
+        >
+          {children({ style, fill, stroke, text })}
+        </div>
+        {editable ? (
+          <ItemResizer
+            rect={{ x: node.x, y: node.y, width, height }}
+            rotation={rotation}
+            keepRatio={actions.keepRatio}
+            snapping={actions.snapping}
+            gridStep={actions.gridStep}
+            onStart={() => {
+              actions.setTransforming(true);
+            }}
+            onPreview={(rect) => {
+              actions.previewGeometry(node.id, rect);
+              if (!rect) actions.setTransforming(false);
+            }}
+            onCommit={(rect) => {
+              actions.updateNode({ ...node, ...rect });
+            }}
+          />
+        ) : null}
+        {editable ? (
+          <RotateHandles
+            rotation={stored}
+            snapping={actions.snapping}
+            onPreview={(angle) => {
+              setLiveRotation(angle);
+              actions.previewRotation(node.id, angle);
+              actions.setTransforming(angle !== null);
+            }}
+            onCommit={(angle) => {
+              actions.rotateItem(node, angle);
+            }}
+          />
+        ) : null}
+        {HANDLES.map((handle) => (
+          <Handle
+            key={handle.id}
+            id={handle.id}
+            type="source"
+            position={handle.position}
+            className={styles['handle']}
+            isConnectable={!locked}
+          />
+        ))}
+        {locked ? <Lock aria-hidden="true" className={styles['lock']} /> : null}
       </div>
-      {HANDLES.map((handle) => (
-        <Handle
-          key={handle.id}
-          id={handle.id}
-          type="source"
-          position={handle.position}
-          className={styles['handle']}
-          isConnectable={!locked}
-        />
-      ))}
-      {locked ? <Lock aria-hidden="true" className={styles['lock']} /> : null}
       {overlay}
     </div>
   );

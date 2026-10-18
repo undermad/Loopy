@@ -4,6 +4,7 @@ export {
   dropFolderFor,
   folderActions,
   importFiles,
+  loadAssets,
   pickFiles,
   resetAssetsStore,
 } from './store';

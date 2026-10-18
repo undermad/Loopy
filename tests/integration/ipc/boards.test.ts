@@ -162,7 +162,7 @@ describe('boards IPC handlers', () => {
     const { projectMigrations } = await import('../../../src/main/storage/project-migrations');
     const db = new DatabaseSync(join(directory, 'legacy.loopy'));
     db.exec('PRAGMA foreign_keys = ON');
-    migrateDatabase(db, projectMigrations.slice(0, -1));
+    migrateDatabase(db, projectMigrations.slice(0, 9));
     db.prepare(
       `INSERT INTO boards (id, name, background_color, grid_color, unit, unit_scale, created_at, updated_at)
        VALUES ('b', 'Old', '#ffffff', '#808080', 'm', 100, '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')`,

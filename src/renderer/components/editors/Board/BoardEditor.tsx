@@ -53,9 +53,15 @@ import {
   createItem,
   descendants,
   dockCluster,
+  dockGroup,
   dockItems,
+  rotateCluster,
+  rotateVector,
+  rotationOf,
+  clusterSelection,
   drillTarget,
   duplicateItems,
+  effectiveZ,
   enteredScopes,
   findDock,
   getBoardNodes,
@@ -79,6 +85,8 @@ import {
   presetSize,
   reparent,
   seams,
+  selectedDockGroup,
+  transformGroup,
   sendToBack,
   setActiveBoard,
   setBoardSelection,
@@ -89,6 +97,7 @@ import {
   undock,
   useBoardSelection,
   useBoardSnapshot,
+  useLiveLayers,
   useBoards,
   withData,
   alignItems,
@@ -109,6 +118,7 @@ import { findCardTemplate, useCardTemplates } from '@renderer/lib/cards';
 import { readableTextColour } from '@renderer/lib/colour';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useEditTarget } from '@renderer/lib/commands';
+import { useSettings } from '@renderer/lib/settings';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useColourFromRef } from '@renderer/lib/palettes';
 import { panelActions, usePanelOpen, type PanelPlacement } from '@renderer/lib/workspaces';
@@ -120,6 +130,8 @@ import { BoardContextMenu, type BoardMenuActions } from './BoardContextMenu';
 import { BoardHeader, type BoardPanel } from './BoardHeader';
 import { BoardToolbar } from './BoardToolbar';
 import { CreationOverlay, type Placement } from './CreationOverlay';
+import { DockGroupFrame } from './DockGroupFrame';
+import { QUICK_MENU_SIZE, QuickCreateMenu, type QuickChoice } from './QuickCreateMenu';
 import { Grid } from './Grid';
 import { SelectionGuard } from './SelectionGuard';
 import { TemplateEditorDialog } from './cards/TemplateEditorDialog';
@@ -148,6 +160,22 @@ const PANEL_PLACEMENT: Record<BoardPanel, { width: number; placement: PanelPlace
 };
 
 const NO_IDS: string[] = [];
+
+function flag(state: Record<string, unknown>, key: string, fallback: boolean): boolean {
+  const value = state[key];
+  return typeof value === 'boolean' ? value : fallback;
+}
+const QUICK_GAP = 48;
+const OPPOSITE: Record<Side, Side> = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' };
+
+interface QuickOpen {
+  left: number;
+  top: number;
+  at: Point;
+  link: { sourceId: string; side: Side | null; handle: EdgeHandle | null } | null;
+}
+const MIN_ZOOM = 0.01;
+const MAX_ZOOM = 20;
 const DOCK_DISTANCE = 16;
 const GUIDE_DISTANCE = 6;
 const QUICK_SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
@@ -174,11 +202,13 @@ function shifted(point: Point | undefined, delta: Point): Point {
   return { x: (point?.x ?? 0) + delta.x, y: (point?.y ?? 0) + delta.y };
 }
 
-function useModifierHeld(key: 'Control' | 'Alt'): boolean {
+function useModifierHeld(key: 'Control' | 'Alt' | 'Shift'): boolean {
   const [held, setHeld] = useState(false);
   useEffect(() => {
     const update = (event: globalThis.KeyboardEvent | MouseEvent) => {
-      setHeld(key === 'Control' ? event.ctrlKey || event.metaKey : event.altKey);
+      setHeld(
+        key === 'Control' ? event.ctrlKey || event.metaKey : key === 'Shift' ? event.shiftKey : event.altKey,
+      );
     };
     const release = () => {
       setHeld(false);
@@ -228,9 +258,11 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
   const templates = useMemo(() => templateList ?? [], [templateList]);
   const assetList = useAssetsSnapshot().assets;
   const images = useMemo(() => assetList.filter((asset) => asset.kind === 'image'), [assetList]);
-  const grid = state['grid'] !== false;
-  const minimap = state['minimap'] === true;
-  const snap = state['snap'] === true;
+  const preferences = useSettings().editors.board;
+  const grid = flag(state, 'grid', preferences.grid);
+  const minimap = flag(state, 'minimap', preferences.minimap);
+  const snap = flag(state, 'snap', preferences.snap);
+  const wheel = preferences.wheel;
   const tool = readTool(state);
   const shape = readShape(state);
   const templateId = typeof state['cardTemplate'] === 'string' ? state['cardTemplate'] : null;
@@ -238,6 +270,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
   const surface = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const storeSelection = useBoardSelection();
+  const liveLayers = useLiveLayers();
   const selectedIds = storeSelection?.boardId === boardId ? storeSelection.nodeIds : NO_IDS;
   const selectedEdgeIds = storeSelection?.boardId === boardId ? storeSelection.edgeIds : NO_IDS;
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -245,8 +278,15 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
   const [dockHint, setDockHint] = useState<Segment | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const [transforming, setTransforming] = useState(false);
+  const [preview, setPreview] = useState<BoardNode[] | null>(null);
+  const [quick, setQuick] = useState<QuickOpen | null>(null);
+  const screenPointer = useRef<Point | null>(null);
+  const pressSelection = useRef<string[]>([]);
   const dragSession = useRef<DragSession | null>(null);
   const deep = useModifierHeld('Control');
+  const shiftHeld = useModifierHeld('Shift');
+  const snapping = snap || deep;
   const background = useColourFromRef(
     snapshot?.board.backgroundColor ?? '#ffffff',
     snapshot?.board.backgroundRef,
@@ -280,10 +320,19 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
     return new Set(dockCluster(only, allNodes).filter((id) => id !== only));
   }, [allNodes, selectedIds]);
 
+  const wholeGroup = useMemo(() => selectedDockGroup(selectedIds, allNodes), [allNodes, selectedIds]);
+  const wholeGroupIds = useMemo<ReadonlySet<string>>(() => new Set(wholeGroup?.ids ?? []), [wholeGroup]);
+  const shownGroup = useMemo(() => {
+    if (!wholeGroup || !preview) return wholeGroup;
+    const shown = allNodes.map((node) => preview.find((candidate) => candidate.id === node.id) ?? node);
+    return dockGroup(wholeGroup.dock, shown);
+  }, [allNodes, preview, wholeGroup]);
+
   const seamList = useMemo(() => {
     const only = selectedIds[0];
+    if (wholeGroup) return seams(wholeGroup.ids, allNodes);
     return dockedPeers.size > 0 && only ? seams(dockCluster(only, allNodes), allNodes) : [];
-  }, [allNodes, dockedPeers, selectedIds]);
+  }, [allNodes, dockedPeers, selectedIds, wholeGroup]);
 
   const select = useCallback(
     (nodeIds: string[], edgeIds: string[] = []) => {
@@ -315,8 +364,38 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
       openTemplateEditor: onEditTemplate,
       dropTarget,
       dockedPeers,
+      wholeGroup: wholeGroupIds,
+      snapping,
+      keepRatio: shiftHeld,
+      previewRotation: (id, angle) => {
+        const turned = angle === null ? [] : rotateCluster(id, angle, allNodes);
+        setPreview(turned.length > 1 ? turned : null);
+      },
+      rotateItem: (node, angle) => {
+        setPreview(null);
+        commit({ upsertNodes: rotateCluster(node.id, angle, allNodes) });
+      },
+      previewGeometry: (id, rect) => {
+        const node = allNodes.find((candidate) => candidate.id === id);
+        setPreview(rect && node ? [{ ...node, ...rect }] : null);
+      },
+      setTransforming,
+      gridStep: (scale) => (snapshot ? gridStep(snapshot.board, scale) : 24),
     }),
-    [background, boardId, commit, dockedPeers, dropTarget, editingId, onEditTemplate],
+    [
+      allNodes,
+      background,
+      boardId,
+      commit,
+      dockedPeers,
+      dropTarget,
+      editingId,
+      onEditTemplate,
+      shiftHeld,
+      snapping,
+      snapshot,
+      wholeGroupIds,
+    ],
   );
 
   const baseNodes = useMemo<Node[]>(() => {
@@ -330,17 +409,32 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
 
   const nodes = useMemo<Node[]>(() => {
     const entered = enteredScopes(selectedIds, allNodes);
+    const reordered = Object.keys(liveLayers).length > 0;
+    const layered = reordered
+      ? allNodes.map((node) => (node.id in liveLayers ? { ...node, z: liveLayers[node.id] ?? node.z } : node))
+      : allNodes;
     return baseNodes.map((node) => {
       const { pointerEvents: _ignored, ...style } = node.style ?? {};
       const parentId = node.parentId ?? null;
       const inert = !deep && !isReachable({ parentId }, entered);
+      const source = reordered ? layered.find((candidate) => candidate.id === node.id) : undefined;
+      const turned = preview?.find((candidate) => candidate.id === node.id);
       return {
         ...node,
+        ...(turned
+          ? {
+              position: { x: turned.x, y: turned.y },
+              width: turned.width,
+              height: turned.height,
+              data: { node: turned },
+            }
+          : {}),
+        ...(source ? { zIndex: effectiveZ(source, layered) } : {}),
         selected: selectedIds.includes(node.id),
         style: inert ? { ...style, pointerEvents: 'none' } : style,
       };
     });
-  }, [allNodes, baseNodes, deep, selectedIds]);
+  }, [allNodes, baseNodes, deep, liveLayers, preview, selectedIds]);
 
   const edges = useMemo(
     () =>
@@ -376,7 +470,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
         const snapped = findDock(rect, candidates, DOCK_DISTANCE / zoom);
         if (snapped) delta = { x: delta.x + snapped.dx, y: delta.y + snapped.dy };
         let lines: Guide[] = [];
-        if (!snapped && !snap) {
+        if (!snapped && !snapping) {
           const blocked = new Set([...moving].flatMap((id) => [id, ...descendants(id, snapshot.nodes)]));
           const others = snapshot.nodes
             .filter((node) => !blocked.has(node.id) && node.data['hidden'] !== true)
@@ -405,7 +499,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
         }));
       return [...rewritten, ...followers];
     },
-    [snap, snapshot, zoom],
+    [snapping, snapshot, zoom],
   );
 
   const startDrag = useCallback(
@@ -456,7 +550,11 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
       const next = applyNodeChanges(changes, nodes);
       setDraft({ base: snapshot, nodes: next });
       if (changes.some((change) => change.type === 'select')) {
-        const selected = next.filter((node) => node.selected).map((node) => node.id);
+        const picked = next.filter((node) => node.selected).map((node) => node.id);
+        const only = picked.length === 1 ? picked[0] : undefined;
+        const selected = only
+          ? clusterSelection(only, getBoardSelection(boardId).nodeIds, snapshot.nodes)
+          : picked;
         setBoardSelection(boardId, selected, getBoardSelection(boardId).edgeIds);
       }
       const { updates, removed, moved } = settleNodeChanges(changes, next, snapshot.nodes, pending.current);
@@ -843,8 +941,11 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
   const selectedNodes = allNodes.filter((node) => selectedIds.includes(node.id));
 
   const quickSource =
+    preferences.quickButtons &&
     tool === 'select' &&
     !dragActive &&
+    !transforming &&
+    quick === null &&
     editingId === null &&
     selectedNodes.length === 1 &&
     selectedIds.length === 1
@@ -862,6 +963,96 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
     },
     [allNodes, commit, select],
   );
+
+  const openQuick = useCallback(
+    (clientX: number, clientY: number, link: QuickOpen['link']) => {
+      const bounds = surface.current?.getBoundingClientRect();
+      const width = bounds?.width ?? 0;
+      const height = bounds?.height ?? 0;
+      const x = clientX - (bounds?.left ?? 0);
+      const y = clientY - (bounds?.top ?? 0);
+      setQuick({
+        left: width > 0 ? Math.max(8, Math.min(x, width - QUICK_MENU_SIZE.width - 8)) : x,
+        top: height > 0 ? Math.max(8, Math.min(y, height - QUICK_MENU_SIZE.height - 8)) : y,
+        at: flow.screenToFlowPosition({ x: clientX, y: clientY }),
+        link,
+      });
+    },
+    [flow],
+  );
+
+  const pickQuick = useCallback(
+    (choice: QuickChoice) => {
+      const open = quick;
+      setQuick(null);
+      if (!open) return;
+      const link = open.link;
+      const source = link ? allNodes.find((node) => node.id === link.sourceId) : undefined;
+      if (choice.kind === 'same') {
+        if (source && link?.side) quickAdd(source, link.side);
+        return;
+      }
+      let preset: ItemPreset;
+      let data: Record<string, unknown> = {};
+      let size: { width: number; height: number };
+      if (choice.kind === 'preset') {
+        preset = choice.preset;
+        size = presetSize(preset);
+      } else if (choice.kind === 'card') {
+        const template = findCardTemplate(choice.templateId);
+        preset = 'card';
+        data = { templateId: choice.templateId, values: {} };
+        size = template ? { width: template.width, height: template.height } : presetSize('card');
+      } else {
+        const asset = assetList.find((candidate) => candidate.id === choice.assetId);
+        preset = 'image';
+        data = asset ? { assetId: asset.id, alt: asset.name } : {};
+        size = asset ? fitSize(asset.width ?? 0, asset.height ?? 0) : presetSize('image');
+      }
+      let point = open.at;
+      if (source && link?.side) {
+        const rect = absoluteRect(source, allNodes);
+        const side = link.side;
+        const local = {
+          x:
+            side === 'right'
+              ? rect.width / 2 + QUICK_GAP + size.width / 2
+              : side === 'left'
+                ? -rect.width / 2 - QUICK_GAP - size.width / 2
+                : 0,
+          y:
+            side === 'bottom'
+              ? rect.height / 2 + QUICK_GAP + size.height / 2
+              : side === 'top'
+                ? -rect.height / 2 - QUICK_GAP - size.height / 2
+                : 0,
+        };
+        const turned = rotateVector(local, rotationOf(source.data));
+        point = { x: rect.x + rect.width / 2 + turned.x, y: rect.y + rect.height / 2 + turned.y };
+      }
+      const node = place(preset, { point }, data, size);
+      if (!node) return;
+      if (source && link) {
+        const sides = link.side
+          ? { source: link.side, target: OPPOSITE[link.side] }
+          : sidesBetween(absoluteRect(source, allNodes), absoluteRect(node, [...allNodes, node]));
+        commit({
+          upsertEdges: [
+            createEdge(boardId, source.id, node.id, {
+              sourceHandle: link.handle ?? sides.source,
+              targetHandle: sides.target,
+            }),
+          ],
+        });
+      }
+      if (node.type === 'text' || node.type === 'container') setEditingId(node.id);
+    },
+    [allNodes, assetList, boardId, commit, place, quick, quickAdd],
+  );
+
+  const closeQuick = useCallback(() => {
+    setQuick(null);
+  }, []);
 
   const trackDrag = useCallback(
     (node: Node, dragging: Node[]) => {
@@ -969,9 +1160,22 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
       if (updates.length > 0) commit({ upsertNodes: updates });
       return;
     }
+    if (event.key === ' ' && !mod && !event.altKey && !event.repeat) {
+      event.preventDefault();
+      const bounds = surface.current?.getBoundingClientRect();
+      const at = screenPointer.current ?? {
+        x: (bounds?.left ?? 0) + (bounds?.width ?? 0) / 2,
+        y: (bounds?.top ?? 0) + (bounds?.height ?? 0) / 2,
+      };
+      openQuick(at.x, at.y, null);
+      return;
+    }
     if (event.key === 'Escape') {
       if (tool !== 'select') setTool('select');
-      else select(parentSelection(ids, allNodes));
+      else {
+        const group = ids.length === 1 && ids[0] ? dockCluster(ids[0], allNodes) : ids;
+        select(group.length > 1 && ids.length === 1 ? group : parentSelection(ids, allNodes));
+      }
       return;
     }
     if (event.key === 'Enter' && !event.defaultPrevented && ids.length > 0) {
@@ -1029,14 +1233,17 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
         tabIndex={-1}
         onKeyDown={onKeyDown}
         onPointerDownCapture={() => {
+          pressSelection.current = getBoardSelection(boardId).nodeIds;
           if (!surface.current?.contains(document.activeElement))
             surface.current?.focus({ preventScroll: true });
         }}
         onPointerMove={(event) => {
           pointer.current = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+          screenPointer.current = { x: event.clientX, y: event.clientY };
         }}
         onPointerLeave={() => {
           pointer.current = null;
+          screenPointer.current = null;
         }}
         onCopy={(event) => {
           onCopy(event, false);
@@ -1076,6 +1283,16 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onConnectEnd={(event, state) => {
+              if (state.isValid || state.toNode || !state.fromNode) return;
+              const point = 'changedTouches' in event ? event.changedTouches[0] : event;
+              if (!point) return;
+              openQuick(point.clientX, point.clientY, {
+                sourceId: state.fromNode.id,
+                side: null,
+                handle: isHandle(state.fromHandle.id) ? state.fromHandle.id : null,
+              });
+            }}
             onNodeDragStart={(event, node, dragging) => {
               startDrag(event, node, dragging);
             }}
@@ -1085,6 +1302,16 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
             onNodeDragStop={() => {
               showDropTarget(null);
               endDrag();
+            }}
+            onNodeClick={(event, node) => {
+              if (event.shiftKey || tool !== 'select') return;
+              const group = dockCluster(node.id, allNodes);
+              const current = pressSelection.current;
+              const whole =
+                group.length > 1 &&
+                current.length === group.length &&
+                group.every((id) => current.includes(id));
+              if (whole) select([node.id]);
             }}
             onNodeDoubleClick={(event, node) => {
               if (node.type !== 'container' || tool !== 'select') return;
@@ -1111,16 +1338,18 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
             onMoveEnd={(_event, viewport) => {
               setState({ viewport });
             }}
-            snapToGrid={snap}
+            snapToGrid={snapping}
             snapGrid={[step, step]}
-            panOnScroll
+            zoomOnScroll={wheel === 'zoom'}
+            panOnScroll={wheel === 'pan'}
+            panActivationKeyCode={null}
             selectionOnDrag={tool === 'select'}
-            panOnDrag={tool === 'hand' ? true : [1, 2]}
+            panOnDrag={tool === 'hand' ? true : [1]}
             nodesDraggable={tool === 'select'}
             elementsSelectable={tool === 'select' || tool === 'hand'}
             zoomOnDoubleClick={false}
-            minZoom={0.01}
-            maxZoom={20}
+            minZoom={MIN_ZOOM}
+            maxZoom={MAX_ZOOM}
             deleteKeyCode={['Backspace', 'Delete']}
             proOptions={{ hideAttribution: true }}
             className={styles['flow']}
@@ -1152,18 +1381,23 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
               {quickSource && quickRect
                 ? QUICK_SIDES.map((side) => {
                     const offset = 22 / zoom;
-                    const left =
-                      side === 'left'
-                        ? quickRect.x - offset
-                        : side === 'right'
-                          ? quickRect.x + quickRect.width + offset
-                          : quickRect.x + quickRect.width / 2;
-                    const top =
-                      side === 'top'
-                        ? quickRect.y - offset
-                        : side === 'bottom'
-                          ? quickRect.y + quickRect.height + offset
-                          : quickRect.y + quickRect.height / 2;
+                    const local = {
+                      x:
+                        side === 'left'
+                          ? -quickRect.width / 2 - offset
+                          : side === 'right'
+                            ? quickRect.width / 2 + offset
+                            : 0,
+                      y:
+                        side === 'top'
+                          ? -quickRect.height / 2 - offset
+                          : side === 'bottom'
+                            ? quickRect.height / 2 + offset
+                            : 0,
+                    };
+                    const turned = rotateVector(local, rotationOf(quickSource.data));
+                    const left = quickRect.x + quickRect.width / 2 + turned.x;
+                    const top = quickRect.y + quickRect.height / 2 + turned.y;
                     return (
                       <button
                         key={side}
@@ -1172,8 +1406,12 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
                         style={{ left, top, scale: String(1 / zoom) }}
                         aria-label={t(`board.quick.${side}`)}
                         title={t(`board.quick.${side}`)}
-                        onClick={() => {
-                          quickAdd(quickSource, side);
+                        onClick={(event) => {
+                          openQuick(event.clientX, event.clientY, {
+                            sourceId: quickSource.id,
+                            side,
+                            handle: null,
+                          });
                         }}
                       >
                         <Plus aria-hidden="true" />
@@ -1192,7 +1430,28 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
                   }}
                 />
               ) : null}
-              {tool === 'select'
+              {tool === 'select' && shownGroup && !dragActive ? (
+                <DockGroupFrame
+                  group={shownGroup}
+                  label={t('board.dockGroup')}
+                  snapping={snapping}
+                  keepRatio={shiftHeld}
+                  gridStep={actions.gridStep}
+                  onStart={() => {
+                    setTransforming(true);
+                  }}
+                  onPreview={(next) => {
+                    setPreview(next && wholeGroup ? transformGroup(wholeGroup, next, allNodes) : null);
+                    if (!next) setTransforming(false);
+                  }}
+                  onCommit={(next) => {
+                    if (!wholeGroup) return;
+                    setPreview(null);
+                    commit({ upsertNodes: transformGroup(wholeGroup, next, allNodes) });
+                  }}
+                />
+              ) : null}
+              {tool === 'select' && !transforming && !dragActive
                 ? seamList.map((seam) => (
                     <button
                       key={seam.a + '-' + seam.b}
@@ -1215,15 +1474,32 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
             {creating || tool === 'arrow' ? (
               <CreationOverlay
                 mode={tool === 'arrow' ? 'connect' : 'place'}
+                wheel={wheel}
+                minZoom={MIN_ZOOM}
+                maxZoom={MAX_ZOOM}
                 nodes={snapshot.nodes}
                 onPlace={onPlace}
                 onConnect={(sourceId, targetId) => {
                   connect(sourceId, targetId);
                 }}
+                onConnectEmpty={(sourceId, clientX, clientY) => {
+                  openQuick(clientX, clientY, { sourceId, side: null, handle: null });
+                }}
               />
             ) : null}
           </ReactFlow>
         </BoardContextMenu>
+        {quick ? (
+          <QuickCreateMenu
+            x={quick.left}
+            y={quick.top}
+            templates={templates}
+            images={images}
+            offerSame={Boolean(quick.link?.side)}
+            onPick={pickQuick}
+            onClose={closeQuick}
+          />
+        ) : null}
         <BoardToolbar
           tool={tool}
           shape={shape}
@@ -1255,6 +1531,7 @@ function Canvas({ boardId, state, setState, onEditTemplate }: CanvasProps) {
 
 function BoardArea({ areaId, state, setState }: EditorProps) {
   const { t } = useTranslation('editors');
+  const preferences = useSettings().editors.board;
   const boards = useBoards();
   const flow = useReactFlow();
   const propertiesOpen = usePanelOpen('properties');
@@ -1291,9 +1568,9 @@ function BoardArea({ areaId, state, setState }: EditorProps) {
         <BoardHeader
           boards={boards}
           board={board}
-          grid={state['grid'] !== false}
-          minimap={state['minimap'] === true}
-          snap={state['snap'] === true}
+          grid={flag(state, 'grid', preferences.grid)}
+          minimap={flag(state, 'minimap', preferences.minimap)}
+          snap={flag(state, 'snap', preferences.snap)}
           panels={{ assets: assetsOpen, layers: layersOpen, properties: propertiesOpen }}
           onSelect={(boardId) => {
             setState({ boardId });

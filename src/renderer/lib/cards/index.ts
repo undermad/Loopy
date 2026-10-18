@@ -4,6 +4,7 @@ export {
   deleteCardTemplate,
   duplicateCardTemplate,
   findCardTemplate,
+  loadCardTemplates,
   resetCardTemplatesStore,
   updateCardTemplate,
   useCardTemplate,

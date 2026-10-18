@@ -4,6 +4,8 @@ boxshadow
 cimode
 colorful
 commitlint
+Cpath
+Csvg
 culori
 dialogs
 docusaurus

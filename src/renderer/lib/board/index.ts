@@ -5,12 +5,14 @@ export {
   deleteBoard,
   loadBoard,
   redoBoard,
+  refreshBoards,
   resetBoardStore,
   setActiveBoard,
   getBoardNodes,
   getBoardSelection,
   setBoardSelection,
   setLiveGeometry,
+  setLiveLayers,
   undoBoard,
   updateBoard,
 } from './store';
@@ -49,6 +51,7 @@ export {
   useBoardSelection,
   useBoardSnapshot,
   useBoards,
+  useLiveLayers,
   useLiveNode,
 } from './hooks';
 export {
@@ -61,9 +64,28 @@ export {
   toUnits,
   unitInPixels,
 } from './units';
-export { childSelection, drillTarget, enteredScopes, isReachable, parentSelection } from './focus';
-export { dockCluster, dockItems, findDock, seams, splitSeam, undock } from './docking';
-export type { DockSnap, Segment } from './docking';
+export {
+  childSelection,
+  clusterSelection,
+  drillTarget,
+  enteredScopes,
+  isReachable,
+  parentSelection,
+} from './focus';
+export {
+  dockCluster,
+  dockGroup,
+  dockItems,
+  findDock,
+  rotateCluster,
+  seams,
+  selectedDockGroup,
+  settleDocks,
+  splitSeam,
+  transformGroup,
+  undock,
+} from './docking';
+export type { DockSnap, Segment, DockGroup, GroupTransform } from './docking';
 export { bringForward, layerPosition, layerRows, moveLayer, sendBackward } from './layers';
 export type { LayerRow } from './layers';
 export { historyState, inverseChanges } from './history';
@@ -80,3 +102,6 @@ export type { BoardClip } from './clipboard';
 export { alignItems, distributeItems, quickCreate, snapGuides } from './arrange';
 export type { Alignment, Guide, Side } from './arrange';
 export { bootBoardShortcuts, boardScopeProps } from './shortcuts';
+export { normaliseAngle, rotateBy, rotateVector, rotationOf, snapAngle } from './rotation';
+export { RESIZE_HANDLES, resizeCursor, resizeRect } from './resize';
+export type { ResizeHandle } from './resize';

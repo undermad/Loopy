@@ -28,8 +28,45 @@
   pointer-events: none;
 }
 
+.splitPreview {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.splitNew {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.splitLine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  background: var(--color-accent);
+}
+
+[data-direction='row'] > .splitLine {
+  width: 2px;
+  inset-block: 0;
+  translate: -1px 0;
+}
+
+[data-direction='column'] > .splitLine {
+  height: 2px;
+  inset-inline: 0;
+  translate: 0 -1px;
+}
+
 .previewRemove {
   background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+
+.splitLine .previewLabel {
+  white-space: nowrap;
 }
 
 .previewLabel {
@@ -38,4 +75,38 @@
   background: var(--color-fg);
   color: var(--color-bg);
   font-size: var(--font-size-xs);
+}
+
+.dockPreview {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.dockZone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+
+  [data-zone='left'] > & {
+    right: 50%;
+  }
+
+  [data-zone='right'] > & {
+    left: 50%;
+  }
+
+  [data-zone='top'] > & {
+    bottom: 50%;
+  }
+
+  [data-zone='bottom'] > & {
+    top: 50%;
+  }
 }

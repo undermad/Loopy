@@ -39,6 +39,7 @@ describe('board flow helpers', () => {
         gridRef: null,
         unit: 'm' as const,
         unitScale: 100,
+        folderId: null,
         createdAt: '',
         updatedAt: '',
       },

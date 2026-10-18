@@ -48,7 +48,10 @@ import {
   createThemesStore,
   storagePaths,
 } from './storage';
+import { IpcChannel } from '@shared/ipc';
+import type { LayoutNode } from '@shared/layout';
 import { createMainWindow } from './window';
+import { syncingIpc, type DataNotifier } from './ipc/sync';
 
 loadDotenv({ quiet: true });
 const env = parseEnv(process.env);
@@ -104,7 +107,30 @@ async function start(): Promise<void> {
     },
   });
   registerShellHandlers(ipcMain, { nativeTheme, locale: app.getLocale(), broadcast });
-  registerWindowHandlers(ipcMain, { windowFor: (event) => BrowserWindow.fromWebContents(event.sender) });
+  const detached = new Map<number, LayoutNode>();
+  let mainWindow: BrowserWindow | null = null;
+  registerWindowHandlers(ipcMain, {
+    windowFor: (event) => BrowserWindow.fromWebContents(event.sender),
+    detach: ({ layout, ...bounds }) => {
+      const window = createMainWindow(bounds);
+      const id = window.webContents.id;
+      detached.set(id, layout);
+      window.on('closed', () => {
+        detached.delete(id);
+      });
+    },
+    layoutFor: (event) => detached.get(event.sender.id) ?? null,
+    returnLayout: (event, layout) => {
+      mainWindow?.webContents.send(IpcChannel.windowLayoutReturned, layout);
+      BrowserWindow.fromWebContents(event.sender)?.close();
+    },
+  });
+  const notify: DataNotifier = (event, domain) => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (window.webContents.id !== event.sender.id)
+        window.webContents.send(IpcChannel.projectDataChanged, { domain });
+    }
+  };
   registerThemesHandlers(ipcMain, { store: createThemesStore(paths.themes), dialogs: dialog, appVersion });
   registerLayoutsHandlers(ipcMain, { store: createLayoutsStore(paths.layouts), dialogs: dialog, appVersion });
   registerStateHandlers(ipcMain, { deviceState });
@@ -117,11 +143,14 @@ async function start(): Promise<void> {
       shell.showItemInFolder(path);
     },
   });
-  registerTicketsHandlers(ipcMain, { project: () => projects.current() });
-  registerBoardsHandlers(ipcMain, { project: () => projects.current() });
-  registerPalettesHandlers(ipcMain, { project: () => projects.current() });
-  registerCardTemplatesHandlers(ipcMain, { project: () => projects.current() });
-  registerAssetsHandlers(ipcMain, { project: () => projects.current(), dialogs: dialog });
+  registerTicketsHandlers(syncingIpc(ipcMain, 'tickets', notify), { project: () => projects.current() });
+  registerBoardsHandlers(syncingIpc(ipcMain, 'boards', notify), { project: () => projects.current() });
+  registerPalettesHandlers(syncingIpc(ipcMain, 'palettes', notify), { project: () => projects.current() });
+  registerCardTemplatesHandlers(syncingIpc(ipcMain, 'cards', notify), { project: () => projects.current() });
+  registerAssetsHandlers(syncingIpc(ipcMain, 'assets', notify), {
+    project: () => projects.current(),
+    dialogs: dialog,
+  });
   protocol.handle(ASSET_PROTOCOL, (request) => handleAssetRequest(() => projects.current(), request));
   protocol.handle(PICKER_PROTOCOL, handlePickerRequest);
   const pickerOverlays = new WeakSet<BrowserWindow>();
@@ -203,7 +232,13 @@ async function start(): Promise<void> {
     void projects.close();
   });
 
-  createMainWindow();
+  mainWindow = createMainWindow();
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (detached.has(window.webContents.id)) window.close();
+    }
+  });
   logger.info(`Loopy ${appVersion} started`);
 
   app.on('activate', () => {

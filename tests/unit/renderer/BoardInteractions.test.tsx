@@ -14,6 +14,7 @@ import {
   loadBoard,
   setBoardSelection,
 } from '@renderer/lib/board';
+import { createCardTemplate } from '@renderer/lib/cards';
 import { runEditCommand } from '@renderer/lib/commands';
 import { ToastProvider, TooltipProvider } from '@renderer/ui';
 import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
@@ -326,6 +327,8 @@ describe('board interactions', () => {
 
     selectIds(['b']);
     fireEvent.click(screen.getByRole('button', { name: 'Add a connected item below' }));
+    expect(screen.getByRole('dialog', { name: 'Quick create' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('option', { name: 'Same as this item' }));
     const last = changes().at(-1);
     expect(last?.upsertNodes?.[0]).toMatchObject({ x: 200, y: 168, data: { text: '' } });
     expect(last?.upsertEdges?.[0]).toMatchObject({
@@ -341,5 +344,83 @@ describe('board interactions', () => {
     await waitFor(() => {
       expect(getBoardNodes(boardId)).toHaveLength(3);
     });
+  });
+
+  it('opens quick create with Space, from + buttons and from a dropped arrow', async () => {
+    const template = await createCardTemplate({ name: 'Hero', width: 200, height: 220, fields: [] });
+    const surface = await open([sticky('a', 0, 0)]);
+    fireEvent.keyDown(surface, { key: ' ' });
+    const menu = screen.getByRole('dialog', { name: 'Quick create' });
+    const search = screen.getByRole('textbox', { name: 'Search items' });
+    fireEvent.change(search, { target: { value: 'zzz' } });
+    expect(screen.getByText('Nothing matches')).toBeInTheDocument();
+    fireEvent.change(search, { target: { value: 'ell' } });
+    fireEvent.keyDown(search, { key: 'ArrowDown' });
+    fireEvent.keyDown(search, { key: 'ArrowUp' });
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(menu).not.toBeInTheDocument();
+    expect(changes().at(-1)?.upsertNodes?.[0]?.data['style']).toMatchObject({ shape: 'ellipse' });
+
+    fireEvent.keyDown(surface, { key: ' ' });
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Search items' }), { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Quick create' })).not.toBeInTheDocument();
+    fireEvent.keyDown(surface, { key: ' ' });
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole('dialog', { name: 'Quick create' })).not.toBeInTheDocument();
+
+    selectIds(['a']);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a connected item to the right' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Hero' }));
+    const card = changes().find((change) => change.upsertNodes?.[0]?.type === 'card')?.upsertNodes?.[0];
+    expect(card).toMatchObject({ x: 248, y: -50, data: { templateId: template.id } });
+    expect(changes().at(-1)?.upsertEdges?.[0]).toMatchObject({
+      sourceId: 'a',
+      targetId: card?.id,
+      data: { sourceHandle: 'right', targetHandle: 'left' },
+    });
+
+    selectIds(['a']);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a connected item to the left' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Empty image' }));
+    expect(
+      changes().find((change) => change.upsertNodes?.[0]?.type === 'image')?.upsertNodes?.[0],
+    ).toMatchObject({
+      x: -288,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Arrow (A)' }));
+    const overlay = await screen.findByTestId('creation-overlay');
+    fireEvent.pointerDown(overlay, { button: 0, clientX: 150, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(overlay, { clientX: 900, clientY: 900, pointerId: 1 });
+    fireEvent.pointerUp(overlay, { clientX: 900, clientY: 900, pointerId: 1 });
+    fireEvent.click(screen.getByRole('option', { name: 'Sticky note' }));
+    const note = changes().at(-2)?.upsertNodes?.[0];
+    expect(note).toMatchObject({ x: 800, y: 840 });
+    expect(changes().at(-1)?.upsertEdges?.[0]).toMatchObject({ sourceId: 'a', targetId: note?.id });
+  });
+});
+
+describe('navigation with tools', () => {
+  it('zooms with the wheel and pans with the middle button over a tool overlay', async () => {
+    await open([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Sticky note (N)' }));
+    const overlay = await screen.findByTestId('creation-overlay');
+    const viewport = () =>
+      document.querySelector<HTMLElement>('.react-flow__viewport')?.style.transform ?? '';
+    const before = viewport();
+    const committed = changes().length;
+    fireEvent.wheel(overlay, { deltaY: -200, clientX: 100, clientY: 100 });
+    await waitFor(() => {
+      expect(viewport()).not.toBe(before);
+    });
+    const zoomed = viewport();
+    fireEvent.wheel(overlay, { deltaY: 3, deltaMode: 1, clientX: 100, clientY: 100 });
+    fireEvent.pointerDown(overlay, { button: 1, clientX: 100, clientY: 100, pointerId: 7 });
+    fireEvent.pointerMove(overlay, { clientX: 160, clientY: 140, pointerId: 7 });
+    fireEvent.pointerUp(overlay, { clientX: 160, clientY: 140, pointerId: 7 });
+    await waitFor(() => {
+      expect(viewport()).not.toBe(zoomed);
+    });
+    expect(changes()).toHaveLength(committed);
   });
 });

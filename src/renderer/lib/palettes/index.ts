@@ -6,6 +6,7 @@ export {
   deletePalette,
   duplicatePalette,
   findPalette,
+  loadPalettes,
   moveToCluster,
   renameCluster,
   resetPalettesStore,

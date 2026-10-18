@@ -147,6 +147,14 @@ describe('note fill', () => {
                 openTemplateEditor: vi.fn(),
                 dropTarget: null,
                 dockedPeers: new Set(),
+                wholeGroup: new Set(),
+                snapping: false,
+                keepRatio: false,
+                previewRotation: vi.fn(),
+                rotateItem: vi.fn(),
+                previewGeometry: vi.fn(),
+                setTransforming: vi.fn(),
+                gridStep: () => 10,
               }}
             >
               <TextItem

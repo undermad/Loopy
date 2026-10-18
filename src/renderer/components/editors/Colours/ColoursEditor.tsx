@@ -21,6 +21,7 @@ import {
 } from '@renderer/lib/palettes';
 import { EmptyState, IconButton, Spinner, ToggleGroup } from '@renderer/ui';
 import { AreaHeaderContent } from '../../Shell/AreaHeaderContent';
+import { ClusterDetails } from './ClusterDetails';
 import { ClusterTab } from './ClusterTab';
 import { ContrastTab } from './ContrastTab';
 import { ExploreTab } from './ExploreTab';
@@ -31,7 +32,7 @@ import styles from './ColoursEditor.module.scss';
 
 export type ColoursTab = 'wheel' | 'image' | 'cluster' | 'contrast' | 'explore';
 
-const TABS: ColoursTab[] = ['wheel', 'image', 'cluster', 'contrast', 'explore'];
+const TABS: ColoursTab[] = ['wheel', 'cluster', 'image', 'contrast', 'explore'];
 
 function readTab(state: Record<string, unknown>): ColoursTab {
   const raw = state['tab'];
@@ -61,6 +62,15 @@ export function ColoursEditor({ state, setState }: EditorProps) {
     }),
   ];
   const selected = items.find((item) => item.palette.id === requested) ?? items[0] ?? null;
+  const clusterId = typeof state['clusterId'] === 'string' ? state['clusterId'] : null;
+  const selectedCluster = clusterId
+    ? ((clusters ?? []).find((cluster) => cluster.id === clusterId) ?? null)
+    : null;
+  const clusterMembers = selectedCluster
+    ? (palettes ?? [])
+        .filter((palette) => palette.clusterId === selectedCluster.id)
+        .sort((a, b) => a.clusterPosition - b.clusterPosition)
+    : [];
   const previous = useRef<string | null>(null);
 
   useEffect(() => {
@@ -70,6 +80,7 @@ export function ColoursEditor({ state, setState }: EditorProps) {
   }, [selected, requested, setState]);
 
   function startNew() {
+    setState({ clusterId: null, clusterEdit: false });
     const draft = newDraft(
       t('library.defaultName', { number: (palettes?.length ?? 0) + 1 }),
       randomHarmonyColours('analogous'),
@@ -125,8 +136,8 @@ export function ColoursEditor({ state, setState }: EditorProps) {
           }}
           items={[
             { value: 'wheel', label: t('tabs.wheel'), icon: <Aperture aria-hidden="true" /> },
-            { value: 'image', label: t('tabs.image'), icon: <Image aria-hidden="true" /> },
             { value: 'cluster', label: t('tabs.cluster'), icon: <Layers aria-hidden="true" /> },
+            { value: 'image', label: t('tabs.image'), icon: <Image aria-hidden="true" /> },
             { value: 'contrast', label: t('tabs.contrast'), icon: <Contrast aria-hidden="true" /> },
             { value: 'explore', label: t('tabs.explore'), icon: <Compass aria-hidden="true" /> },
           ]}
@@ -148,16 +159,28 @@ export function ColoursEditor({ state, setState }: EditorProps) {
             <PaletteList
               items={items}
               clusters={clusters ?? []}
-              selectedId={selected?.palette.id ?? null}
+              selectedId={selectedCluster ? null : (selected?.palette.id ?? null)}
+              selectedClusterId={selectedCluster?.id ?? null}
               onSelect={(paletteId) => {
-                setState({ paletteId, tab: tab === 'explore' ? 'wheel' : tab });
+                setState({
+                  paletteId,
+                  clusterId: null,
+                  clusterEdit: false,
+                  tab: tab === 'explore' || tab === 'cluster' ? 'wheel' : tab,
+                });
+              }}
+              onSelectCluster={(id) => {
+                setState({ clusterId: id, clusterEdit: false, tab: 'cluster' });
               }}
               onNew={startNew}
+              onNewCluster={() => {
+                setState({ clusterId: null, clusterEdit: false, tab: 'cluster' });
+              }}
               onDiscardNew={() => {
                 discard(NEW_PALETTE_KEY);
               }}
               onCluster={(paletteId) => {
-                setState({ paletteId, tab: 'cluster' });
+                setState({ paletteId, clusterId: null, clusterEdit: false, tab: 'cluster' });
               }}
             />
           </aside>
@@ -197,7 +220,26 @@ export function ColoursEditor({ state, setState }: EditorProps) {
               }}
             />
           ) : null}
-          {tab === 'cluster' ? (
+          {tab === 'cluster' && selectedCluster ? (
+            <ClusterDetails
+              key={`${selectedCluster.id}:${String(state['clusterEdit'] === true)}`}
+              cluster={selectedCluster}
+              members={clusterMembers}
+              editing={state['clusterEdit'] === true}
+              state={state}
+              setState={setState}
+              onModify={() => {
+                setState({ clusterEdit: true });
+              }}
+              onDone={() => {
+                setState({ clusterEdit: false });
+              }}
+              onOpenPalette={(paletteId) => {
+                setState({ paletteId, clusterId: null, clusterEdit: false, tab: 'wheel' });
+              }}
+            />
+          ) : null}
+          {tab === 'cluster' && !selectedCluster ? (
             <ClusterTab
               seed={storedSelected}
               state={state}

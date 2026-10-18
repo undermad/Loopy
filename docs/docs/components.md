@@ -17,6 +17,7 @@ Every screen is built from the primitives in `src/renderer/ui`, imported from `@
 | `Tooltip`, `TooltipProvider`                       | Radix Tooltip          | One provider at the app root                                                                                  |
 | `Field`, `Input`, `TextArea`, `Select`             | Radix Label and Select | `Field` wires id, hint and error to the control inside it                                                     |
 | `Switch`, `ToggleGroup`                            | Radix Switch, Toggle   | `ToggleGroup` is single-select and never empties                                                              |
+| `ScrollStrip`                                      | `div`                  | Overflowing toolbar with no scrollbar: wheel or middle drag scrolls it, faded edges show hidden content       |
 | `NumberInput`                                      | `input`                | Drag left or right to change the value, Shift for tenths of a step; click to type. Commits on Enter or blur   |
 | `Tabs`                                             | Radix Tabs             | `Root`, `List`, `Trigger`, `Content`                                                                          |
 | `Dialog`, `ConfirmDialog`                          | Radix Dialog           | `Dialog.Content` takes `title`, `description` and `closeLabel`                                                |

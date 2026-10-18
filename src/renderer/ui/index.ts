@@ -14,6 +14,7 @@ export * from './NumberInput';
 export * from './Popover';
 export * from './RichText';
 export * from './ScrollArea';
+export * from './ScrollStrip';
 export * from './Select';
 export * from './Separator';
 export * from './Spinner';

@@ -183,6 +183,7 @@ test('docks items, moves them together, undoes and adds a connected item', async
 
   await key.click();
   await window.getByRole('button', { name: 'Add a connected item to the right' }).click();
+  await window.getByRole('option', { name: 'Same as this item' }).click();
   await window.keyboard.type('Vault');
   await window.keyboard.press('Escape');
   await expect(window.getByRole('group', { name: 'Vault' })).toBeVisible();

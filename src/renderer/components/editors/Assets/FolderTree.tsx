@@ -1,7 +1,7 @@
 import { useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { ChevronRight, Files, Folder, FolderOpen } from 'lucide-react';
-import type { AssetFolder } from '@shared/assets';
+import { ChevronRight, Folder, FolderOpen } from 'lucide-react';
+import type { AssetFolder, AssetScope } from '@shared/assets';
 import { buildFolderTree, descendantFolderIds, folderActions, type FolderNode } from '@renderer/lib/assets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { ConfirmDialog, ContextMenu, cx } from '@renderer/ui';
@@ -10,18 +10,23 @@ import { ROOT_VALUE, folderDropId, folderLabel, hasFiles, type FolderDropData } 
 import styles from './FolderTree.module.scss';
 
 export interface FolderTreeProps {
+  scope: AssetScope;
+  label: string;
+  rootLabel: string;
+  rootIcon: ReactNode;
   folders: AssetFolder[];
   counts: Map<string | null, number>;
   total: number;
-  selectedId: string | null;
+  selectedId: string | null | undefined;
   onSelect: (id: string | null) => void;
-  onImport: (files: FileList, folderId: string | null) => void;
+  onImport?: ((files: FileList, folderId: string | null) => void) | undefined;
 }
 
 type Dialog = { kind: 'rename' | 'subfolder' | 'delete'; folderId: string } | { kind: 'new' } | null;
 
 interface RowProps {
   id: string | null;
+  scope: AssetScope;
   label: string;
   count: number;
   depth: number;
@@ -30,13 +35,14 @@ interface RowProps {
   expanded: boolean | undefined;
   onToggle?: () => void;
   onSelect: () => void;
-  onImport: (files: FileList) => void;
+  onImport: ((files: FileList) => void) | undefined;
   menu: ReactNode;
   children?: ReactNode;
 }
 
 function TreeRow({
   id,
+  scope,
   label,
   count,
   depth,
@@ -50,11 +56,11 @@ function TreeRow({
   children,
 }: RowProps) {
   const [hover, setHover] = useState(false);
-  const data: FolderDropData = { type: 'folder', id };
-  const { setNodeRef, isOver } = useDroppable({ id: folderDropId(id), data });
+  const data: FolderDropData = { type: 'folder', id, scope };
+  const { setNodeRef, isOver } = useDroppable({ id: folderDropId(id, scope), data });
 
   function onDragOver(event: DragEvent<HTMLDivElement>) {
-    if (!hasFiles(event.dataTransfer)) return;
+    if (!onImport || !hasFiles(event.dataTransfer)) return;
     event.preventDefault();
     event.stopPropagation();
     setHover(true);
@@ -66,7 +72,7 @@ function TreeRow({
 
   function onDrop(event: DragEvent<HTMLDivElement>) {
     setHover(false);
-    if (event.dataTransfer.files.length === 0) return;
+    if (!onImport || event.dataTransfer.files.length === 0) return;
     event.preventDefault();
     event.stopPropagation();
     onImport(event.dataTransfer.files);
@@ -117,12 +123,24 @@ function TreeRow({
   );
 }
 
-export function FolderTree({ folders, counts, total, selectedId, onSelect, onImport }: FolderTreeProps) {
+export function FolderTree({
+  scope,
+  label,
+  rootLabel,
+  rootIcon,
+  folders: allFolders,
+  counts,
+  total,
+  selectedId,
+  onSelect,
+  onImport,
+}: FolderTreeProps) {
   const { t } = useTranslation('assets');
   const { t: tc } = useTranslation('common');
   const treeRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [dialog, setDialog] = useState<Dialog>(null);
+  const folders = allFolders.filter((folder) => folder.scope === scope);
   const tree = buildFolderTree(folders);
   const byId = new Map(folders.map((folder) => [folder.id, folder]));
   const dialogFolder = dialog && 'folderId' in dialog ? byId.get(dialog.folderId) : undefined;
@@ -223,7 +241,7 @@ export function FolderTree({ folders, counts, total, selectedId, onSelect, onImp
               disabled={folder.parentId === null}
               onSelect={() => void folderActions.update(folder.id, { parentId: null })}
             >
-              {t('topLevel')}
+              {rootLabel}
             </ContextMenu.Item>
             {moveTargets(folder).map((target) => (
               <ContextMenu.Item
@@ -255,6 +273,7 @@ export function FolderTree({ folders, counts, total, selectedId, onSelect, onImp
       <TreeRow
         key={folder.id}
         id={folder.id}
+        scope={scope}
         label={folder.name}
         count={counts.get(folder.id) ?? 0}
         depth={node.depth + 1}
@@ -267,9 +286,13 @@ export function FolderTree({ folders, counts, total, selectedId, onSelect, onImp
         onSelect={() => {
           onSelect(folder.id);
         }}
-        onImport={(files) => {
-          onImport(files, folder.id);
-        }}
+        onImport={
+          onImport
+            ? (files) => {
+                onImport(files, folder.id);
+              }
+            : undefined
+        }
         menu={folderMenu(folder)}
       >
         {expanded ? (
@@ -283,21 +306,26 @@ export function FolderTree({ folders, counts, total, selectedId, onSelect, onImp
 
   return (
     <>
-      <div ref={treeRef} role="tree" aria-label={t('tree')} className={styles['tree']} onKeyDown={onKeyDown}>
+      <div ref={treeRef} role="tree" aria-label={label} className={styles['tree']} onKeyDown={onKeyDown}>
         <TreeRow
           id={null}
-          label={t('allFiles')}
+          scope={scope}
+          label={rootLabel}
           count={total}
           depth={0}
-          icon={<Files />}
+          icon={rootIcon}
           selected={selectedId === null}
           expanded={undefined}
           onSelect={() => {
             onSelect(null);
           }}
-          onImport={(files) => {
-            onImport(files, null);
-          }}
+          onImport={
+            onImport
+              ? (files) => {
+                  onImport(files, null);
+                }
+              : undefined
+          }
           menu={
             <ContextMenu.Item
               onSelect={() => {
@@ -334,7 +362,7 @@ export function FolderTree({ folders, counts, total, selectedId, onSelect, onImp
           submitLabel={tc('actions.create')}
           onSubmit={(name) =>
             folderActions
-              .create({ name, parentId: dialog.kind === 'subfolder' ? dialog.folderId : null })
+              .create({ name, parentId: dialog.kind === 'subfolder' ? dialog.folderId : null, scope })
               .then(() => undefined)
           }
         />
@@ -347,7 +375,7 @@ export function FolderTree({ folders, counts, total, selectedId, onSelect, onImp
         title={t('folder.delete')}
         description={t('folder.deleteConfirm', {
           name: dialogFolder?.name ?? '',
-          parent: dialogFolder?.parentId ? (byId.get(dialogFolder.parentId)?.name ?? '') : t('topLevel'),
+          parent: dialogFolder?.parentId ? (byId.get(dialogFolder.parentId)?.name ?? '') : rootLabel,
         })}
         confirmLabel={tc('actions.delete')}
         cancelLabel={tc('actions.cancel')}

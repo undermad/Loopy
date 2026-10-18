@@ -153,6 +153,29 @@ export function swapAreas(root: LayoutNode, firstId: string, secondId: string): 
   return replaceNode(swapped, secondId, { ...first, id: secondId });
 }
 
+export function insertNode(root: LayoutNode, targetId: string, node: LayoutNode, side: Side): LayoutNode {
+  const target = findArea(root, targetId);
+  if (!target) return root;
+  const direction: SplitDirection = side === 'left' || side === 'right' ? 'row' : 'column';
+  const before = side === 'left' || side === 'top';
+  const split: SplitNode = {
+    kind: 'split',
+    id: crypto.randomUUID(),
+    direction,
+    children: before ? [node, target] : [target, node],
+    sizes: [0.5, 0.5],
+  };
+  return normalise(replaceNode(root, targetId, split));
+}
+
+export function moveArea(root: LayoutNode, sourceId: string, targetId: string, side: Side): LayoutNode {
+  const source = findArea(root, sourceId);
+  if (!source || sourceId === targetId || !findArea(root, targetId)) return root;
+  const without = removeArea(root, sourceId);
+  if (without === root) return root;
+  return insertNode(without, targetId, source, side);
+}
+
 export function resizeSplit(root: LayoutNode, splitId: string, sizes: number[]): LayoutNode {
   const update = (node: LayoutNode): LayoutNode => {
     if (node.kind === 'area') return node;

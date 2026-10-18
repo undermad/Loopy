@@ -1,8 +1,10 @@
-import type { SplitDirection, Workspace } from '@shared/layout';
+import type { AreaNode, LayoutNode, SplitDirection, Workspace } from '@shared/layout';
 import {
   collectAreas,
   findArea,
+  insertNode,
   joinAreas,
+  moveArea,
   patchAreaState,
   removeArea,
   resizeSplit,
@@ -10,6 +12,7 @@ import {
   splitArea,
   swapAreas,
 } from '@renderer/lib/layout';
+import type { Side } from '@renderer/lib/layout';
 import { updateWorkspace, workspacesStore } from './store';
 
 function updateActive(update: (workspace: Workspace) => Workspace): void {
@@ -37,6 +40,35 @@ export const areaActions = {
       if (collectAreas(workspace.root).length <= 1) return workspace;
       const { maximisedAreaId: _ignored, ...rest } = workspace;
       return { ...rest, root: removeArea(workspace.root, areaId) };
+    });
+  },
+  move(sourceId: string, targetId: string, zone: Side | 'centre'): void {
+    if (zone === 'centre') {
+      areaActions.swap(sourceId, targetId);
+      return;
+    }
+    updateActive((workspace) => {
+      const { maximisedAreaId: _ignored, ...rest } = workspace;
+      return { ...rest, root: moveArea(workspace.root, sourceId, targetId, zone) };
+    });
+  },
+  take(areaId: string): AreaNode | null {
+    const { workspaces, activeId } = workspacesStore.getState();
+    const workspace = workspaces.find((item) => item.id === activeId);
+    const area = workspace ? findArea(workspace.root, areaId) : null;
+    if (!workspace || !area) return null;
+    if (collectAreas(workspace.root).length <= 1) areaActions.setEditor(areaId, 'empty');
+    else areaActions.close(areaId);
+    return area;
+  },
+  receive(layout: LayoutNode): void {
+    updateActive((workspace) => {
+      const areas = collectAreas(workspace.root);
+      const hovered = workspacesStore.getState().hoveredAreaId;
+      const anchor = areas.find((area) => area.id === hovered) ?? areas.at(-1);
+      if (!anchor) return workspace;
+      const { maximisedAreaId: _ignored, ...rest } = workspace;
+      return { ...rest, root: insertNode(workspace.root, anchor.id, layout, 'right') };
     });
   },
   swap(firstId: string, secondId: string): void {

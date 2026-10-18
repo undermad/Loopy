@@ -1,4 +1,5 @@
 import type { BoardNode } from '@shared/board';
+import { dockCluster } from './docking';
 import { itemAt, type Point } from './items';
 
 export function enteredScopes(selectedIds: string[], nodes: BoardNode[]): Set<string> {
@@ -33,4 +34,12 @@ export function childSelection(selectedIds: string[], nodes: BoardNode[]): strin
 export function drillTarget(point: Point, scopeId: string, nodes: BoardNode[]): BoardNode | null {
   const outside = nodes.filter((node) => node.parentId !== scopeId).map((node) => node.id);
   return itemAt(point, nodes, outside);
+}
+
+export function clusterSelection(clicked: string, previous: string[], nodes: BoardNode[]): string[] {
+  const group = dockCluster(clicked, nodes);
+  if (group.length < 2) return [clicked];
+  const whole = previous.length === group.length && group.every((id) => previous.includes(id));
+  const inside = previous.length === 1 && group.includes(previous[0] ?? '');
+  return whole || inside ? [clicked] : group;
 }

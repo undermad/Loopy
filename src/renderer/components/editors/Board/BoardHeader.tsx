@@ -111,127 +111,138 @@ export function BoardHeader({
       </DropdownMenu.Root>
       {board ? (
         <>
-          <ProjectColourPicker
-            size="sm"
-            value={{ hex: board.backgroundColor, ref: board.backgroundRef }}
-            label={t('board.background')}
-            onChange={(value) =>
-              void updateBoard(board.id, { backgroundColor: value.hex, backgroundRef: value.ref })
-            }
-          />
-          <ProjectColourPicker
-            size="sm"
-            value={{ hex: board.gridColor, ref: board.gridRef }}
-            label={t('board.gridColor')}
-            onChange={(value) => void updateBoard(board.id, { gridColor: value.hex, gridRef: value.ref })}
-          />
-          <IconButton
-            label={t('board.zoomOut')}
-            size="sm"
-            onClick={() => {
-              onZoom('out');
-            }}
-          >
-            <ZoomOut aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={t('board.zoomIn')}
-            size="sm"
-            onClick={() => {
-              onZoom('in');
-            }}
-          >
-            <ZoomIn aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={t('board.fit')}
-            size="sm"
-            onClick={() => {
-              onZoom('fit');
-            }}
-          >
-            <Maximize aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={t('board.grid')}
-            size="sm"
-            active={grid}
-            onClick={() => {
-              onToggle('grid', !grid);
-            }}
-          >
-            <Grid3x3 aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={t('board.snap')}
-            size="sm"
-            active={snap}
-            onClick={() => {
-              onToggle('snap', !snap);
-            }}
-          >
-            <Magnet aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={t('board.minimap')}
-            size="sm"
-            active={minimap}
-            onClick={() => {
-              onToggle('minimap', !minimap);
-            }}
-          >
-            <Map aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={t('board.undo')}
-            size="sm"
-            disabled={!history.canUndo}
-            onClick={() => {
-              void undoBoard(board.id);
-            }}
-          >
-            <Undo2 aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={t('board.redo')}
-            size="sm"
-            disabled={!history.canRedo}
-            onClick={() => {
-              void redoBoard(board.id);
-            }}
-          >
-            <Redo2 aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={t('board.assetsPanel')}
-            size="sm"
-            active={panels.assets}
-            onClick={() => {
-              onTogglePanel('assets');
-            }}
-          >
-            <PanelLeft aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={t('board.layersPanel')}
-            size="sm"
-            active={panels.layers}
-            onClick={() => {
-              onTogglePanel('layers');
-            }}
-          >
-            <Layers aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            label={t('board.properties')}
-            size="sm"
-            active={panels.properties}
-            onClick={() => {
-              onTogglePanel('properties');
-            }}
-          >
-            <PanelRight aria-hidden="true" />
-          </IconButton>
+          <div role="group" aria-label={t('board.groups.history')} className={styles['headerGroup']}>
+            <IconButton
+              label={t('board.undo')}
+              size="sm"
+              disabled={!history.canUndo}
+              onClick={() => {
+                void undoBoard(board.id);
+              }}
+            >
+              <Undo2 aria-hidden="true" />
+            </IconButton>
+            <IconButton
+              label={t('board.redo')}
+              size="sm"
+              disabled={!history.canRedo}
+              onClick={() => {
+                void redoBoard(board.id);
+              }}
+            >
+              <Redo2 aria-hidden="true" />
+            </IconButton>
+          </div>
+          <span className={styles['headerSeparator']} aria-hidden="true" />
+          <div role="group" aria-label={t('board.groups.view')} className={styles['headerGroup']}>
+            <IconButton
+              label={t('board.zoomOut')}
+              size="sm"
+              onClick={() => {
+                onZoom('out');
+              }}
+            >
+              <ZoomOut aria-hidden="true" />
+            </IconButton>
+            <IconButton
+              label={t('board.zoomIn')}
+              size="sm"
+              onClick={() => {
+                onZoom('in');
+              }}
+            >
+              <ZoomIn aria-hidden="true" />
+            </IconButton>
+            <IconButton
+              label={t('board.fit')}
+              size="sm"
+              onClick={() => {
+                onZoom('fit');
+              }}
+            >
+              <Maximize aria-hidden="true" />
+            </IconButton>
+            <IconButton
+              label={t('board.minimap')}
+              size="sm"
+              active={minimap}
+              onClick={() => {
+                onToggle('minimap', !minimap);
+              }}
+            >
+              <Map aria-hidden="true" />
+            </IconButton>
+          </div>
+          <span className={styles['headerSpacer']} aria-hidden="true" />
+          <div role="group" aria-label={t('board.groups.canvas')} className={styles['headerGroup']}>
+            <ProjectColourPicker
+              size="sm"
+              value={{ hex: board.backgroundColor, ref: board.backgroundRef }}
+              label={t('board.background')}
+              onChange={(value) =>
+                void updateBoard(board.id, { backgroundColor: value.hex, backgroundRef: value.ref })
+              }
+            />
+            <ProjectColourPicker
+              size="sm"
+              value={{ hex: board.gridColor, ref: board.gridRef }}
+              label={t('board.gridColor')}
+              onChange={(value) => void updateBoard(board.id, { gridColor: value.hex, gridRef: value.ref })}
+            />
+            <IconButton
+              label={t('board.grid')}
+              size="sm"
+              active={grid}
+              onClick={() => {
+                onToggle('grid', !grid);
+              }}
+            >
+              <Grid3x3 aria-hidden="true" />
+            </IconButton>
+            <IconButton
+              label={t('board.snap')}
+              size="sm"
+              active={snap}
+              onClick={() => {
+                onToggle('snap', !snap);
+              }}
+            >
+              <Magnet aria-hidden="true" />
+            </IconButton>
+          </div>
+          <span className={styles['headerSpacer']} aria-hidden="true" />
+          <div role="group" aria-label={t('board.groups.panels')} className={styles['headerGroup']}>
+            <IconButton
+              label={t('board.assetsPanel')}
+              size="sm"
+              active={panels.assets}
+              onClick={() => {
+                onTogglePanel('assets');
+              }}
+            >
+              <PanelLeft aria-hidden="true" />
+            </IconButton>
+            <IconButton
+              label={t('board.layersPanel')}
+              size="sm"
+              active={panels.layers}
+              onClick={() => {
+                onTogglePanel('layers');
+              }}
+            >
+              <Layers aria-hidden="true" />
+            </IconButton>
+            <IconButton
+              label={t('board.properties')}
+              size="sm"
+              active={panels.properties}
+              onClick={() => {
+                onTogglePanel('properties');
+              }}
+            >
+              <PanelRight aria-hidden="true" />
+            </IconButton>
+          </div>
         </>
       ) : (
         <Button

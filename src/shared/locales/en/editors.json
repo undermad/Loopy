@@ -106,6 +106,7 @@
     "chooseFile": "File",
     "locked": "Locked",
     "visible": "Visible",
+    "rotation": "Rotation (°)",
     "docked_one": "Docked to {{count}} item",
     "docked_other": "Docked to {{count}} items",
     "detach": "Detach",
@@ -268,6 +269,24 @@
     "priority": "Priority",
     "state": "State",
     "labels": "Labels",
+    "links": {
+      "title": "Linked assets",
+      "add": "Link asset",
+      "search": "Search boards, palettes and files",
+      "boards": "Boards",
+      "palettes": "Colour palettes",
+      "files": "Files",
+      "none": "Nothing to link yet",
+      "open": "Open {{name}}",
+      "remove": "Unlink {{name}}",
+      "missing": "Missing asset",
+      "missingHint": "This asset was deleted",
+      "kinds": {
+        "board": "Board",
+        "palette": "Colour palette",
+        "asset": "File"
+      }
+    },
     "addLabel": "Add label",
     "newLabel": "New label",
     "labelName": "Label name",
@@ -328,6 +347,12 @@
     "editHint": "Double-click to edit. Drag to move, select to resize.",
     "snap": "Snap to grid",
     "properties": "Properties panel",
+    "groups": {
+      "history": "History",
+      "view": "View",
+      "canvas": "Canvas",
+      "panels": "Panels"
+    },
     "assetsPanel": "Assets panel",
     "layersPanel": "Layers panel",
     "gridColor": "Grid colour",
@@ -336,11 +361,26 @@
     "dropMove": "Move into {{name}}",
     "dropAdd": "Add to {{name}}",
     "detachSeam": "Detach these items",
+    "dockGroup": "Docked group",
     "imageMissing": "No image chosen",
     "fileMissing": "File not found",
     "copied_one": "{{count}} board item",
     "copied_other": "{{count}} board items",
     "pasteFailed": "Couldn't read the clipboard",
+    "quickMenu": {
+      "label": "Quick create",
+      "search": "Search items",
+      "empty": "Nothing matches",
+      "same": "Same as this item",
+      "emptyImage": "Empty image",
+      "categories": {
+        "basics": "Basics",
+        "shapes": "Shapes",
+        "layout": "Layout",
+        "cards": "Cards",
+        "media": "Images"
+      }
+    },
     "quick": {
       "top": "Add a connected item above",
       "right": "Add a connected item to the right",

@@ -87,3 +87,12 @@
     width: 132px;
   }
 }
+
+.section {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

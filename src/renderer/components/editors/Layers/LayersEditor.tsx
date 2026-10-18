@@ -7,6 +7,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -38,6 +39,7 @@ import {
   layerRows,
   moveLayer,
   setBoardSelection,
+  setLiveLayers,
   useActiveBoardId,
   useBoardSelection,
   useBoardSnapshot,
@@ -226,14 +228,25 @@ export function LayersEditor(_props: EditorProps) {
   const rows = layerRows(nodes, collapsed);
   const selectedIds = selection?.boardId === board ? selection.nodeIds : [];
 
-  function reorder({ active, over }: DragEndEvent) {
-    if (over?.id === undefined || active.id === over.id) return;
-    const moving = nodes.find((node) => node.id === active.id);
-    const target = nodes.find((node) => node.id === over.id);
-    if (!moving || target?.parentId !== moving.parentId) return;
+  function planned(activeId: string, overId: string | undefined) {
+    const moving = nodes.find((node) => node.id === activeId);
+    const target = nodes.find((node) => node.id === overId);
+    if (!moving || target?.parentId !== moving.parentId) return [];
     const siblings = nodes.filter((node) => node.parentId === moving.parentId).sort((a, b) => a.z - b.z);
-    const index = siblings.findIndex((node) => node.id === target.id);
-    const updates = moveLayer(moving.id, index, nodes);
+    return moveLayer(
+      moving.id,
+      siblings.findIndex((node) => node.id === target.id),
+      nodes,
+    );
+  }
+
+  function preview({ active, over }: DragOverEvent) {
+    setLiveLayers(planned(String(active.id), over ? String(over.id) : undefined));
+  }
+
+  function reorder({ active, over }: DragEndEvent) {
+    setLiveLayers(null);
+    const updates = planned(String(active.id), over ? String(over.id) : undefined);
     if (updates.length > 0) void commitChanges(board, { upsertNodes: updates });
   }
 
@@ -247,7 +260,15 @@ export function LayersEditor(_props: EditorProps) {
 
   return (
     <ScrollArea className={styles['scroll']} {...boardScopeProps}>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorder}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragOver={preview}
+        onDragEnd={reorder}
+        onDragCancel={() => {
+          setLiveLayers(null);
+        }}
+      >
         <SortableContext items={rows.map((row) => row.node.id)} strategy={verticalListSortingStrategy}>
           <ul className={styles['list']} aria-label={t('layers.label')}>
             {rows.map((row) => (

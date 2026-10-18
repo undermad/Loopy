@@ -7,6 +7,7 @@ import {
 } from '@shared/app-settings';
 import type { RecentProject } from '@shared/device-state';
 import type {
+  DataChange,
   ColorScheme,
   LoopyApi,
   ProjectState,
@@ -14,7 +15,7 @@ import type {
   ShellState,
   ShellStatePatch,
 } from '@shared/ipc';
-import type { LayoutPreset } from '@shared/layout';
+import type { LayoutNode, LayoutPreset } from '@shared/layout';
 import type { ProjectInfo } from '@shared/project';
 import { builtInThemes, type Theme } from '@shared/theme';
 import { bootstrap } from '@renderer/bootstrap';
@@ -48,6 +49,9 @@ export interface FakeApi extends LoopyApi {
   emitSettings: (settings: AppSettings) => void;
   emitNativeTheme: (scheme: ColorScheme) => void;
   emitProject: () => void;
+  detachedLayout: LayoutNode | null;
+  emitLayoutReturned: (layout: LayoutNode) => void;
+  emitDataChanged: (change: DataChange) => void;
 }
 
 export function makeProject(name: string, id = crypto.randomUUID()): ProjectInfo {
@@ -57,6 +61,8 @@ export function makeProject(name: string, id = crypto.randomUUID()): ProjectInfo
 
 export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: ColorScheme = 'light'): FakeApi {
   const settingsListeners = new Set<(settings: AppSettings) => void>();
+  const returnedListeners = new Set<(layout: LayoutNode) => void>();
+  const dataListeners = new Set<(change: DataChange) => void>();
   const themeListeners = new Set<(scheme: ColorScheme) => void>();
   const projectListeners = new Set<(state: ProjectState) => void>();
   const projectState = (): ProjectState => ({ current: api.current, recent: api.recent });
@@ -167,6 +173,32 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     toggleFullscreen: vi.fn(() => Promise.resolve(true)),
     pickScreenColour: vi.fn(() => Promise.resolve(null)),
     editCommand: vi.fn(() => Promise.resolve()),
+    detachArea: vi.fn(() => Promise.resolve()),
+    getDetachedLayout: vi.fn(() => Promise.resolve(api.detachedLayout)),
+    returnLayout: vi.fn(() => Promise.resolve()),
+    onLayoutReturned: vi.fn((listener: (layout: LayoutNode) => void) => {
+      returnedListeners.add(listener);
+      return () => {
+        returnedListeners.delete(listener);
+      };
+    }),
+    onProjectDataChanged: vi.fn((listener: (change: DataChange) => void) => {
+      dataListeners.add(listener);
+      return () => {
+        dataListeners.delete(listener);
+      };
+    }),
+    detachedLayout: null,
+    emitLayoutReturned: (layout) => {
+      returnedListeners.forEach((listener) => {
+        listener(layout);
+      });
+    },
+    emitDataChanged: (change) => {
+      dataListeners.forEach((listener) => {
+        listener(change);
+      });
+    },
     emitSettings: (settings) => {
       settingsListeners.forEach((listener) => {
         listener(settings);

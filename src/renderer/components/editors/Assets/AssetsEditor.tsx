@@ -12,16 +12,22 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import {
+  Files,
   FolderPlus,
   FolderTree as FolderTreeIcon,
   LayoutGrid,
   List,
+  Palette,
   PanelRight,
+  PenTool,
   Settings2,
   Shapes,
   Upload,
 } from 'lucide-react';
-import { ASSET_KINDS, assetKindOf, type Asset, type AssetKind, type AssetTarget } from '@shared/assets';
+import { ASSET_KINDS, assetKindOf, type Asset, type AssetScope, type AssetTarget } from '@shared/assets';
+import { updateBoard, useBoards } from '@renderer/lib/board';
+import { updatePalette, usePalettes } from '@renderer/lib/palettes';
+import { openLinked, useWorkspaceNames } from '@renderer/lib/workspaces';
 import type { EditorProps } from '@renderer/lib/editors';
 import {
   assetActions,
@@ -38,6 +44,7 @@ import {
   useAssetsSnapshot,
 } from '@renderer/lib/assets';
 import { useTranslation } from '@renderer/lib/i18n';
+import { useSettings } from '@renderer/lib/settings';
 import { Button, IconButton, Input, ScrollArea, Spinner, ToggleGroup, cx } from '@renderer/ui';
 import { AreaHeaderContent } from '../../Shell/AreaHeaderContent';
 import { PromptDialog } from '../../Shell/PromptDialog';
@@ -45,14 +52,22 @@ import { AssetDetails } from './AssetDetails';
 import { AssetGrid, AssetThumbnail, type SelectModifiers } from './AssetGrid';
 import { AssetOptionsDialog } from './AssetOptionsDialog';
 import { FolderTree } from './FolderTree';
-import { KindList } from './KindList';
+import { InternalDetails } from './InternalDetails';
+import { InternalGrid, InternalThumbnail } from './InternalGrid';
+import { KindList, type KindChoice } from './KindList';
 import {
+  INTERNAL_SCOPES,
   hasFiles,
+  internalKey,
   readBoolean,
   readFolderId,
+  readScope,
   readString,
   type AssetDragData,
   type FolderDropData,
+  type InternalDragData,
+  type InternalItem,
+  type InternalKind,
 } from './kinds';
 import gridStyles from './AssetGrid.module.scss';
 import styles from './AssetsEditor.module.scss';
@@ -60,8 +75,26 @@ import styles from './AssetsEditor.module.scss';
 type View = 'folders' | 'types';
 type Layout = 'grid' | 'list';
 
-function isKind(value: string): value is AssetKind {
-  return (ASSET_KINDS as readonly string[]).includes(value);
+function isKind(value: string): value is KindChoice {
+  return value === 'board' || value === 'palette' || (ASSET_KINDS as readonly string[]).includes(value);
+}
+
+function internalOf(item: { data: { current?: unknown } } | null | undefined): InternalDragData | null {
+  const current = item?.data.current;
+  return typeof current === 'object' && current !== null && (current as { type?: string }).type === 'internal'
+    ? (current as InternalDragData)
+    : null;
+}
+
+function matchesName(name: string, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  return needle.length === 0 || name.toLowerCase().includes(needle);
+}
+
+function folderTally(items: { folderId: string | null }[]): Map<string | null, number> {
+  const counts = new Map<string | null, number>();
+  for (const item of items) counts.set(item.folderId, (counts.get(item.folderId) ?? 0) + 1);
+  return counts;
 }
 
 function dragDataOf(item: { data: { current?: unknown } } | null | undefined): AssetDragData | null {
@@ -82,6 +115,10 @@ export function AssetsEditor({ state, setState }: EditorProps) {
   const { t } = useTranslation('assets');
   const loaded = useAssetsLoaded();
   const { folders, assets, settings } = useAssetsSnapshot();
+  const boards = useBoards();
+  const palettes = usePalettes();
+  const names = useWorkspaceNames();
+  const [draggingInternal, setDraggingInternal] = useState<InternalItem | null>(null);
   const [dialog, setDialog] = useState<'folder' | 'options' | null>(null);
   const [dropping, setDropping] = useState(false);
   const [dragging, setDragging] = useState<string[] | null>(null);
@@ -89,18 +126,61 @@ export function AssetsEditor({ state, setState }: EditorProps) {
   const dragDepth = useRef(0);
 
   const view: View = readString(state, 'view', 'folders') === 'types' ? 'types' : 'folders';
-  const layout: Layout = readString(state, 'layout', 'grid') === 'list' ? 'list' : 'grid';
+  const preferences = useSettings().editors.assets;
+  const layout: Layout = readString(state, 'layout', preferences.layout) === 'list' ? 'list' : 'grid';
   const search = readString(state, 'search', '');
-  const folderId = readFolderId(state, folders);
+  const scope: AssetScope = view === 'folders' ? readScope(state) : 'files';
+  const fileFolders = folders.filter((folder) => folder.scope === 'files');
+  const folderId = readFolderId(state, folders, scope);
   const kindValue = readString(state, 'kind', 'image');
-  const kind: AssetKind = isKind(kindValue) ? kindValue : 'image';
+  const kind: KindChoice = isKind(kindValue) ? kindValue : 'image';
+  const selectedInternal = readString(state, 'internalId', '');
+  const internalItems: InternalItem[] = [
+    ...(boards ?? []).map((board) => ({
+      kind: 'board' as const,
+      id: board.id,
+      name: board.name,
+      folderId: board.folderId,
+      colours: [],
+    })),
+    ...(palettes ?? []).map((palette) => ({
+      kind: 'palette' as const,
+      id: palette.id,
+      name: palette.name,
+      folderId: palette.folderId,
+      colours: palette.colours.map((colour) => colour.hex),
+    })),
+  ].sort((a, b) => a.name.localeCompare(b.name));
+  const internalKind: InternalKind | null =
+    view === 'types'
+      ? kind === 'board' || kind === 'palette'
+        ? kind
+        : null
+      : scope === 'boards'
+        ? 'board'
+        : scope === 'palettes'
+          ? 'palette'
+          : null;
+  const searching = search.trim().length > 0;
+  const shownInternal = internalItems.filter(
+    (item) =>
+      (internalKind === null || item.kind === internalKind) &&
+      (view === 'types' || internalKind === null || folderId === null || item.folderId === folderId) &&
+      matchesName(item.name, search),
+  );
+  const internalDetails =
+    internalKind !== null || searching
+      ? (shownInternal.find((item) => internalKey(item) === selectedInternal) ?? null)
+      : null;
   const selectedId = readString(state, 'selectedId', '');
-  const details = readBoolean(state, 'details', true);
+  const details = readBoolean(state, 'details', preferences.details);
 
   const byName = (a: Asset, b: Asset) => a.name.localeCompare(b.name);
   const visible = (
     view === 'types'
-      ? assetsOfKind(assets, kind, search)
+      ? kind === 'board' || kind === 'palette'
+        ? []
+        : assetsOfKind(assets, kind, search)
       : folderId === null
         ? assets.filter((asset) => matchesAssetSearch(asset, search))
         : assetsInFolder(assets, folderId, search)
@@ -110,9 +190,17 @@ export function AssetsEditor({ state, setState }: EditorProps) {
     (selection.length > 0 ? selection : [selectedId]).filter((id) => existing.has(id)),
   );
   const selectedAsset = assets.find((asset) => asset.id === selectedId) ?? null;
-  const counts = folderCounts(folders, assets);
+  const counts = folderCounts(fileFolders, assets);
   const selectedFolder = folders.find((folder) => folder.id === folderId);
-  const importTarget = view === 'types' ? 'auto' : folderId;
+  const importTarget = view === 'types' || scope !== 'files' ? 'auto' : folderId;
+
+  function openItem(item: InternalItem) {
+    openLinked({ kind: item.kind, id: item.id }, names);
+  }
+
+  function selectInternal(item: InternalItem) {
+    setState({ internalId: internalKey(item) });
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -139,7 +227,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
       return;
     }
     setSelection([id]);
-    setState({ selectedId: id });
+    setState({ selectedId: id, internalId: '' });
   }
 
   function imported(ids: string[], firstName?: string) {
@@ -188,6 +276,12 @@ export function AssetsEditor({ state, setState }: EditorProps) {
 
   function onDragStart({ active }: DragStartEvent) {
     setDragging(dragDataOf(active)?.ids ?? null);
+    const internal = internalOf(active);
+    setDraggingInternal(
+      internal
+        ? (internalItems.find((item) => item.kind === internal.kind && item.id === internal.id) ?? null)
+        : null,
+    );
   }
 
   function pointerOf({ activatorEvent, delta }: DragMoveEvent | DragEndEvent): { x: number; y: number } {
@@ -205,20 +299,31 @@ export function AssetsEditor({ state, setState }: EditorProps) {
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setDragging(null);
+    setDraggingInternal(null);
+    const internal = internalOf(active);
+    const drop = dropDataOf(over);
+    if (internal) {
+      if (drop?.scope !== INTERNAL_SCOPES[internal.kind]) return;
+      const patch = { folderId: drop.id };
+      void (internal.kind === 'board' ? updateBoard(internal.id, patch) : updatePalette(internal.id, patch));
+      return;
+    }
     const data = dragDataOf(active);
     if (data) {
       const { x, y } = pointerOf(event);
       if (reportAssetDrag(data.ids, x, y, 'drop')) return;
     }
-    const target = dropDataOf(over);
-    if (!data || !target) return;
+    const target = drop;
+    if (!data || target?.scope !== 'files') return;
     const ids = data.ids.filter((id) => assets.find((asset) => asset.id === id)?.folderId !== target.id);
     if (ids.length > 0) void assetActions.move(ids, target.id);
   }
 
   const draggingAssets = (dragging ?? []).flatMap((id) => assets.filter((asset) => asset.id === id));
   const dropLabel =
-    view === 'types' ? t('drop.auto') : t('drop.into', { name: selectedFolder?.name ?? t('allFiles') });
+    view === 'types' || scope !== 'files'
+      ? t('drop.auto')
+      : t('drop.into', { name: selectedFolder?.name ?? t('allFiles') });
 
   return (
     <div
@@ -323,24 +428,57 @@ export function AssetsEditor({ state, setState }: EditorProps) {
           onDragEnd={onDragEnd}
           onDragCancel={() => {
             setDragging(null);
+            setDraggingInternal(null);
             reportAssetDrag([], Number.NaN, Number.NaN, 'cancel');
           }}
         >
           <div className={styles['body']}>
             <ScrollArea className={styles['sidebar']}>
               {view === 'folders' ? (
-                <FolderTree
-                  folders={folders}
-                  counts={counts}
-                  total={assets.length}
-                  selectedId={folderId}
-                  onSelect={(id) => {
-                    setState({ folderId: id ?? '' });
-                  }}
-                  onImport={importDropped}
-                />
+                <>
+                  <div className={styles['section']}>{t('external')}</div>
+                  <FolderTree
+                    scope="files"
+                    label={t('tree')}
+                    rootLabel={t('allFiles')}
+                    rootIcon={<Files />}
+                    folders={folders}
+                    counts={counts}
+                    total={assets.length}
+                    selectedId={scope === 'files' ? folderId : undefined}
+                    onSelect={(id) => {
+                      setState({ scope: 'files', folderId: id ?? '' });
+                    }}
+                    onImport={importDropped}
+                  />
+                  <div className={styles['section']}>{t('internal')}</div>
+                  {(['board', 'palette'] as const).map((item) => {
+                    const itemScope = INTERNAL_SCOPES[item];
+                    const own = internalItems.filter((candidate) => candidate.kind === item);
+                    return (
+                      <FolderTree
+                        key={item}
+                        scope={itemScope}
+                        label={t(itemScope)}
+                        rootLabel={t(itemScope)}
+                        rootIcon={item === 'board' ? <PenTool /> : <Palette />}
+                        folders={folders}
+                        counts={folderTally(own)}
+                        total={own.length}
+                        selectedId={scope === itemScope ? folderId : undefined}
+                        onSelect={(id) => {
+                          setState({ scope: itemScope, folderId: id ?? '' });
+                        }}
+                      />
+                    );
+                  })}
+                </>
               ) : (
                 <KindList
+                  internalCounts={{
+                    board: internalItems.filter((item) => item.kind === 'board').length,
+                    palette: internalItems.filter((item) => item.kind === 'palette').length,
+                  }}
                   counts={kindCounts(assets)}
                   selected={kind}
                   onSelect={(next) => {
@@ -353,28 +491,69 @@ export function AssetsEditor({ state, setState }: EditorProps) {
               )}
             </ScrollArea>
             <ScrollArea className={styles['main']} viewportClassName={styles['mainViewport']}>
-              <AssetGrid
-                assets={visible}
-                folders={folders}
-                selectedIds={selectedIds}
-                layout={layout}
-                showPath={view === 'types' || folderId === null}
-                searching={search.trim().length > 0}
-                onSelect={select}
-                onOpen={(id) => {
-                  setSelection([id]);
-                  setState({ selectedId: id, details: true });
-                }}
-              />
+              {internalKind !== null ? (
+                <InternalGrid
+                  items={shownInternal}
+                  folders={folders}
+                  selectedKey={selectedInternal}
+                  layout={layout}
+                  showPath={view === 'types' || folderId === null}
+                  searching={searching}
+                  label={t(INTERNAL_SCOPES[internalKind])}
+                  onSelect={selectInternal}
+                  onOpen={openItem}
+                />
+              ) : (
+                <>
+                  <AssetGrid
+                    assets={visible}
+                    folders={fileFolders}
+                    selectedIds={selectedIds}
+                    layout={layout}
+                    showPath={view === 'types' || folderId === null}
+                    searching={search.trim().length > 0}
+                    onSelect={select}
+                    onOpen={(id) => {
+                      setSelection([id]);
+                      setState({ selectedId: id, details: true, internalId: '' });
+                    }}
+                  />
+                  {searching && shownInternal.length > 0 ? (
+                    <>
+                      <div className={styles['section']}>{t('internal')}</div>
+                      <InternalGrid
+                        items={shownInternal}
+                        folders={folders}
+                        selectedKey={selectedInternal}
+                        layout={layout}
+                        showPath
+                        searching
+                        label={t('internal')}
+                        onSelect={selectInternal}
+                        onOpen={openItem}
+                      />
+                    </>
+                  ) : null}
+                </>
+              )}
             </ScrollArea>
             {details ? (
               <div className={styles['details']}>
-                <AssetDetails asset={selectedAsset} folders={folders} />
+                {internalDetails ? (
+                  <InternalDetails item={internalDetails} folders={folders} onOpen={openItem} />
+                ) : (
+                  <AssetDetails asset={selectedAsset} folders={fileFolders} />
+                )}
               </div>
             ) : null}
           </div>
           <DragOverlay dropAnimation={null}>
-            {draggingAssets[0] ? (
+            {draggingInternal ? (
+              <div className={gridStyles['ghost']}>
+                <InternalThumbnail item={draggingInternal} />
+                <span>{draggingInternal.name}</span>
+              </div>
+            ) : draggingAssets[0] ? (
               <div className={gridStyles['ghost']}>
                 <AssetThumbnail asset={draggingAssets[0]} />
                 <span>
@@ -404,7 +583,11 @@ export function AssetsEditor({ state, setState }: EditorProps) {
           submitLabel={t('newFolder')}
           onSubmit={(name) =>
             folderActions
-              .create({ name, parentId: view === 'folders' ? folderId : null })
+              .create({
+                name,
+                parentId: view === 'folders' ? folderId : null,
+                scope: internalKind ? INTERNAL_SCOPES[internalKind] : 'files',
+              })
               .then(() => undefined)
           }
         />
@@ -414,7 +597,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
         onOpenChange={(open) => {
           if (!open) setDialog(null);
         }}
-        folders={folders}
+        folders={fileFolders}
         settings={settings}
       />
     </div>

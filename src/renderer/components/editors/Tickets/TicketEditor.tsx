@@ -28,6 +28,7 @@ import {
 import { PromptDialog } from '../../Shell/PromptDialog';
 import { Comments } from './Comments';
 import { LabelPicker } from './LabelPicker';
+import { LinkedAssets } from './LinkedAssets';
 import { PRIORITY_ICONS, TYPE_ICONS } from './TicketCard';
 import { useRichTextLabels } from './useRichTextLabels';
 import styles from './TicketEditor.module.scss';
@@ -207,6 +208,10 @@ export function TicketEditor(_props: EditorProps) {
         <Field label={t('ticket.labels')}>
           <LabelPicker ticketId={ticket.id} selected={ticketLabels} />
         </Field>
+        <section className={styles['block']} aria-label={t('ticket.links.title')}>
+          <h3 className={styles['blockTitle']}>{t('ticket.links.title')}</h3>
+          <LinkedAssets ticketId={ticket.id} links={ticket.links} />
+        </section>
         <Comments ticketId={ticket.id} comments={commentsOf(snapshot, ticket.id)} />
         <footer className={styles['meta']}>
           <span>

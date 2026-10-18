@@ -23,7 +23,17 @@ The toolbar on the left of the canvas holds every tool. A creation tool places a
 | Card      | C     | A card from the chosen card template, see the cards page                                          |
 | Arrow     | A     | Drag from one item to another; the arrow joins the sides that face each other                     |
 
-Escape returns to Select. Every item also has four connection handles that appear on hover, so an arrow can be dragged from any side without the Arrow tool.
+Escape returns to Select. Every item also has four connection handles that appear on hover, so an arrow can be dragged from any side without the Arrow tool. The toolbar scrolls with the wheel or a middle-button drag when the area is too short for it.
+
+## Navigation
+
+The wheel zooms around the pointer and a middle-button drag pans, whichever tool is active; the Hand tool also pans with the left button. Creation and arrow tools cover the canvas with `CreationOverlay`, which applies the same wheel zoom and middle-button pan itself. Preferences, Editors tab, can make the wheel pan instead.
+
+## Quick create
+
+Press Space on the board for a quick create menu at the pointer. It lists every item kind by category: basics, shapes, layout, card templates and images from assets. Type to filter, use the arrow keys and Enter, or click. The item lands under the pointer.
+
+The same menu opens when you drop an arrow on empty canvas, from a handle or with the Arrow tool. The new item is placed there and the arrow connects to it. The + buttons around a selected item open it too, with Same as this item first; the choice is placed one gap away on that side and joined with an arrow.
 
 ## Selecting inside containers and cards
 
@@ -36,6 +46,9 @@ The first click on a container or card selects it, and a drag moves it. Its chil
 | Step out                | Escape selects the parent, then clears the selection |
 | Step in                 | Enter selects a container's children                 |
 | Add to the selection    | Shift+click                                          |
+| Pick one docked item    | Click a docked group again once it is selected       |
+
+Docked items select as a group first: a click on any of them selects the whole group, and a second click on a member selects that item alone. A selected group shows one frame around all of its items instead of an outline per item. Escape on a single docked item selects its group again. `clusterSelection` in `focus.ts` does this.
 
 `focus.ts` in `src/renderer/lib/board` works out which items are reachable from the selection. The canvas gives every other item `pointer-events: none`, so a click falls through to its container.
 
@@ -53,7 +66,10 @@ The first click on a container or card selects it, and a drag moves it. Its chil
 | Order              | `]` brings to front, `[` sends to back; the Layers panel and Arrange buttons step one layer at a time   |
 | Lock               | Ctrl+L or the context menu; a locked item cannot move, resize, connect or be deleted                    |
 | Delete             | Delete or Backspace; a container takes its children with it                                             |
-| Pan and zoom       | Middle or right drag, scroll to pan, Ctrl and wheel to zoom                                             |
+| Pan and zoom       | Middle drag to pan, the wheel to zoom, with any tool                                                    |
+| Rotate             | Drag just outside a corner of a selected item; the corner itself still resizes                          |
+| Resize evenly      | Hold Shift while dragging a corner to keep the proportions                                              |
+| Snap               | Hold Ctrl while moving, resizing or rotating; with grid snap on it is always on                         |
 
 Right-click an item or arrow for its context menu. A right-button drag still pans; the menu opens only when the pointer did not move.
 
@@ -61,11 +77,21 @@ Pasting an image from the clipboard imports it into assets and places it. Plain 
 
 ## Dragging
 
+Rotation turns the item together with its selection outline, resize handles, rotate zones and connection handles, so a rotated item is selected, resized and rotated along its own edges. `ItemFrame` draws all of them inside one rotated layer, and `ItemResizer` with `resize.ts` resizes in the item's own axes. The + buttons sit outside the rotated sides. The + buttons and seam buttons hide while an item rotates. Snapping rounds the angle to the nearest 15 degrees, from 0. Pressing Ctrl in the middle of a rotation snaps at once. `rotation.ts` holds the angle maths and Properties has a Rotation field.
+
+Rotating a container turns everything inside it around the container's centre, so the contents keep their place in it. Resizing a container changes only the container. Items inside it keep their own handles and can be rotated and resized on their own. `carryContents` in `docking.ts` moves the contents.
+
 | While dragging    | Shows                                                                                                  |
 | ----------------- | ------------------------------------------------------------------------------------------------------ |
 | Over a container  | An accent outline, a tint and a "Move into" label. Dropping there nests the item                       |
 | Near another item | A docking bar on the facing side. Dropping there snaps the item flush and docks them                   |
 | Lined up with one | Red guides at matching edges or centres, with a snap of a few screen pixels; off while grid snap is on |
+
+Items stay docked only while they touch. After every change, `commitChanges` checks each affected dock with `settleDocks` and splits it into the groups that still touch; an item left on its own loses its dock, so removing the middle of three docked items unlinks the outer two. The fix is part of the same change, so undo restores the dock too.
+
+A docked group acts as one item. Its frame covers the width and height of all its items, in the group's own rotation, and has the same resize handles and rotate zones as a single item. Resizing the frame scales every item and the gaps between them, so the seams stay closed. Rotating it turns every item around the group's centre by the same angle. A docked item cannot be resized or rotated on its own: it shows no handles, and Properties disables its width and height; its Rotation field turns the whole group.
+
+The group is not stored. `dockGroup` in `docking.ts` builds it from the items that share a `dock` id, `selectedDockGroup` finds it when the selection is exactly one whole group, and `transformGroup` applies a new frame. `DockGroupFrame` draws the frame with `ItemResizer` and `RotateHandles`, the same components as a single item. Seams are measured in the group's own frame, so a rotated group stays docked. A rotated item resizes along its own axes with the opposite edge held in place.
 
 Docked items move together: drag any of them and the rest follow. Alt+drag pulls one out of its dock and skips docking. Selecting a docked item outlines the rest of its group with a dashed line and shows an unlink button on each seam; the button splits the group there. Detach is also in the context menu and in Properties. A dock is a shared `dock` id in item data, kept by `docking.ts`.
 
@@ -81,11 +107,11 @@ With two or more items selected, Properties shows Align and Arrange. Alignment w
 | Alt+Shift+H  | Distribute horizontally |
 | Alt+Shift+V  | Distribute vertically   |
 
-A selected item shows a + button on each side. Clicking one adds an item of the same kind and style one gap away, joins it with an arrow and opens it for typing. `arrange.ts` holds the guides, alignment, distribution and quick-create maths.
+A selected item shows a + button on each side, which opens quick create for that side. The + buttons, seam buttons and other quick controls hide while an item is being dragged or resized, and Preferences can turn the + buttons off. `arrange.ts` holds the guides, alignment, distribution and quick-create maths.
 
 ## Layers
 
-The Layers panel lists the open board's items, top first, with children indented under their container. Click a row to select, Shift or Ctrl+click to add, double-click to rename. Drag the grip to reorder items that share a parent. The eye and lock buttons set `hidden` and `locked`. A hidden item stays in the file but is not drawn or snapped to.
+The Layers panel lists the open board's items, top first, with children indented under their container. Click a row to select, Shift or Ctrl+click to add, double-click to rename. Drag the grip to reorder items that share a parent; the board redraws in the new order while you drag, through `setLiveLayers`, and the order is saved on drop. The eye and lock buttons set `hidden` and `locked`. A hidden item stays in the file but is not drawn or snapped to.
 
 ## Assets on the board
 
@@ -95,7 +121,7 @@ The Assets editor uses dnd-kit inside its own area, so `reportAssetDrag` in `src
 
 ## Items
 
-An item's `data` holds a shared base and its own content. The base is `style`, `name`, `locked`, `hidden` and `dock`; `resolveItemStyle` in `src/renderer/lib/board` layers the type's defaults, then any template style, then the item's own style.
+An item's `data` holds a shared base and its own content. The base is `style`, `name`, `locked`, `hidden`, `dock` and `rotation` in degrees; `resolveItemStyle` in `src/renderer/lib/board` layers the type's defaults, then any template style, then the item's own style.
 
 | Style field                                        | Values                                                             |
 | -------------------------------------------------- | ------------------------------------------------------------------ |
@@ -133,7 +159,7 @@ The Properties editor follows the board selection kept in `src/renderer/lib/boar
 
 Number fields scrub: drag left or right to change the value, hold Shift for tenths of a step, or click to type.
 
-The header holds undo and redo, then three panel buttons. Assets opens on the left of the board, Layers below Properties, and Properties on the right at 320 pixels. The Design workspace starts with all three open.
+The header has three zones. History (undo, redo) and view (zoom, fit, minimap) sit on the left, canvas (background, grid colour, grid, snap) in the middle, and the panel buttons for Properties, Assets and Layers on the far right. Assets opens on the left of the board, Layers below Properties, and Properties on the right at 320 pixels. The Design workspace starts with all three open.
 
 ## Model
 

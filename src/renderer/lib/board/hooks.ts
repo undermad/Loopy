@@ -28,3 +28,7 @@ export function useBoardHistory(boardId: string): { canUndo: boolean; canRedo: b
   useStore(boardStore, (state) => state.history);
   return historyState(boardId);
 }
+
+export function useLiveLayers(): Record<string, number> {
+  return useStore(boardStore, (state) => state.liveLayers);
+}

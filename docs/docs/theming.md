@@ -32,3 +32,7 @@ The `ThemeProvider` component re-applies the active theme whenever settings, the
 | `themes:list`                    | Built-ins first, then custom themes         |
 | `themes:save`, `themes:delete`   | Custom themes only                          |
 | `themes:export`, `themes:import` | File dialogs in main, envelope on disk      |
+
+## Editor defaults
+
+Preferences, Editors tab, sets the defaults every area starts from: board grid, snap, minimap, the + buttons and whether the wheel zooms or pans, and the assets layout and details panel. An area's own header buttons override them for that area. They live in `editors` in `settings.json`, added in settings version 3.

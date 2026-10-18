@@ -76,7 +76,7 @@ Everything lives under Electron's user data directory. `storagePaths` in `src/ma
 
 | File                  | Holds                                                              | Format                     |
 | --------------------- | ------------------------------------------------------------------ | -------------------------- |
-| `settings.json`       | App preferences: theme, UI font, font size                         | JSON with `schemaVersion`  |
+| `settings.json`       | App preferences: theme, UI font, font size, editor defaults        | JSON with `schemaVersion`  |
 | `state.json`          | Device state: recent projects, workspaces, status bar              | JSON with `schemaVersion`  |
 | `projects/<id>.loopy` | One project: metadata, settings, tickets, boards, palettes, assets | SQLite with `user_version` |
 | `themes/<id>.json`    | One custom theme per file, see the theming page                    | JSON with `schemaVersion`  |

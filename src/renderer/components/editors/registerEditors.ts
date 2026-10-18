@@ -31,7 +31,7 @@ export function registerEditors(): void {
     titleKey: 'types.properties',
     icon: SlidersHorizontal,
     component: PropertiesEditor,
-    category: 'general',
+    category: 'design',
   });
   registerEditor({
     id: 'layers',
@@ -45,7 +45,7 @@ export function registerEditors(): void {
     titleKey: 'types.colours',
     icon: Palette,
     component: ColoursEditor,
-    category: 'design',
+    category: 'palette',
     defaultState: () => ({ tab: 'wheel' }),
   });
   registerEditor({
@@ -53,7 +53,7 @@ export function registerEditors(): void {
     titleKey: 'types.assets',
     icon: FolderOpen,
     component: AssetsEditor,
-    category: 'design',
+    category: 'assets',
     defaultState: () => ({ view: 'folders', search: '' }),
   });
   registerEditor({
@@ -62,7 +62,7 @@ export function registerEditors(): void {
     icon: PenTool,
     component: BoardEditor,
     category: 'design',
-    defaultState: () => ({ grid: true, minimap: false }),
+    defaultState: () => ({}),
   });
   registerEditor({
     id: 'tickets',

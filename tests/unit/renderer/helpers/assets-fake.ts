@@ -47,6 +47,7 @@ function defaultFolders(): AssetFolder[] {
   return Object.values(DEFAULT_FOLDER_IDS).map((id) => ({
     id,
     parentId: null,
+    scope: 'files' as const,
     name: names[id] ?? id,
     createdAt: STAMP,
     updatedAt: STAMP,
@@ -101,6 +102,7 @@ export function createAssetsFake() {
       data.snapshot.folders.push({
         id: nextId('folder'),
         parentId: input.parentId,
+        scope: input.scope,
         name: input.name,
         createdAt: STAMP,
         updatedAt: STAMP,

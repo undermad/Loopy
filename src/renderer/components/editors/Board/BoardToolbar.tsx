@@ -15,7 +15,7 @@ import {
 import type { Asset } from '@shared/assets';
 import type { CardTemplate } from '@shared/cards';
 import { useTranslation } from '@renderer/lib/i18n';
-import { DropdownMenu, IconButton, Tooltip, cx } from '@renderer/ui';
+import { DropdownMenu, IconButton, Tooltip, cx, ScrollStrip } from '@renderer/ui';
 import { SHAPE_TOOLS, TOOL_KEYS, type BoardTool, type ShapeTool } from './tools';
 import styles from './BoardToolbar.module.scss';
 
@@ -73,7 +73,8 @@ export function BoardToolbar({
   const shapeActive = (SHAPE_TOOLS as readonly string[]).includes(tool);
 
   return (
-    <div
+    <ScrollStrip
+      orientation="vertical"
       className={styles['toolbar']}
       role="toolbar"
       aria-label={t('board.tools.label')}
@@ -181,6 +182,6 @@ export function BoardToolbar({
       </DropdownMenu.Root>
       <span className={styles['separator']} />
       {button('arrow', t('board.tools.arrow'), <Spline aria-hidden="true" />)}
-    </div>
+    </ScrollStrip>
   );
 }

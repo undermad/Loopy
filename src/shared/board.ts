@@ -13,6 +13,7 @@ export const boardSchema = z.object({
   gridRef: colourRefSchema.nullable().default(null),
   unit: boardUnitSchema,
   unitScale: z.number().positive().max(1_000_000),
+  folderId: z.string().min(1).nullable().default(null),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
@@ -60,6 +61,7 @@ const itemDataSchema = z.object({
   locked: z.boolean().default(false),
   hidden: z.boolean().default(false),
   dock: z.string().min(1).nullable().default(null),
+  rotation: z.number().min(0).max(360).default(0),
 });
 
 export const textDataSchema = itemDataSchema.extend({
@@ -159,6 +161,7 @@ export const boardPatchSchema = z
     gridRef: colourRefSchema.nullable(),
     unit: boardUnitSchema,
     unitScale: boardSchema.shape.unitScale,
+    folderId: z.string().min(1).nullable(),
   })
   .partial();
 

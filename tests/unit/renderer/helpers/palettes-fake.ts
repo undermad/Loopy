@@ -49,6 +49,7 @@ export function createPalettesFake() {
       name: input.name,
       harmony: input.harmony,
       baseIndex: Math.min(input.baseIndex, input.colours.length - 1),
+      folderId: null,
       source: input.source,
       colours: input.colours.map((colour) => ({
         id: colour.id ?? nextId('colour'),
@@ -82,6 +83,7 @@ export function createPalettesFake() {
         harmony: patch.harmony ?? current.harmony,
         baseIndex: Math.min(patch.baseIndex ?? current.baseIndex, colours.length - 1),
         colours,
+        folderId: patch.folderId === undefined ? current.folderId : patch.folderId,
         ...(patch.clusterId !== undefined && patch.clusterId !== current.clusterId
           ? { clusterId: patch.clusterId, clusterPosition: nextPosition(patch.clusterId) }
           : {}),

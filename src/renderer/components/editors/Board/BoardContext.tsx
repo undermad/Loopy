@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { BoardEdge, BoardNode } from '@shared/board';
+import type { Rect } from '@renderer/lib/board';
 
 export interface DropTarget {
   id: string;
@@ -16,6 +17,14 @@ export interface BoardActions {
   openTemplateEditor: (templateId: string | null) => void;
   dropTarget: DropTarget | null;
   dockedPeers: ReadonlySet<string>;
+  wholeGroup: ReadonlySet<string>;
+  snapping: boolean;
+  keepRatio: boolean;
+  previewRotation: (id: string, angle: number | null) => void;
+  rotateItem: (node: BoardNode, angle: number) => void;
+  previewGeometry: (id: string, rect: Rect | null) => void;
+  setTransforming: (active: boolean) => void;
+  gridStep: (zoom: number) => number;
 }
 
 export const BoardActionsContext = createContext<BoardActions | null>(null);
