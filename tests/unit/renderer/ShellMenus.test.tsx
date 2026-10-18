@@ -1,17 +1,17 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '@renderer/App';
-import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
+import { bootTestApp, makeProject, makeRecent, type FakeApi } from './helpers/api';
 
 let api: FakeApi;
 
 beforeEach(async () => {
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
-  api.recent = [{ id: project.id, name: project.name, openedAt: '2026-10-17T08:00:00.000Z' }];
+  api.recent = [{ ...makeRecent('Space Game'), id: project.id }];
   api.current = project;
+  api.path = api.recent[0]?.path ?? null;
   api.emitProject();
 });
 
@@ -55,7 +55,7 @@ describe('shell menus', () => {
     expect(api.exportLayout).toHaveBeenCalled();
   });
 
-  it('opens recent projects, exports and closes the project, and shows about', async () => {
+  it('opens recent projects, saves and closes the project, and shows about', async () => {
     const user = userEvent.setup();
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     render(<App />);
@@ -65,12 +65,21 @@ describe('shell menus', () => {
     await user.hover(await screen.findByRole('menuitem', { name: 'Open recent' }));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Space Game' }));
     await waitFor(() => {
-      expect(api.openProject).toHaveBeenCalled();
+      expect(api.openRecentProject).toHaveBeenCalledWith(api.recent[0]?.path);
     });
 
     await user.click(screen.getByRole('menuitem', { name: 'File' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Export project…' }));
-    expect(api.exportProject).toHaveBeenCalled();
+    await user.click(await screen.findByRole('menuitem', { name: /^Save(?! as)/ }));
+    expect(api.saveProject).toHaveBeenCalled();
+
+    await user.click(screen.getByRole('menuitem', { name: 'File' }));
+    await user.click(await screen.findByRole('menuitem', { name: /Save as…/ }));
+    expect(api.saveProjectAs).toHaveBeenCalled();
+    expect(screen.queryByRole('menuitem', { name: /Export project/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('menuitem', { name: 'File' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Open…' }));
+    expect(api.openProject).toHaveBeenCalled();
 
     await user.click(screen.getByRole('menuitem', { name: 'Help' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Documentation' }));
@@ -86,6 +95,52 @@ describe('shell menus', () => {
     expect(await screen.findByRole('heading', { name: 'Welcome to Loopy' })).toBeInTheDocument();
 
     await user.keyboard('{Control>}n{/Control}');
-    expect(await screen.findByRole('dialog', { name: 'New project' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'New project' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('menuitem', { name: 'File' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Quit' }));
+    expect(api.quitApp).toHaveBeenCalled();
+  });
+
+  it('renames the open project from Project settings and marks it unsaved', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole('tab', { name: 'Planning' });
+    expect(document.title).toBe('Space Game — Loopy');
+
+    await user.click(screen.getByRole('menuitem', { name: 'File' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Project settings…' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Project settings' });
+    const name = within(dialog).getByLabelText(/Project name/);
+    expect(name).toHaveValue('Space Game');
+    await user.clear(name);
+    await user.type(name, 'Moon Game');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    expect(api.renameProject).toHaveBeenCalledWith('Moon Game');
+    expect(await screen.findByText('Project: Moon Game')).toBeInTheDocument();
+    expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
+    expect(document.title).toBe('• Moon Game — Loopy');
+  });
+
+  it('saves with the keyboard, even from a text field, and reports a failed save', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole('tab', { name: 'Planning' });
+
+    await user.keyboard('{Control>}s{/Control}');
+    expect(api.saveProject).toHaveBeenCalledTimes(1);
+
+    await user.keyboard('{Control>}{Shift>}s{/Shift}{/Control}');
+    expect(api.saveProjectAs).toHaveBeenCalledTimes(1);
+
+    vi.mocked(api.saveProject).mockResolvedValueOnce({ status: 'failed' });
+    const input = document.createElement('input');
+    document.body.append(input);
+    input.focus();
+    await user.keyboard('{Control>}s{/Control}');
+    expect(api.saveProject).toHaveBeenCalledTimes(2);
+    expect(await screen.findByText('The project could not be saved.')).toBeInTheDocument();
+    input.remove();
   });
 });

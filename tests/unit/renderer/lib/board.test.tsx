@@ -19,7 +19,6 @@ describe('board library', () => {
   it('creates boards, commits changes locally first and keeps snapshots in sync', async () => {
     const api = await bootTestApp();
     const project = makeProject('Space Game');
-    api.projects = [project];
     api.current = project;
     api.emitProject();
 

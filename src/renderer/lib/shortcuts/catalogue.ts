@@ -17,6 +17,8 @@ export const SHORTCUT_CATEGORIES: readonly ShortcutCategory[] = [
     id: 'app',
     entries: [
       entry('newProject', keymap.newProject.keys),
+      entry('save', keymap.save.keys),
+      entry('saveAs', keymap.saveAs.keys),
       entry('preferences', keymap.preferences.keys),
       entry('fullscreen', keymap.fullscreen.keys),
     ],

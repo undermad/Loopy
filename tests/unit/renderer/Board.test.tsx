@@ -27,7 +27,6 @@ function Harness({ state }: { state: Record<string, unknown> }) {
 beforeEach(async () => {
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
 });

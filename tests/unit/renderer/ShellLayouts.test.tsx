@@ -19,7 +19,6 @@ beforeEach(async () => {
     fake.layouts.push(preset);
   });
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
 });

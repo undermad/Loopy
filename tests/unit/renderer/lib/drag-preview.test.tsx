@@ -100,7 +100,6 @@ describe('stateActions.reorder', () => {
   it('moves a state to an index and clamps out-of-range targets', async () => {
     const api = await bootTestApp();
     const project = makeProject('Space Game');
-    api.projects = [project];
     api.current = project;
     api.emitProject();
     await act(async () => {

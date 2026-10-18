@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { constants, copyFile, mkdir, open, rm } from 'node:fs/promises';
+import { constants, copyFile, mkdir, open, rename, rm } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { projectInfoSchema, projectNameSchema, type ProjectInfo } from '@shared/project';
@@ -146,10 +146,25 @@ export async function openProject(path: string): Promise<ProjectDatabase> {
   }
 }
 
-export async function exportProject(project: ProjectDatabase, destination: string): Promise<void> {
+export function renameProject(project: ProjectDatabase, name: string, now: Date = new Date()): ProjectInfo {
+  const projectName = projectNameSchema.parse(name);
+  project.db
+    .prepare('UPDATE project SET name = ?, updated_at = ? WHERE singleton = 1')
+    .run(projectName, now.toISOString());
+  return readProjectInfo(project);
+}
+
+export async function saveProjectFile(project: ProjectDatabase, destination: string): Promise<void> {
   await mkdir(dirname(destination), { recursive: true });
-  await removeDatabaseFiles(destination);
-  project.db.exec(`VACUUM INTO '${destination.replaceAll("'", "''")}'`);
+  const temporary = `${destination}.${randomUUID()}.tmp`;
+  try {
+    project.db.exec(`VACUUM INTO '${temporary.replaceAll("'", "''")}'`);
+    await Promise.all([`${destination}-wal`, `${destination}-shm`].map((file) => rm(file, { force: true })));
+    await rename(temporary, destination);
+  } catch (error) {
+    await rm(temporary, { force: true });
+    throw error;
+  }
 }
 
 export async function importProject(source: string, destination: string): Promise<ProjectDatabase> {

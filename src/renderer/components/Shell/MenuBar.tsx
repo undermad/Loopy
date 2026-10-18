@@ -3,20 +3,23 @@ import { runEditCommand } from '@renderer/lib/commands';
 import { useTranslation } from '@renderer/lib/i18n';
 import {
   closeProject,
-  exportProject,
-  importProject,
   openProject,
+  openRecentProject,
+  quitApp,
+  startCreatingProject,
   useCurrentProject,
   useRecentProjects,
 } from '@renderer/lib/project';
 import { describeKeys, keymap } from '@renderer/lib/shortcuts';
-import { Menubar } from '@renderer/ui';
+import { Menubar, useToast } from '@renderer/ui';
+import type { OpenProjectResult } from '@shared/ipc';
 import { LINKS } from './links';
 import { WindowMenu } from './WindowMenu';
+import { useSaveCommands } from './useSaveCommands';
 import { WorkspaceTabs } from './WorkspaceTabs';
 import styles from './MenuBar.module.scss';
 
-export type ShellDialog = 'preferences' | 'newProject' | 'saveLayout' | 'shortcuts' | 'about';
+export type ShellDialog = 'preferences' | 'projectSettings' | 'saveLayout' | 'shortcuts' | 'about';
 
 export interface MenuBarProps {
   onDialog: (dialog: ShellDialog) => void;
@@ -31,8 +34,17 @@ const EDIT_COMMANDS: EditCommand[] = ['undo', 'redo', 'cut', 'copy', 'paste', 'd
 
 export function MenuBar({ onDialog, editCommand }: MenuBarProps) {
   const { t } = useTranslation('shell');
+  const { t: tw } = useTranslation('welcome');
+  const toast = useToast();
   const project = useCurrentProject();
   const recent = useRecentProjects();
+  const { save, saveAs } = useSaveCommands();
+
+  async function report(pending: Promise<OpenProjectResult>) {
+    const result = await pending;
+    if (result.status === 'failed')
+      toast.show({ title: tw('openFailed'), description: result.code, variant: 'danger' });
+  }
 
   return (
     <div className={styles['bar']}>
@@ -40,31 +52,46 @@ export function MenuBar({ onDialog, editCommand }: MenuBarProps) {
         <Menubar.Menu>
           <Menubar.Trigger>{t('menu.file')}</Menubar.Trigger>
           <Menubar.Content>
-            <Menubar.Item
-              onSelect={() => {
-                onDialog('newProject');
-              }}
-            >
+            <Menubar.Item onSelect={startCreatingProject}>
               {t('menu.newProject')}
               <MenuShortcut id="newProject" />
             </Menubar.Item>
-            <Menubar.Item onSelect={() => void importProject()}>{t('menu.openProject')}</Menubar.Item>
+            <Menubar.Item onSelect={() => void report(openProject())}>{t('menu.openProject')}</Menubar.Item>
             <Menubar.Sub>
               <Menubar.SubTrigger disabled={recent.length === 0}>{t('menu.openRecent')}</Menubar.SubTrigger>
               <Menubar.SubContent>
                 {recent.map((entry) => (
-                  <Menubar.Item key={entry.id} onSelect={() => void openProject(entry.id)}>
+                  <Menubar.Item
+                    key={entry.path}
+                    disabled={entry.missing}
+                    title={entry.path}
+                    onSelect={() => void report(openRecentProject(entry.path))}
+                  >
                     {entry.name}
                   </Menubar.Item>
                 ))}
               </Menubar.SubContent>
             </Menubar.Sub>
             <Menubar.Separator />
+            <Menubar.Item disabled={!project} onSelect={() => void save()}>
+              {t('menu.save')}
+              <MenuShortcut id="save" />
+            </Menubar.Item>
+            <Menubar.Item disabled={!project} onSelect={() => void saveAs()}>
+              {t('menu.saveAs')}
+              <MenuShortcut id="saveAs" />
+            </Menubar.Item>
+            <Menubar.Item
+              disabled={!project}
+              onSelect={() => {
+                onDialog('projectSettings');
+              }}
+            >
+              {t('menu.projectSettings')}
+            </Menubar.Item>
+            <Menubar.Separator />
             <Menubar.Item disabled={!project} onSelect={() => void closeProject()}>
               {t('menu.closeProject')}
-            </Menubar.Item>
-            <Menubar.Item disabled={!project} onSelect={() => void exportProject()}>
-              {t('menu.exportProject')}
             </Menubar.Item>
             <Menubar.Separator />
             <Menubar.Item
@@ -76,13 +103,7 @@ export function MenuBar({ onDialog, editCommand }: MenuBarProps) {
               <MenuShortcut id="preferences" />
             </Menubar.Item>
             <Menubar.Separator />
-            <Menubar.Item
-              onSelect={() => {
-                window.close();
-              }}
-            >
-              {t('menu.quit')}
-            </Menubar.Item>
+            <Menubar.Item onSelect={() => void quitApp()}>{t('menu.quit')}</Menubar.Item>
           </Menubar.Content>
         </Menubar.Menu>
         <Menubar.Menu>

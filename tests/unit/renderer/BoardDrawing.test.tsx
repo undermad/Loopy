@@ -128,7 +128,6 @@ beforeEach(async () => {
   canvas = installCanvasFake();
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await act(async () => {

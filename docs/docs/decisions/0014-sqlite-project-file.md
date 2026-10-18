@@ -4,6 +4,8 @@ description: One SQLite database per project, stored by the app and shared as a 
 
 # 0014 One SQLite database per project, `.loopy`
 
+Where the file lives and when it is written is superseded by [0022](./0022-save-based-project-files.md). The file format stands.
+
 ## Context
 
 A project holds boards with text, images, diagrams and tasks that reference each other and reuse assets. A JSON document would need its own foreign keys, would carry images as base64 and would be rewritten whole on every save. The user should never manage files or folders; the app owns the storage and offers export and import.

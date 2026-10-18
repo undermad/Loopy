@@ -51,7 +51,6 @@ function file(name: string, type: string): File {
 
 function openProject() {
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
 }

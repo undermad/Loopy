@@ -7,11 +7,11 @@ import {
   CURRENT_PROJECT_SCHEMA_VERSION,
   LOOPY_APPLICATION_ID,
   createProject,
-  exportProject,
   importProject,
   isProjectFile,
   openProject,
   readProjectInfo,
+  saveProjectFile,
   type ProjectDatabase,
   type ProjectFileError,
 } from '../../../src/main/storage';
@@ -136,13 +136,13 @@ describe('project database', () => {
     await expectErrorCode(openProject(path), 'CORRUPT');
   });
 
-  it('exports a compacted copy and imports it as a new project', async () => {
+  it('saves a compacted copy and imports it as a new project', async () => {
     const original = await track(createProject(join(directory, 'demo.loopy'), 'Demo'));
     original.db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('colour', '"#ff0000"');
     const exported = join(directory, 'shared', 'demo-export.loopy');
 
-    await exportProject(original, exported);
-    await exportProject(original, exported);
+    await saveProjectFile(original, exported);
+    await saveProjectFile(original, exported);
 
     await expect(readdir(join(directory, 'shared'))).resolves.toEqual(['demo-export.loopy']);
     const imported = await track(importProject(exported, join(directory, 'imported.loopy')));

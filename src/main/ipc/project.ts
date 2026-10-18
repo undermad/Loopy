@@ -1,31 +1,30 @@
-import { randomUUID } from 'node:crypto';
-import { readdir, rename, stat } from 'node:fs/promises';
-import { basename, dirname, extname, resolve } from 'node:path';
+import { stat } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import type { IpcMain } from 'electron';
 import {
   IpcChannel,
   projectIdSchema,
-  projectNameSchema,
-  type ExportResult,
-  type ImportProjectResult,
+  projectPathSchema,
   type OpenProjectResult,
   type ProjectFailureCode,
   type ProjectState,
-  type ProjectSummary,
+  type RecentProjectEntry,
+  type SaveProjectResult,
 } from '@shared/ipc';
-import { PROJECT_FILE_EXTENSION, type ProjectInfo } from '@shared/project';
+import { PROJECT_FILE_EXTENSION, type ProjectInfo, type RecoverableProject } from '@shared/project';
+import type { SaveChoice } from '../open-file';
 import type { DeviceStateService } from '../services/device-state';
+import { exists } from '../storage/fs';
 import type { StoragePaths } from '../storage/paths';
+import { ProjectFileError, type ProjectDatabase } from '../storage/project-database';
 import {
-  createProject,
-  exportProject,
-  importProject,
-  openProject,
-  ProjectFileError,
-  readProjectInfo,
-  removeDatabaseFiles,
-  type ProjectDatabase,
-} from '../storage/project-database';
+  collectOrphans,
+  createSession,
+  discardOrphan,
+  openSession,
+  restoreSession,
+  type ProjectSession,
+} from '../storage/project-session';
 import type { Broadcast } from './settings';
 import type { FileDialogs } from './themes';
 
@@ -35,17 +34,18 @@ export interface ProjectHandlerDeps {
   dialogs: FileDialogs;
   broadcast: Broadcast;
   revealInFolder: (path: string) => void;
-  confirmReplace: (name: string) => Promise<boolean>;
+  confirmSave: (name: string) => Promise<SaveChoice>;
 }
 
 export interface ProjectService {
   current(): ProjectDatabase | null;
   state(): ProjectState;
-  close(): Promise<void>;
-  openFile(path: string): Promise<ImportProjectResult | OpenProjectResult>;
+  needsSave(): boolean;
+  markDirty(): Promise<void>;
+  guard(): Promise<boolean>;
+  openFile(path: string): Promise<OpenProjectResult>;
+  dispose(): void;
 }
-
-type ImportOutcome = ImportProjectResult | { status: 'kept'; id: string };
 
 const projectFilters = [{ name: 'Loopy project', extensions: [PROJECT_FILE_EXTENSION] }];
 const MAX_RECENT = 10;
@@ -55,214 +55,216 @@ function failureCode(error: unknown): ProjectFailureCode {
   return 'CORRUPT';
 }
 
-async function modifiedAt(path: string): Promise<number> {
-  const times = await Promise.all(
-    [path, `${path}-wal`].map((file) =>
-      stat(file).then(
-        (info) => info.mtimeMs,
-        () => 0,
-      ),
-    ),
-  );
-  return Math.max(...times);
-}
-
-export function registerProjectHandlers(
+export async function registerProjectHandlers(
   ipc: Pick<IpcMain, 'handle'>,
   deps: ProjectHandlerDeps,
-): ProjectService {
-  let current: ProjectDatabase | null = null;
-  let currentInfo: ProjectInfo | null = null;
+): Promise<ProjectService> {
+  let session: ProjectSession | null = null;
+  let recoverable: RecoverableProject[] = await collectOrphans(deps.paths.working);
 
-  const state = (): ProjectState => ({ current: currentInfo, recent: deps.deviceState.get().recentProjects });
+  const recent = () => deps.deviceState.get().recentProjects;
+  const state = (): ProjectState => ({
+    current: session?.info() ?? null,
+    path: session?.savedPath ?? null,
+    dirty: session?.dirty ?? false,
+    recent: recent(),
+    recoverable,
+  });
   const notify = () => {
     deps.broadcast(IpcChannel.projectChanged, state());
   };
 
-  async function touchRecent(info: ProjectInfo): Promise<void> {
-    const entry = { id: info.id, name: info.name, openedAt: new Date().toISOString() };
-    const recent = deps.deviceState.get().recentProjects.filter((item) => item.id !== info.id);
-    await deps.deviceState.update({
-      recentProjects: [entry, ...recent].slice(0, MAX_RECENT),
-      lastProjectId: info.id,
-    });
-  }
-
-  function close(): Promise<void> {
-    if (current) {
-      current.close();
-      current = null;
-      currentInfo = null;
-      notify();
+  function knownPath(raw: unknown): string {
+    const path = resolve(projectPathSchema.parse(raw));
+    if (!recent().some((entry) => resolve(entry.path) === path) && session?.savedPath !== path) {
+      throw new Error(`Unknown project path ${path}`);
     }
-    return Promise.resolve();
+    return path;
   }
 
-  async function adopt(database: ProjectDatabase): Promise<ProjectInfo> {
-    await close();
-    current = database;
-    currentInfo = readProjectInfo(database);
-    await touchRecent(currentInfo);
+  async function touchRecent(info: ProjectInfo, path: string): Promise<void> {
+    const entry = { id: info.id, name: info.name, path, openedAt: new Date().toISOString() };
+    const others = recent().filter((item) => resolve(item.path) !== resolve(path));
+    await deps.deviceState.update({ recentProjects: [entry, ...others].slice(0, MAX_RECENT) });
+  }
+
+  function end(): void {
+    session?.discard();
+    session = null;
+  }
+
+  async function adopt(next: ProjectSession): Promise<OpenProjectResult> {
+    end();
+    session = next;
+    if (next.savedPath) await touchRecent(next.info(), next.savedPath);
     notify();
-    return currentInfo;
+    return { status: 'opened', project: next.info() };
   }
 
-  async function list(): Promise<ProjectSummary[]> {
-    let entries: string[];
+  async function saveTo(path: string): Promise<SaveProjectResult> {
+    if (!session) return { status: 'cancelled' };
     try {
-      entries = await readdir(deps.paths.projects);
+      await session.saveTo(path);
     } catch {
-      return [];
+      notify();
+      return { status: 'failed' };
     }
-    const lastOpened = new Map(deps.deviceState.get().recentProjects.map((item) => [item.id, item.openedAt]));
-    const summaries: ProjectSummary[] = [];
-    for (const entry of entries) {
-      if (extname(entry) !== `.${PROJECT_FILE_EXTENSION}`) continue;
-      const path = deps.paths.projectFile(basename(entry, `.${PROJECT_FILE_EXTENSION}`));
-      let info: ProjectInfo | null;
-      if (currentInfo && current?.path === path) {
-        info = currentInfo;
-      } else {
-        try {
-          const database = await openProject(path);
-          try {
-            info = readProjectInfo(database);
-          } finally {
-            database.close();
-          }
-        } catch {
-          info = null;
-        }
-      }
-      if (!info) continue;
-      const openedAt = lastOpened.get(info.id);
-      summaries.push(openedAt ? { ...info, lastOpenedAt: openedAt } : info);
-    }
-    return summaries.sort((a, b) =>
-      (b.lastOpenedAt ?? b.updatedAt).localeCompare(a.lastOpenedAt ?? a.updatedAt),
-    );
+    await touchRecent(session.info(), path);
+    notify();
+    return { status: 'saved' };
   }
 
-  async function create(rawName: unknown): Promise<ProjectInfo> {
-    const name = projectNameSchema.parse(rawName);
-    const id = randomUUID();
-    const database = await createProject(deps.paths.projectFile(id), name, new Date(), id);
-    return adopt(database);
+  async function defaultFolder(): Promise<string | undefined> {
+    const latest = recent()[0];
+    if (latest) return dirname(latest.path);
+    return (await exists(deps.paths.projects)) ? deps.paths.projects : undefined;
   }
 
-  async function open(rawId: unknown): Promise<OpenProjectResult> {
-    const id = projectIdSchema.parse(rawId);
-    if (currentInfo?.id === id) return { status: 'opened', project: currentInfo };
-    try {
-      const database = await openProject(deps.paths.projectFile(id));
-      return { status: 'opened', project: await adopt(database) };
-    } catch (error) {
-      return { status: 'failed', code: failureCode(error) };
-    }
-  }
-
-  async function localName(id: string): Promise<string | null> {
-    if (currentInfo?.id === id) return currentInfo.name;
-    try {
-      const database = await openProject(deps.paths.projectFile(id));
-      try {
-        return readProjectInfo(database).name;
-      } finally {
-        database.close();
-      }
-    } catch {
-      return null;
-    }
-  }
-
-  async function keepLocal(id: string, source: string): Promise<boolean> {
-    const target = deps.paths.projectFile(id);
-    const [localTime, sourceTime] = await Promise.all([modifiedAt(target), modifiedAt(source)]);
-    if (localTime <= sourceTime) return false;
-    const name = await localName(id);
-    return name !== null && !(await deps.confirmReplace(name));
-  }
-
-  async function importFrom(source: string): Promise<ImportOutcome> {
-    const temporary = deps.paths.projectFile(randomUUID());
-    try {
-      const copy = await importProject(source, temporary);
-      const info = readProjectInfo(copy);
-      copy.close();
-      if (await keepLocal(info.id, source)) {
-        await removeDatabaseFiles(temporary);
-        return { status: 'kept', id: info.id };
-      }
-      const target = deps.paths.projectFile(info.id);
-      if (currentInfo?.id === info.id) await close();
-      await removeDatabaseFiles(target);
-      await rename(temporary, target);
-      return { status: 'imported', project: await adopt(await openProject(target)) };
-    } catch (error) {
-      await removeDatabaseFiles(temporary);
-      return { status: 'failed', code: failureCode(error) };
-    }
-  }
-
-  async function importFromFile(): Promise<ImportProjectResult> {
-    const picked = await deps.dialogs.showOpenDialog({ properties: ['openFile'], filters: projectFilters });
-    const source = picked.filePaths[0];
-    if (picked.canceled || !source) return { status: 'cancelled' };
-    const outcome = await importFrom(source);
-    return outcome.status === 'kept' ? { status: 'cancelled' } : outcome;
-  }
-
-  async function openFile(path: string): Promise<ImportProjectResult | OpenProjectResult> {
-    const location = resolve(path);
-    if (dirname(location) === resolve(deps.paths.projects)) {
-      const id = projectIdSchema.safeParse(basename(location, `.${PROJECT_FILE_EXTENSION}`));
-      if (id.success) return open(id.data);
-    }
-    const outcome = await importFrom(location);
-    return outcome.status === 'kept' ? open(outcome.id) : outcome;
-  }
-
-  async function exportCurrent(): Promise<ExportResult> {
-    if (!current || !currentInfo) return { status: 'cancelled' };
+  async function saveAs(): Promise<SaveProjectResult> {
+    if (!session) return { status: 'cancelled' };
+    const fileName = `${session.info().name}.${PROJECT_FILE_EXTENSION}`;
+    const folder = session.savedPath ? dirname(session.savedPath) : await defaultFolder();
     const picked = await deps.dialogs.showSaveDialog({
-      defaultPath: `${currentInfo.name}.${PROJECT_FILE_EXTENSION}`,
+      defaultPath: folder ? join(folder, fileName) : fileName,
       filters: projectFilters,
     });
     if (picked.canceled || !picked.filePath) return { status: 'cancelled' };
-    await exportProject(current, picked.filePath);
-    return { status: 'exported' };
+    return saveTo(resolve(picked.filePath));
   }
 
-  async function remove(rawId: unknown): Promise<void> {
-    const id = projectIdSchema.parse(rawId);
-    if (currentInfo?.id === id) await close();
-    await removeDatabaseFiles(deps.paths.projectFile(id));
-    await deps.deviceState.update({
-      recentProjects: deps.deviceState.get().recentProjects.filter((item) => item.id !== id),
+  function save(): Promise<SaveProjectResult> {
+    if (session?.savedPath) return saveTo(session.savedPath);
+    return saveAs();
+  }
+
+  async function guard(): Promise<boolean> {
+    if (!session?.needsSave) return true;
+    const choice = await deps.confirmSave(session.info().name);
+    if (choice === 'cancel') return false;
+    if (choice === 'discard') return true;
+    return (await save()).status === 'saved';
+  }
+
+  async function create(rawName: unknown): Promise<OpenProjectResult> {
+    if (!(await guard())) return { status: 'cancelled' };
+    return adopt(await createSession(deps.paths.working, String(rawName)));
+  }
+
+  async function openPath(path: string): Promise<OpenProjectResult> {
+    const location = resolve(path);
+    if (session?.savedPath === location) return { status: 'opened', project: session.info() };
+    if (!(await guard())) return { status: 'cancelled' };
+    try {
+      return await adopt(await openSession(deps.paths.working, location));
+    } catch (error) {
+      return { status: 'failed', code: failureCode(error) };
+    }
+  }
+
+  async function open(): Promise<OpenProjectResult> {
+    const folder = session?.savedPath ? dirname(session.savedPath) : await defaultFolder();
+    const picked = await deps.dialogs.showOpenDialog({
+      ...(folder ? { defaultPath: folder } : {}),
+      properties: ['openFile'],
+      filters: projectFilters,
     });
+    const source = picked.filePaths[0];
+    if (picked.canceled || !source) return { status: 'cancelled' };
+    return openPath(source);
+  }
+
+  async function close(): Promise<void> {
+    if (!session || !(await guard())) return;
+    end();
     notify();
   }
 
-  async function removeRecent(rawId: unknown): Promise<ProjectState> {
-    const id = projectIdSchema.parse(rawId);
-    await deps.deviceState.update({
-      recentProjects: deps.deviceState.get().recentProjects.filter((item) => item.id !== id),
-    });
+  async function rename(rawName: unknown): Promise<ProjectInfo> {
+    if (!session) throw new Error('No project is open');
+    const info = await session.rename(String(rawName));
+    notify();
+    return info;
+  }
+
+  async function markDirty(): Promise<void> {
+    if (!session || session.dirty) return;
+    await session.markDirty();
+    notify();
+  }
+
+  function offered(raw: unknown): string {
+    const id = projectIdSchema.parse(raw);
+    if (!recoverable.some((item) => item.id === id)) throw new Error(`Nothing to recover for ${id}`);
+    return id;
+  }
+
+  async function recover(raw: unknown): Promise<OpenProjectResult> {
+    const id = offered(raw);
+    if (!(await guard())) return { status: 'cancelled' };
+    recoverable = recoverable.filter((item) => item.id !== id);
+    try {
+      return await adopt(await restoreSession(deps.paths.working, id));
+    } catch (error) {
+      discardOrphan(deps.paths.working, id);
+      notify();
+      return { status: 'failed', code: failureCode(error) };
+    }
+  }
+
+  function discardRecovery(raw: unknown): ProjectState {
+    const id = offered(raw);
+    discardOrphan(deps.paths.working, id);
+    recoverable = recoverable.filter((item) => item.id !== id);
+    notify();
+    return state();
+  }
+
+  async function list(): Promise<RecentProjectEntry[]> {
+    return Promise.all(
+      recent().map(async (entry) => ({
+        ...entry,
+        missing: !(await stat(entry.path).then(
+          (info) => info.isFile(),
+          () => false,
+        )),
+      })),
+    );
+  }
+
+  async function removeRecent(raw: unknown): Promise<ProjectState> {
+    const path = knownPath(raw);
+    await deps.deviceState.update({ recentProjects: recent().filter((item) => resolve(item.path) !== path) });
+    notify();
     return state();
   }
 
   ipc.handle(IpcChannel.projectList, () => list());
   ipc.handle(IpcChannel.projectCreate, (_event, name: unknown) => create(name));
-  ipc.handle(IpcChannel.projectOpen, (_event, id: unknown) => open(id));
+  ipc.handle(IpcChannel.projectOpen, () => open());
+  ipc.handle(IpcChannel.projectOpenRecent, async (_event, path: unknown) => openPath(knownPath(path)));
   ipc.handle(IpcChannel.projectClose, () => close());
   ipc.handle(IpcChannel.projectState, () => state());
-  ipc.handle(IpcChannel.projectImport, () => importFromFile());
-  ipc.handle(IpcChannel.projectExport, () => exportCurrent());
-  ipc.handle(IpcChannel.projectDelete, (_event, id: unknown) => remove(id));
-  ipc.handle(IpcChannel.projectReveal, (_event, rawId: unknown) => {
-    deps.revealInFolder(deps.paths.projectFile(projectIdSchema.parse(rawId)));
-  });
-  ipc.handle(IpcChannel.projectRemoveRecent, (_event, id: unknown) => removeRecent(id));
+  ipc.handle(IpcChannel.projectSave, () => save());
+  ipc.handle(IpcChannel.projectSaveAs, () => saveAs());
+  ipc.handle(IpcChannel.projectRename, (_event, name: unknown) => rename(name));
+  ipc.handle(IpcChannel.projectRecover, (_event, id: unknown) => recover(id));
+  ipc.handle(IpcChannel.projectDiscardRecovery, (_event, id: unknown) =>
+    Promise.resolve(id).then(discardRecovery),
+  );
+  ipc.handle(IpcChannel.projectReveal, (_event, path: unknown) =>
+    Promise.resolve(path).then((raw) => {
+      deps.revealInFolder(knownPath(raw));
+    }),
+  );
+  ipc.handle(IpcChannel.projectRemoveRecent, (_event, path: unknown) => removeRecent(path));
 
-  return { current: () => current, state, close, openFile };
+  return {
+    current: () => session?.project ?? null,
+    state,
+    needsSave: () => session?.needsSave ?? false,
+    markDirty,
+    guard,
+    openFile: openPath,
+    dispose: end,
+  };
 }

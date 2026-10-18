@@ -22,7 +22,6 @@ function must<T>(value: T | undefined): T {
 async function bootWithProject(): Promise<FakeApi> {
   const api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await act(async () => {

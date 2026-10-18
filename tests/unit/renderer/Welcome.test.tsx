@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { WelcomeScreen } from '@renderer/components/Welcome/WelcomeScreen';
 import { useCurrentProject } from '@renderer/lib/project';
 import { ToastProvider, TooltipProvider } from '@renderer/ui';
-import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
+import { bootTestApp, makeRecent, type FakeApi } from './helpers/api';
 
 let api: FakeApi;
 
@@ -24,42 +24,117 @@ beforeEach(async () => {
   api = await bootTestApp();
 });
 
-describe('WelcomeScreen', () => {
-  it('creates a project from the dialog and opens it', async () => {
+describe('creating a project', () => {
+  it('opens the creation view with Untitled filled in and creates the project without saving', async () => {
     const user = userEvent.setup();
     render(<Harness />);
 
-    expect(screen.getByText('No projects yet')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'New project' }));
-    await user.type(screen.getByLabelText(/Project name/), 'Space Game');
+
+    expect(screen.getByRole('heading', { name: 'New project' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Project name/)).toHaveValue('Untitled');
+    expect(screen.getByText(/Nothing is written to disk until you save/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    expect(api.createProject).toHaveBeenCalledWith('Untitled');
+    expect(api.saveProject).not.toHaveBeenCalled();
+    expect(await screen.findByTestId('current')).toHaveTextContent('Untitled');
+  });
+
+  it('uses the name the user types and needs a name to continue', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'New project' }));
+    const name = screen.getByLabelText(/Project name/);
+
+    await user.clear(name);
+    expect(screen.getByRole('button', { name: 'Create' })).toBeDisabled();
+    await user.type(name, 'Space Game');
     await user.click(screen.getByRole('button', { name: 'Create' }));
 
     expect(api.createProject).toHaveBeenCalledWith('Space Game');
-    expect(await screen.findByTestId('current')).toHaveTextContent('Space Game');
   });
 
-  it('lists projects and recent projects, greys out missing recent projects and removes them', async () => {
-    const existing = makeProject('Existing');
-    api.projects = [existing];
-    api.recent = [
-      { id: existing.id, name: 'Existing', openedAt: '2026-10-17T08:00:00.000Z' },
-      { id: crypto.randomUUID(), name: 'Gone', openedAt: '2026-10-16T08:00:00.000Z' },
+  it('goes back to the welcome screen on Cancel without creating anything', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'New project' }));
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(api.createProject).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Welcome to Loopy' })).toBeInTheDocument();
+  });
+});
+
+describe('recent files', () => {
+  it('lists recent files by path, greys out missing ones and opens the rest', async () => {
+    const quest = makeRecent('Quest');
+    const gone = makeRecent('Gone');
+    api.recent = [quest, gone];
+    api.missing = [gone.path];
+    api.emitProject();
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    const recent = screen.getByRole('region', { name: 'Recent' });
+    expect(await within(recent).findByRole('button', { name: /Gone/ })).toBeDisabled();
+    expect(within(recent).getByText(quest.path, { exact: false })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Your projects' })).not.toBeInTheDocument();
+
+    await user.click(within(recent).getByRole('button', { name: /Quest/ }));
+    expect(api.openRecentProject).toHaveBeenCalledWith(quest.path);
+    expect(await screen.findByTestId('current')).toHaveTextContent('Quest');
+  });
+
+  it('shows a recent file in its folder and removes it from the list', async () => {
+    const quest = makeRecent('Quest');
+    api.recent = [quest];
+    api.emitProject();
+    const user = userEvent.setup();
+    render(<Harness />);
+    const row = await screen.findByRole('button', { name: /Quest/ });
+
+    fireEvent.contextMenu(row.closest('li') as HTMLElement);
+    await user.click(await screen.findByRole('menuitem', { name: 'Show in folder' }));
+    expect(api.revealProject).toHaveBeenCalledWith(quest.path);
+
+    fireEvent.contextMenu(row.closest('li') as HTMLElement);
+    await user.click(await screen.findByRole('menuitem', { name: 'Remove from recent' }));
+    expect(api.removeRecentProject).toHaveBeenCalledWith(quest.path);
+  });
+});
+
+describe('recovering unsaved work', () => {
+  it('offers work from a crash and restores it', async () => {
+    api.recoverable = [
+      { id: crypto.randomUUID(), name: 'Lost work', path: null, modifiedAt: '2026-10-18T08:00:00.000Z' },
     ];
     api.emitProject();
     const user = userEvent.setup();
     render(<Harness />);
 
-    const gone = await screen.findByRole('button', { name: /Gone/ });
-    expect(gone).toBeDisabled();
-    expect(await screen.findAllByRole('button', { name: /Existing/ })).toHaveLength(2);
+    const panel = await screen.findByRole('region', { name: 'Recover unsaved work' });
+    expect(within(panel).getByText('Lost work')).toBeInTheDocument();
+    expect(within(panel).getByText(/Not saved yet/)).toBeInTheDocument();
+    await user.click(within(panel).getByRole('button', { name: 'Restore Lost work' }));
 
-    fireEvent.contextMenu(gone.closest('li') as HTMLElement);
-    await user.click(await screen.findByRole('menuitem', { name: 'Remove from recent' }));
-    expect(api.removeRecentProject).toHaveBeenCalled();
+    expect(api.recoverProject).toHaveBeenCalled();
+    expect(await screen.findByTestId('current')).toHaveTextContent('Lost work');
+  });
 
-    await user.click(
-      within(screen.getByRole('region', { name: 'Your projects' })).getByRole('button', { name: /Existing/ }),
-    );
-    expect(await screen.findByTestId('current')).toHaveTextContent('Existing');
+  it('discards recovered work', async () => {
+    const id = crypto.randomUUID();
+    api.recoverable = [
+      { id, name: 'Lost work', path: 'D:\\Games\\Lost.loopy', modifiedAt: '2026-10-18T08:00:00.000Z' },
+    ];
+    api.emitProject();
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.click(await screen.findByRole('button', { name: 'Discard Lost work' }));
+
+    expect(api.discardRecovery).toHaveBeenCalledWith(id);
+    expect(screen.queryByRole('region', { name: 'Recover unsaved work' })).not.toBeInTheDocument();
   });
 });

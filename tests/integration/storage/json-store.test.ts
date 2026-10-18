@@ -106,8 +106,9 @@ describe('device state store', () => {
     const state: DeviceState = {
       schemaVersion: DEVICE_STATE_SCHEMA_VERSION,
       windowBounds: { x: 10, y: 20, width: 1280, height: 800 },
-      lastProjectId: id,
-      recentProjects: [{ id, name: 'Demo', openedAt: '2026-10-17T09:00:00.000Z' }],
+      recentProjects: [
+        { id, name: 'Demo', path: join(directory, 'Demo.loopy'), openedAt: '2026-10-17T09:00:00.000Z' },
+      ],
       statusBar: true,
     };
 

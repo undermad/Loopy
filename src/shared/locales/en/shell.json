@@ -9,9 +9,10 @@
     "openProject": "Open…",
     "openRecent": "Open recent",
     "noRecent": "No recent projects",
+    "save": "Save",
+    "saveAs": "Save as…",
+    "projectSettings": "Project settings…",
     "closeProject": "Close project",
-    "importProject": "Import project…",
-    "exportProject": "Export project…",
     "preferences": "Preferences…",
     "quit": "Quit",
     "undo": "Undo",
@@ -121,7 +122,8 @@
     "noProject": "No project open",
     "hint": "Ctrl+Space maximises the area under the pointer. Drag an area corner to split or join.",
     "filesImported": "{{count}} files added to assets.",
-    "filesFailed": "The files could not be added to assets."
+    "filesFailed": "The files could not be added to assets.",
+    "unsaved": "Unsaved changes"
   },
   "about": {
     "title": "About Loopy",
@@ -199,11 +201,18 @@
       "scrub": "Change a number field",
       "scrubFine": "Change a number field in small steps",
       "scrollToolbar": "Scroll a crowded toolbar",
-      "panToolbar": "Drag a crowded toolbar"
+      "panToolbar": "Drag a crowded toolbar",
+      "save": "Save project",
+      "saveAs": "Save project as"
     }
   },
   "window": {
     "title": "Loopy",
     "return": "Return to main window"
+  },
+  "project": {
+    "settingsTitle": "Project settings",
+    "saved": "Project saved.",
+    "saveFailed": "The project could not be saved."
   }
 }

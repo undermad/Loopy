@@ -157,7 +157,6 @@ function renderMarkdown(body: string, noteId: string | null = null, onToggleTask
 beforeEach(async () => {
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await waitFor(() => {

@@ -189,7 +189,6 @@ beforeEach(async () => {
   captured.actions = null;
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   const board = await createBoard({ name: 'Ideas' });

@@ -30,7 +30,6 @@ beforeEach(async () => {
   setState.mockReset();
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await createBoard({ name: 'Ideas' });

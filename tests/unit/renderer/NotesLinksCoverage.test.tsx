@@ -48,7 +48,6 @@ const STAMP = '2026-10-17T09:00:00.000Z';
 async function bootWithProject(): Promise<FakeApi> {
   const api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   await act(async () => {
     api.emitProject();

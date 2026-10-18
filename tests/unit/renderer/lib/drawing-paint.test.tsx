@@ -52,7 +52,6 @@ beforeEach(async () => {
   installCanvasFake();
   api = await bootTestApp();
   const project = makeProject('Sketch');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await act(async () => {

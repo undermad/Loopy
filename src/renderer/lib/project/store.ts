@@ -1,36 +1,53 @@
 import { createStore } from 'zustand/vanilla';
-import type { RecentProject } from '@shared/device-state';
-import type { LoopyApi, ProjectState, ProjectSummary } from '@shared/ipc';
-import type { ProjectInfo } from '@shared/project';
+import type {
+  LoopyApi,
+  OpenProjectResult,
+  ProjectState,
+  RecentProjectEntry,
+  SaveProjectResult,
+} from '@shared/ipc';
+import type { ProjectInfo, RecoverableProject } from '@shared/project';
 
 export type ProjectApi = Pick<
   LoopyApi,
   | 'listProjects'
   | 'createProject'
   | 'openProject'
+  | 'openRecentProject'
   | 'closeProject'
   | 'getProjectState'
-  | 'importProject'
-  | 'exportProject'
-  | 'deleteProject'
+  | 'saveProject'
+  | 'saveProjectAs'
+  | 'renameProject'
+  | 'recoverProject'
+  | 'discardRecovery'
   | 'revealProject'
   | 'removeRecentProject'
   | 'onProjectChanged'
+  | 'quitApp'
 >;
 
 interface ProjectStoreState {
   current: ProjectInfo | null;
-  recent: RecentProject[];
-  projects: ProjectSummary[];
+  path: string | null;
+  dirty: boolean;
+  recent: RecentProjectEntry[];
+  recoverable: RecoverableProject[];
+  creating: boolean;
   api: ProjectApi | null;
 }
 
-export const projectStore = createStore<ProjectStoreState>(() => ({
+const initialState = (): ProjectStoreState => ({
   current: null,
+  path: null,
+  dirty: false,
   recent: [],
-  projects: [],
+  recoverable: [],
+  creating: false,
   api: null,
-}));
+});
+
+export const projectStore = createStore<ProjectStoreState>(initialState);
 
 function requireApi(): ProjectApi {
   const { api } = projectStore.getState();
@@ -39,58 +56,86 @@ function requireApi(): ProjectApi {
 }
 
 function applyState(state: ProjectState): void {
-  projectStore.setState({ current: state.current, recent: state.recent });
+  projectStore.setState({
+    current: state.current,
+    path: state.path,
+    dirty: state.dirty,
+    recoverable: state.recoverable,
+  });
 }
 
-export async function refreshProjects(): Promise<ProjectSummary[]> {
-  const projects = await requireApi().listProjects();
-  projectStore.setState({ projects });
-  return projects;
+async function refreshRecent(): Promise<void> {
+  projectStore.setState({ recent: await requireApi().listProjects() });
 }
 
 export async function bootProject(api: ProjectApi): Promise<void> {
   projectStore.setState({ api });
-  const [state, projects] = await Promise.all([api.getProjectState(), api.listProjects()]);
-  projectStore.setState({ current: state.current, recent: state.recent, projects });
+  const [state, recent] = await Promise.all([api.getProjectState(), api.listProjects()]);
+  applyState(state);
+  projectStore.setState({ recent });
   api.onProjectChanged((next) => {
     applyState(next);
-    void refreshProjects();
+    void refreshRecent();
   });
 }
 
-export async function createProject(name: string): Promise<ProjectInfo> {
-  const project = await requireApi().createProject(name);
-  await refreshProjects();
-  return project;
+export function startCreatingProject(): void {
+  projectStore.setState({ creating: true });
 }
 
-export function openProject(id: string) {
-  return requireApi().openProject(id);
+export function stopCreatingProject(): void {
+  projectStore.setState({ creating: false });
+}
+
+export async function createProject(name: string): Promise<OpenProjectResult> {
+  const result = await requireApi().createProject(name);
+  if (result.status === 'opened') stopCreatingProject();
+  return result;
+}
+
+export function openProject(): Promise<OpenProjectResult> {
+  return requireApi().openProject();
+}
+
+export function openRecentProject(path: string): Promise<OpenProjectResult> {
+  return requireApi().openRecentProject(path);
 }
 
 export function closeProject(): Promise<void> {
   return requireApi().closeProject();
 }
 
-export function importProject() {
-  return requireApi().importProject();
+export function saveProject(): Promise<SaveProjectResult> {
+  return requireApi().saveProject();
 }
 
-export function exportProject() {
-  return requireApi().exportProject();
+export function saveProjectAs(): Promise<SaveProjectResult> {
+  return requireApi().saveProjectAs();
 }
 
-export async function deleteProject(id: string): Promise<void> {
-  await requireApi().deleteProject(id);
-  await refreshProjects();
+export function renameProject(name: string): Promise<ProjectInfo> {
+  return requireApi().renameProject(name);
 }
 
-export function revealProject(id: string): Promise<void> {
-  return requireApi().revealProject(id);
+export function recoverProject(id: string): Promise<OpenProjectResult> {
+  return requireApi().recoverProject(id);
 }
 
-export async function removeRecentProject(id: string): Promise<void> {
-  applyState(await requireApi().removeRecentProject(id));
+export async function discardRecovery(id: string): Promise<void> {
+  applyState(await requireApi().discardRecovery(id));
+}
+
+export function revealProject(path: string): Promise<void> {
+  return requireApi().revealProject(path);
+}
+
+export async function removeRecentProject(path: string): Promise<void> {
+  applyState(await requireApi().removeRecentProject(path));
+  await refreshRecent();
+}
+
+export function quitApp(): Promise<void> {
+  return requireApi().quitApp();
 }
 
 export function currentProject(): ProjectInfo | null {
@@ -107,6 +152,11 @@ export function subscribeCurrentProject(listener: (project: ProjectInfo | null) 
   });
 }
 
+export function windowTitle(appName: string, project: ProjectInfo | null, dirty: boolean): string {
+  if (!project) return appName;
+  return `${dirty ? '• ' : ''}${project.name} — ${appName}`;
+}
+
 export function resetProjectStore(): void {
-  projectStore.setState({ current: null, recent: [], projects: [], api: null });
+  projectStore.setState(initialState());
 }

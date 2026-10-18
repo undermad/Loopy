@@ -10,16 +10,25 @@ export function projectPathFromArgv(argv: readonly string[]): string | null {
   return match ?? null;
 }
 
-export function replaceDialog(language: Language, name: string): MessageBoxOptions {
+export type SaveChoice = 'save' | 'discard' | 'cancel';
+
+export function saveChangesDialog(language: Language, name: string): MessageBoxOptions {
   const text = resources[language].welcome;
   return {
-    type: 'question',
-    message: text.replaceMessage.replace('{{name}}', name),
-    detail: text.replaceDetail,
-    buttons: [text.keepMine, text.replace],
+    type: 'warning',
+    message: text.saveChangesMessage.replace('{{name}}', name),
+    detail: text.saveChangesDetail,
+    buttons: [text.save, text.discardChanges, text.cancel],
     defaultId: 0,
-    cancelId: 0,
+    cancelId: 2,
+    noLink: true,
   };
+}
+
+export function saveChoice(response: number): SaveChoice {
+  if (response === 0) return 'save';
+  if (response === 1) return 'discard';
+  return 'cancel';
 }
 
 export function openFailedDialog(language: Language, path: string): MessageBoxOptions {

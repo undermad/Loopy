@@ -4,13 +4,14 @@ import styles from './WelcomeScreen.module.scss';
 
 export interface ProjectRowProps {
   name: string;
+  path: string;
   meta: ReactNode;
   disabled?: boolean;
   onOpen: () => void;
   menu: ReactNode;
 }
 
-export function ProjectRow({ name, meta, disabled = false, onOpen, menu }: ProjectRowProps) {
+export function ProjectRow({ name, path, meta, disabled = false, onOpen, menu }: ProjectRowProps) {
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>
@@ -21,7 +22,12 @@ export function ProjectRow({ name, meta, disabled = false, onOpen, menu }: Proje
             onClick={onOpen}
             disabled={disabled}
           >
-            <span className={styles['rowName']}>{name}</span>
+            <span className={styles['rowText']}>
+              <span className={styles['rowName']}>{name}</span>
+              <span className={styles['rowPath']} title={path}>
+                {path}
+              </span>
+            </span>
             <span className={styles['rowMeta']}>{meta}</span>
           </button>
         </li>

@@ -3,13 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { LAYOUT_SCHEMA_VERSION } from '@shared/layout';
 import { buildWorkspace } from '@shared/layout-presets';
 import { createBoard, updateBoard, useBoards } from '@renderer/lib/board';
-import {
-  closeProject,
-  deleteProject,
-  importProject,
-  openProject,
-  revealProject,
-} from '@renderer/lib/project';
+import { closeProject, openProject, openRecentProject, revealProject } from '@renderer/lib/project';
 import { selectTicket, ticketActions, useSelectedTicket, useTicketsLoaded } from '@renderer/lib/tickets';
 import { useActiveWorkspace, useStatusBarVisible } from '@renderer/lib/workspaces';
 import { bootTestApp, makeProject } from '../helpers/api';
@@ -31,7 +25,6 @@ describe('store edge cases', () => {
   it('clears tickets when the project closes and reports project failures', async () => {
     const api = await bootTestApp();
     const project = makeProject('Space Game');
-    api.projects = [project];
     api.current = project;
     api.emitProject();
     await act(async () => {
@@ -52,18 +45,18 @@ describe('store edge cases', () => {
     expect(result.current.loaded).toBe(false);
     expect(result.current.selected).toBeNull();
 
-    await expect(openProject(crypto.randomUUID())).resolves.toEqual({ status: 'failed', code: 'NOT_FOUND' });
-    await expect(importProject()).resolves.toEqual({ status: 'cancelled' });
-    await revealProject(project.id);
-    expect(api.revealProject).toHaveBeenCalledWith(project.id);
-    await deleteProject(project.id);
-    expect(api.deleteProject).toHaveBeenCalledWith(project.id);
+    await expect(openRecentProject('D:/nowhere.loopy')).resolves.toEqual({
+      status: 'failed',
+      code: 'NOT_FOUND',
+    });
+    await expect(openProject()).resolves.toEqual({ status: 'cancelled' });
+    await revealProject('D:/Games/Space Game.loopy');
+    expect(api.revealProject).toHaveBeenCalledWith('D:/Games/Space Game.loopy');
   });
 
   it('reloads the board list when a board is renamed before it was opened', async () => {
     const api = await bootTestApp();
     const project = makeProject('Space Game');
-    api.projects = [project];
     api.current = project;
     api.emitProject();
     const board = await createBoard({ name: 'Ideas' });

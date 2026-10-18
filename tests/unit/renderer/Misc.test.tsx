@@ -18,7 +18,6 @@ describe('remaining branches', () => {
     expect(result.current).toBeNull();
 
     const project = makeProject('Space Game');
-    api.projects = [project];
     api.current = project;
     api.emitProject();
     render(<App />);
@@ -39,7 +38,6 @@ describe('remaining branches', () => {
   it('reports an imported layout from the Window menu', async () => {
     const api = await bootTestApp();
     const project = makeProject('Space Game');
-    api.projects = [project];
     api.current = project;
     api.emitProject();
     const layout: LayoutPreset = {

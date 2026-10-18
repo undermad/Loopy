@@ -6,11 +6,11 @@ export { createLayoutsStore } from './layouts-store';
 export { JsonStoreError } from './json-store';
 export {
   createProject,
-  exportProject,
   importProject,
   isProjectFile,
   openProject,
   readProjectInfo,
+  saveProjectFile,
   ProjectFileError,
   LOOPY_APPLICATION_ID,
   type ProjectDatabase,

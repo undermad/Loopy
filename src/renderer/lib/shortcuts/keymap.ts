@@ -6,6 +6,8 @@ export interface Shortcut {
 
 export type ShortcutId =
   | 'newProject'
+  | 'save'
+  | 'saveAs'
   | 'preferences'
   | 'nextWorkspace'
   | 'previousWorkspace'
@@ -15,6 +17,8 @@ export type ShortcutId =
 
 export const keymap: Record<ShortcutId, Shortcut> = {
   newProject: { id: 'newProject', keys: '$mod+N', labelKey: 'menu.newProject' },
+  save: { id: 'save', keys: '$mod+S', labelKey: 'menu.save' },
+  saveAs: { id: 'saveAs', keys: '$mod+Shift+S', labelKey: 'menu.saveAs' },
   preferences: { id: 'preferences', keys: '$mod+Comma', labelKey: 'menu.preferences' },
   nextWorkspace: { id: 'nextWorkspace', keys: '$mod+PageDown', labelKey: 'workspace.next' },
   previousWorkspace: { id: 'previousWorkspace', keys: '$mod+PageUp', labelKey: 'workspace.previous' },

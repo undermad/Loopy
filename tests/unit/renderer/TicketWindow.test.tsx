@@ -38,7 +38,6 @@ async function typeInto(element: HTMLElement, text: string) {
 beforeEach(async () => {
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await ticketActions.create({ title: 'Plan the level', stateId: 'todo' });

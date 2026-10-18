@@ -49,7 +49,6 @@ function areaElement(id: string, left: number, top: number, width: number, heigh
 beforeEach(async () => {
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
 });

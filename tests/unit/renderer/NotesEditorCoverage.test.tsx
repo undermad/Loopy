@@ -91,7 +91,6 @@ function file(name: string, type: string, content = 'data'): File {
 beforeEach(async () => {
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await waitFor(() => {

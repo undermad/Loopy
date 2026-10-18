@@ -11,12 +11,11 @@ import type {
   ColorScheme,
   LoopyApi,
   ProjectState,
-  ProjectSummary,
   ShellState,
   ShellStatePatch,
 } from '@shared/ipc';
 import type { LayoutNode, LayoutPreset } from '@shared/layout';
-import type { ProjectInfo } from '@shared/project';
+import type { ProjectInfo, RecoverableProject } from '@shared/project';
 import { builtInThemes, type Theme } from '@shared/theme';
 import { bootstrap } from '@renderer/bootstrap';
 import { resetProjectStore } from '@renderer/lib/project';
@@ -40,9 +39,12 @@ import { createTicketsFake } from './tickets-fake';
 export interface FakeApi extends LoopyApi {
   settings: AppSettings;
   themes: Theme[];
-  projects: ProjectSummary[];
   recent: RecentProject[];
+  missing: string[];
   current: ProjectInfo | null;
+  path: string | null;
+  dirty: boolean;
+  recoverable: RecoverableProject[];
   shell: ShellState;
   layouts: LayoutPreset[];
   tickets: ReturnType<typeof createTicketsFake>['data'];
@@ -58,9 +60,13 @@ export interface FakeApi extends LoopyApi {
   emitDataChanged: (change: DataChange) => void;
 }
 
-export function makeProject(name: string, id = crypto.randomUUID()): ProjectInfo {
+export function makeProject(name: string, id: string = crypto.randomUUID()): ProjectInfo {
   const stamp = '2026-10-17T09:00:00.000Z';
   return { id, name, createdAt: stamp, updatedAt: stamp };
+}
+
+export function makeRecent(name: string, path = `D:/Games/${name}.loopy`): RecentProject {
+  return { id: crypto.randomUUID(), name, path, openedAt: '2026-10-17T08:00:00.000Z' };
 }
 
 export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: ColorScheme = 'light'): FakeApi {
@@ -69,7 +75,27 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
   const dataListeners = new Set<(change: DataChange) => void>();
   const themeListeners = new Set<(scheme: ColorScheme) => void>();
   const projectListeners = new Set<(state: ProjectState) => void>();
-  const projectState = (): ProjectState => ({ current: api.current, recent: api.recent });
+  const projectState = (): ProjectState => ({
+    current: api.current,
+    path: api.path,
+    dirty: api.dirty,
+    recent: api.recent,
+    recoverable: api.recoverable,
+  });
+  const opened = (project: ProjectInfo, path: string | null, dirty = false) => {
+    api.current = project;
+    api.path = path;
+    api.dirty = dirty;
+    api.emitProject();
+    return Promise.resolve({ status: 'opened' as const, project });
+  };
+  const saved = () => {
+    if (!api.current) return Promise.resolve({ status: 'cancelled' as const });
+    api.path ??= `D:/Games/${api.current.name}.loopy`;
+    api.dirty = false;
+    api.emitProject();
+    return Promise.resolve({ status: 'saved' as const });
+  };
   const ticketsFake = createTicketsFake();
   const boardsFake = createBoardsFake();
   const palettesFake = createPalettesFake();
@@ -79,9 +105,12 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
   const api: FakeApi = {
     settings: appSettingsSchema.parse({ schemaVersion: APP_SETTINGS_SCHEMA_VERSION, ...overrides }),
     themes: [...builtInThemes],
-    projects: [],
     recent: [],
+    missing: [],
     current: null,
+    path: null,
+    dirty: false,
+    recoverable: [],
     shell: { workspaces: null, statusBar: true },
     layouts: [],
     tickets: ticketsFake.data,
@@ -96,6 +125,7 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     ...assetsFake.api,
     ...notesFake.api,
     getAppVersion: vi.fn(() => Promise.resolve({ app: '0.1.0', electron: '44.8.0' })),
+    quitApp: vi.fn(() => Promise.resolve()),
     getSettings: vi.fn(() => Promise.resolve(api.settings)),
     setSettings: vi.fn((patch: AppSettingsPatch) => {
       api.settings = appSettingsSchema.parse({ ...api.settings, ...patch });
@@ -122,36 +152,47 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     }),
     exportTheme: vi.fn(() => Promise.resolve({ status: 'exported' as const })),
     importTheme: vi.fn(() => Promise.resolve({ status: 'cancelled' as const })),
-    listProjects: vi.fn(() => Promise.resolve(api.projects)),
-    createProject: vi.fn((name: string) => {
-      const project = makeProject(name);
-      api.projects = [project, ...api.projects];
-      api.current = project;
-      api.emitProject();
-      return Promise.resolve(project);
-    }),
-    openProject: vi.fn((id: string) => {
-      const project = api.projects.find((candidate) => candidate.id === id);
-      if (!project) return Promise.resolve({ status: 'failed' as const, code: 'NOT_FOUND' as const });
-      api.current = project;
-      api.emitProject();
-      return Promise.resolve({ status: 'opened' as const, project });
+    listProjects: vi.fn(() =>
+      Promise.resolve(api.recent.map((entry) => ({ ...entry, missing: api.missing.includes(entry.path) }))),
+    ),
+    createProject: vi.fn((name: string) => opened(makeProject(name), null)),
+    openProject: vi.fn(() => Promise.resolve({ status: 'cancelled' as const })),
+    openRecentProject: vi.fn((path: string) => {
+      const entry = api.recent.find((candidate) => candidate.path === path);
+      if (!entry) return Promise.resolve({ status: 'failed' as const, code: 'NOT_FOUND' as const });
+      return opened(makeProject(entry.name, entry.id), entry.path);
     }),
     closeProject: vi.fn(() => {
       api.current = null;
+      api.path = null;
+      api.dirty = false;
       api.emitProject();
       return Promise.resolve();
     }),
     getProjectState: vi.fn(() => Promise.resolve(projectState())),
-    importProject: vi.fn(() => Promise.resolve({ status: 'cancelled' as const })),
-    exportProject: vi.fn(() => Promise.resolve({ status: 'exported' as const })),
-    deleteProject: vi.fn((id: string) => {
-      api.projects = api.projects.filter((candidate) => candidate.id !== id);
-      return Promise.resolve();
+    saveProject: vi.fn(saved),
+    saveProjectAs: vi.fn(saved),
+    renameProject: vi.fn((name: string) => {
+      if (!api.current) return Promise.reject(new Error('No project is open'));
+      api.current = { ...api.current, name };
+      api.dirty = true;
+      api.emitProject();
+      return Promise.resolve(api.current);
+    }),
+    recoverProject: vi.fn((id: string) => {
+      const entry = api.recoverable.find((candidate) => candidate.id === id);
+      if (!entry) return Promise.resolve({ status: 'failed' as const, code: 'NOT_FOUND' as const });
+      api.recoverable = api.recoverable.filter((candidate) => candidate.id !== id);
+      return opened(makeProject(entry.name), entry.path, true);
+    }),
+    discardRecovery: vi.fn((id: string) => {
+      api.recoverable = api.recoverable.filter((candidate) => candidate.id !== id);
+      api.emitProject();
+      return Promise.resolve(projectState());
     }),
     revealProject: vi.fn(() => Promise.resolve()),
-    removeRecentProject: vi.fn((id: string) => {
-      api.recent = api.recent.filter((candidate) => candidate.id !== id);
+    removeRecentProject: vi.fn((path: string) => {
+      api.recent = api.recent.filter((candidate) => candidate.path !== path);
       return Promise.resolve(projectState());
     }),
     onProjectChanged: vi.fn((listener: (state: ProjectState) => void) => {

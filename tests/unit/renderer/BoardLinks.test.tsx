@@ -56,7 +56,6 @@ async function openCard(name: RegExp) {
 beforeEach(async () => {
   const api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   overworld = await createBoard({ name: 'Overworld' });

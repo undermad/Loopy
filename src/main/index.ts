@@ -14,7 +14,7 @@ import {
 import { ASSET_PROTOCOL } from '@shared/assets';
 import { assetSchemePrivileges, handleAssetRequest } from './asset-protocol';
 import { parseEnv, userDataOverride } from './env';
-import { openFailedDialog, projectPathFromArgv, replaceDialog } from './open-file';
+import { openFailedDialog, projectPathFromArgv, saveChangesDialog, saveChoice } from './open-file';
 import { resolveLanguage } from '@shared/i18n';
 import { registerAppHandlers } from './ipc/app';
 import { registerAssetsHandlers } from './ipc/assets';
@@ -104,7 +104,13 @@ async function start(): Promise<void> {
     logger.error(`Device state could not be read, using defaults: ${String(error)}`);
   });
 
-  registerAppHandlers(ipcMain, { appVersion, electronVersion: process.versions.electron });
+  registerAppHandlers(ipcMain, {
+    appVersion,
+    electronVersion: process.versions.electron,
+    quit: () => {
+      app.quit();
+    },
+  });
   const settings = await registerSettingsHandlers(ipcMain, {
     store: createAppSettingsStore(paths.settings),
     broadcast,
@@ -132,6 +138,7 @@ async function start(): Promise<void> {
     },
   });
   const notify: DataNotifier = (event, domain) => {
+    void projects.markDirty();
     for (const window of BrowserWindow.getAllWindows()) {
       if (window.webContents.id !== event.sender.id)
         window.webContents.send(IpcChannel.projectDataChanged, { domain });
@@ -140,7 +147,7 @@ async function start(): Promise<void> {
   registerThemesHandlers(ipcMain, { store: createThemesStore(paths.themes), dialogs: dialog, appVersion });
   registerLayoutsHandlers(ipcMain, { store: createLayoutsStore(paths.layouts), dialogs: dialog, appVersion });
   registerStateHandlers(ipcMain, { deviceState });
-  const projects = registerProjectHandlers(ipcMain, {
+  const projects = await registerProjectHandlers(ipcMain, {
     paths,
     deviceState,
     dialogs: dialog,
@@ -148,12 +155,12 @@ async function start(): Promise<void> {
     revealInFolder: (path) => {
       shell.showItemInFolder(path);
     },
-    confirmReplace: async (name) => {
-      const options = replaceDialog(language(), name);
+    confirmSave: async (name) => {
+      const options = saveChangesDialog(language(), name);
       const result = mainWindow
         ? await dialog.showMessageBox(mainWindow, options)
         : await dialog.showMessageBox(options);
-      return result.response === 1;
+      return saveChoice(result.response);
     },
   });
   const language = () => resolveLanguage(settings.current().language, app.getLocale());
@@ -246,11 +253,41 @@ async function start(): Promise<void> {
       if (BrowserWindow.getAllWindows().every((window) => pickerOverlays.has(window))) screenPicker.dispose();
     });
   });
-  app.on('before-quit', () => {
-    void projects.close();
+  let confirmed = false;
+  let guarding = false;
+  const confirmThen = (proceed: () => void) => {
+    if (guarding) return;
+    guarding = true;
+    void projects
+      .guard()
+      .then((ok) => {
+        if (!ok) return;
+        confirmed = true;
+        proceed();
+      })
+      .finally(() => {
+        guarding = false;
+      });
+  };
+  app.on('before-quit', (event) => {
+    if (confirmed || !projects.needsSave()) return;
+    event.preventDefault();
+    confirmThen(() => {
+      app.quit();
+    });
+  });
+  app.on('will-quit', () => {
+    projects.dispose();
   });
 
   mainWindow = createMainWindow();
+  mainWindow.on('close', (event) => {
+    if (confirmed || !projects.needsSave()) return;
+    event.preventDefault();
+    confirmThen(() => {
+      mainWindow?.close();
+    });
+  });
   mainWindow.on('closed', () => {
     mainWindow = null;
     for (const window of BrowserWindow.getAllWindows()) {

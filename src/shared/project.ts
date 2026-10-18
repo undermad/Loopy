@@ -12,3 +12,12 @@ export const projectInfoSchema = z.object({
 });
 
 export type ProjectInfo = z.infer<typeof projectInfoSchema>;
+
+export const recoverableProjectSchema = z.object({
+  id: z.uuid(),
+  name: projectNameSchema,
+  path: z.string().min(1).nullable(),
+  modifiedAt: z.iso.datetime(),
+});
+
+export type RecoverableProject = z.infer<typeof recoverableProjectSchema>;

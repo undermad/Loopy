@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AssetFolder } from '@shared/assets';
 import type { Note } from '@shared/notes';
-import { closeProject, openProject } from '@renderer/lib/project';
+import { closeProject, openRecentProject } from '@renderer/lib/project';
 import {
   applyTemplate,
   bootNotes,
@@ -39,7 +39,7 @@ import {
   useNotesLoaded,
   userTemplates,
 } from '@renderer/lib/notes';
-import { bootTestApp, makeProject } from '../helpers/api';
+import { bootTestApp, makeProject, makeRecent } from '../helpers/api';
 import { createNotesFake } from '../helpers/notes-fake';
 
 const STAMP = '2026-10-17T09:00:00.000Z';
@@ -69,8 +69,8 @@ describe('notes project switching', () => {
     vi.useFakeTimers();
     const project = makeProject('Game');
     const api = await bootTestApp({}, 'light', (fake) => {
-      fake.projects = [project];
       fake.current = project;
+      fake.recent = [{ ...makeRecent('Game'), id: project.id }];
     });
     const item = await createNote({ title: 'Item' });
     setActiveNote(item.id);
@@ -86,7 +86,7 @@ describe('notes project switching', () => {
     expect(api.updateNote).not.toHaveBeenCalled();
 
     await act(async () => {
-      await openProject(project.id);
+      await openRecentProject(api.recent[0]?.path ?? '');
     });
     await vi.waitFor(() => {
       expect(result.current).toBe(true);
