@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { APP_SETTINGS_SCHEMA_VERSION, appSettingsPatchSchema, appSettingsSchema } from '@shared/app-settings';
+import { brushStateSchema } from '@shared/brushes';
 
 describe('app settings schema', () => {
   it('fills defaults for a file that only carries the version', () => {
@@ -14,6 +15,7 @@ describe('app settings schema', () => {
         board: { grid: true, snap: false, minimap: false, wheel: 'zoom', quickButtons: true },
         assets: { layout: 'grid', details: true },
       },
+      brushes: brushStateSchema.parse({}),
     });
   });
 

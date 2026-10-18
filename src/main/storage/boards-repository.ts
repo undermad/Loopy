@@ -11,9 +11,11 @@ import {
   boardPatchSchema,
   boardSchema,
   boardSnapshotSchema,
+  boardTileListSchema,
   type Board,
   type BoardNode,
   type BoardSnapshot,
+  type BoardTile,
 } from '@shared/board';
 import { assertFolderScope } from './assets-repository';
 
@@ -235,7 +237,33 @@ export function applyChanges(db: DatabaseSync, boardId: string, raw: unknown): B
     }
     const removeEdge = db.prepare('DELETE FROM board_edges WHERE id = ? AND board_id = ?');
     for (const id of changes.removeEdgeIds) removeEdge.run(id, boardId);
+    const drawing = db.prepare(
+      "SELECT 1 FROM board_nodes WHERE id = ? AND board_id = ? AND type = 'drawing'",
+    );
+    const removeTile = db.prepare('DELETE FROM board_tiles WHERE node_id = ? AND tx = ? AND ty = ?');
+    for (const tile of changes.removeTiles) {
+      if (drawing.get(tile.nodeId, boardId)) removeTile.run(tile.nodeId, tile.tx, tile.ty);
+    }
+    const upsertTile = db.prepare(
+      `INSERT INTO board_tiles (node_id, tx, ty, bytes, updated_at) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(node_id, tx, ty) DO UPDATE SET bytes = excluded.bytes, updated_at = excluded.updated_at`,
+    );
+    for (const tile of changes.upsertTiles) {
+      if (!drawing.get(tile.nodeId, boardId)) throw new Error(`Tile for unknown drawing ${tile.nodeId}`);
+      upsertTile.run(tile.nodeId, tile.tx, tile.ty, tile.bytes, stamp);
+    }
     db.prepare('UPDATE boards SET updated_at = ? WHERE id = ?').run(stamp, boardId);
     return readBoard(db, boardId);
   });
+}
+
+export function readTiles(db: DatabaseSync, boardId: string): BoardTile[] {
+  readBoardRow(db, boardId);
+  const rows = db
+    .prepare(
+      `SELECT t.node_id AS nodeId, t.tx, t.ty, t.bytes FROM board_tiles t
+       JOIN board_nodes n ON n.id = t.node_id WHERE n.board_id = ? ORDER BY t.node_id, t.ty, t.tx`,
+    )
+    .all(boardId);
+  return boardTileListSchema.parse(rows);
 }

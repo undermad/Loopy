@@ -15,7 +15,12 @@ import {
   type ProjectDatabase,
   type ProjectFileError,
 } from '../../../src/main/storage';
-import { readApplicationId, readUserVersion } from '../../../src/main/storage/sql-migrations';
+import { projectMigrations } from '../../../src/main/storage/project-migrations';
+import {
+  migrateDatabase,
+  readApplicationId,
+  readUserVersion,
+} from '../../../src/main/storage/sql-migrations';
 
 let directory: string;
 const open: ProjectDatabase[] = [];
@@ -159,5 +164,31 @@ describe('project database', () => {
     writeForeignDatabase(foreign);
     await expectErrorCode(importProject(foreign, join(directory, 'copy.loopy')), 'NOT_A_PROJECT');
     await expect(readdir(directory)).resolves.toEqual(['demo.loopy', 'foreign.loopy', 'taken.loopy']);
+  });
+
+  it('adds drawing tiles that cascade with their layer when upgrading from version 12', () => {
+    const db = new DatabaseSync(join(directory, 'sketch.loopy'));
+    db.exec('PRAGMA foreign_keys = ON');
+    migrateDatabase(db, projectMigrations.slice(0, 12));
+    const stamp = '2026-01-01T00:00:00.000Z';
+    db.prepare(
+      `INSERT INTO boards (id, name, background_color, grid_color, unit, unit_scale, created_at, updated_at)
+       VALUES ('b', 'Sketch', '#ffffff', '#808080', 'm', 100, ?, ?)`,
+    ).run(stamp, stamp);
+    db.prepare(
+      `INSERT INTO board_nodes (id, board_id, type, x, y, width, height, z, data, created_at, updated_at)
+       VALUES ('ink', 'b', 'drawing', 0, 0, 10, 10, 1, '{}', ?, ?)`,
+    ).run(stamp, stamp);
+    migrateDatabase(db, projectMigrations);
+    expect(readUserVersion(db)).toBe(13);
+    db.prepare(
+      "INSERT INTO board_tiles (node_id, tx, ty, bytes, updated_at) VALUES ('ink', 0, -1, ?, ?)",
+    ).run(new Uint8Array([1, 2]), stamp);
+    const count = () =>
+      (db.prepare('SELECT COUNT(*) AS count FROM board_tiles').get() as { count: number }).count;
+    expect(count()).toBe(1);
+    db.prepare("DELETE FROM board_nodes WHERE id = 'ink'").run();
+    expect(count()).toBe(0);
+    db.close();
   });
 });

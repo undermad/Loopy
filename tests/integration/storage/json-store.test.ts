@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { APP_SETTINGS_SCHEMA_VERSION } from '@shared/app-settings';
+import { brushStateSchema } from '@shared/brushes';
 import { DEVICE_STATE_SCHEMA_VERSION, type DeviceState } from '@shared/device-state';
 import {
   createAppSettingsStore,
@@ -67,6 +68,7 @@ describe('app settings store', () => {
         board: { grid: true, snap: false, minimap: false, wheel: 'zoom', quickButtons: true },
         assets: { layout: 'grid', details: true },
       },
+      brushes: brushStateSchema.parse({}),
     });
   });
 

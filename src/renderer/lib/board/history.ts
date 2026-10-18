@@ -1,5 +1,18 @@
-import type { BoardChanges, BoardEdge, BoardNode, BoardSnapshot } from '@shared/board';
+import type {
+  BoardChanges,
+  BoardEdge,
+  BoardNode,
+  BoardSnapshot,
+  BoardTile,
+  BoardTileKey,
+} from '@shared/board';
 import { descendants } from './items';
+
+type TileMap = Record<string, BoardTile>;
+
+export function tileKey(tile: BoardTileKey): string {
+  return `${tile.nodeId}:${String(tile.tx)}:${String(tile.ty)}`;
+}
 
 interface Entry {
   undo: BoardChanges[];
@@ -7,6 +20,7 @@ interface Entry {
   at: number;
   key: string;
   upsertOnly: boolean;
+  bytes: number;
 }
 
 interface Stacks {
@@ -17,6 +31,7 @@ interface Stacks {
 const LIMIT = 200;
 const GROUP_MS = 80;
 const COALESCE_MS = 500;
+const MAX_TILE_BYTES = 256 * 1024 * 1024;
 
 const stacks = new Map<string, Stacks>();
 
@@ -35,6 +50,8 @@ function keyOf(changes: BoardChanges): string {
     ...(changes.removeNodeIds ?? []).map((id) => `-n:${id}`),
     ...(changes.upsertEdges ?? []).map((edge) => `e:${edge.id}`),
     ...(changes.removeEdgeIds ?? []).map((id) => `-e:${id}`),
+    ...(changes.upsertTiles ?? []).map((tile) => `t:${tileKey(tile)}`),
+    ...(changes.removeTiles ?? []).map((tile) => `-t:${tileKey(tile)}`),
   ];
   return ids.sort().join('|');
 }
@@ -44,11 +61,25 @@ function isEmpty(changes: BoardChanges): boolean {
     (changes.upsertNodes?.length ?? 0) === 0 &&
     (changes.removeNodeIds?.length ?? 0) === 0 &&
     (changes.upsertEdges?.length ?? 0) === 0 &&
-    (changes.removeEdgeIds?.length ?? 0) === 0
+    (changes.removeEdgeIds?.length ?? 0) === 0 &&
+    (changes.upsertTiles?.length ?? 0) === 0 &&
+    (changes.removeTiles?.length ?? 0) === 0
   );
 }
 
-export function inverseChanges(changes: BoardChanges, before: BoardSnapshot): BoardChanges {
+function hasTiles(changes: BoardChanges): boolean {
+  return (changes.upsertTiles?.length ?? 0) > 0 || (changes.removeTiles?.length ?? 0) > 0;
+}
+
+function tileBytes(changes: BoardChanges): number {
+  return (changes.upsertTiles ?? []).reduce((total, tile) => total + tile.bytes.byteLength, 0);
+}
+
+export function inverseChanges(
+  changes: BoardChanges,
+  before: BoardSnapshot,
+  tilesBefore: TileMap = {},
+): BoardChanges {
   const nodeById = new Map(before.nodes.map((node) => [node.id, node]));
   const edgeById = new Map(before.edges.map((edge) => [edge.id, edge]));
   const removed = new Set(
@@ -81,21 +112,46 @@ export function inverseChanges(changes: BoardChanges, before: BoardSnapshot): Bo
   for (const edge of before.edges) {
     if (removed.has(edge.sourceId) || removed.has(edge.targetId)) restoreEdges.set(edge.id, edge);
   }
+  const restoreTiles = new Map<string, BoardTile>();
+  const removeTiles = new Map<string, BoardTileKey>();
+  for (const tile of changes.upsertTiles ?? []) {
+    const key = tileKey(tile);
+    const previous = tilesBefore[key];
+    if (previous) restoreTiles.set(key, previous);
+    else removeTiles.set(key, { nodeId: tile.nodeId, tx: tile.tx, ty: tile.ty });
+  }
+  for (const tile of changes.removeTiles ?? []) {
+    const previous = tilesBefore[tileKey(tile)];
+    if (previous) restoreTiles.set(tileKey(tile), previous);
+  }
+  for (const [key, tile] of Object.entries(tilesBefore)) {
+    if (removed.has(tile.nodeId)) restoreTiles.set(key, tile);
+  }
   return {
     upsertNodes: [...restoreNodes.values()],
     removeNodeIds,
     upsertEdges: [...restoreEdges.values()],
     removeEdgeIds,
+    upsertTiles: [...restoreTiles.values()],
+    removeTiles: [...removeTiles.values()],
   };
 }
 
-export function recordChanges(boardId: string, changes: BoardChanges, before: BoardSnapshot): void {
+export function recordChanges(
+  boardId: string,
+  changes: BoardChanges,
+  before: BoardSnapshot,
+  tilesBefore: TileMap = {},
+): void {
   if (isEmpty(changes)) return;
   const history = stacksFor(boardId);
-  const undo = inverseChanges(changes, before);
+  const undo = inverseChanges(changes, before, tilesBefore);
   const at = Date.now();
   const key = keyOf(changes);
+  const bytes = tileBytes(changes) + tileBytes(undo);
+  const painted = hasTiles(changes) || hasTiles(undo);
   const upsertOnly =
+    !painted &&
     (changes.removeNodeIds?.length ?? 0) === 0 &&
     (changes.removeEdgeIds?.length ?? 0) === 0 &&
     (undo.removeNodeIds?.length ?? 0) === 0 &&
@@ -104,6 +160,7 @@ export function recordChanges(boardId: string, changes: BoardChanges, before: Bo
   history.future = [];
   if (
     last &&
+    !painted &&
     (at - last.at < GROUP_MS ||
       (upsertOnly && last.upsertOnly && last.key === key && at - last.at < COALESCE_MS))
   ) {
@@ -114,8 +171,12 @@ export function recordChanges(boardId: string, changes: BoardChanges, before: Bo
     last.upsertOnly = last.upsertOnly && upsertOnly;
     return;
   }
-  history.past.push({ undo: [undo], redo: [changes], at, key, upsertOnly });
+  history.past.push({ undo: [undo], redo: [changes], at, key, upsertOnly, bytes });
   if (history.past.length > LIMIT) history.past.shift();
+  let total = history.past.reduce((sum, entry) => sum + entry.bytes, 0);
+  while (total > MAX_TILE_BYTES && history.past.length > 1) {
+    total -= history.past.shift()?.bytes ?? 0;
+  }
 }
 
 export function takeUndo(boardId: string): BoardChanges[] | null {

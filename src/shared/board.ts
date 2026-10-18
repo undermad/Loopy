@@ -18,7 +18,7 @@ export const boardSchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 
-export const BOARD_NODE_TYPES = ['text', 'image', 'container', 'card', 'file', 'link'] as const;
+export const BOARD_NODE_TYPES = ['text', 'image', 'container', 'card', 'file', 'link', 'drawing'] as const;
 export const boardNodeTypeSchema = z.enum(BOARD_NODE_TYPES);
 
 export const ITEM_SHAPES = ['rectangle', 'rounded', 'ellipse', 'diamond', 'pill'] as const;
@@ -96,6 +96,15 @@ export const linkDataSchema = itemDataSchema.extend({
   target: boardLinkSchema.nullable().default(null),
 });
 
+export const DRAWING_TILE_SIZE = 512;
+export const DEFAULT_DRAWING_RESOLUTION = 2;
+
+export const drawingDataSchema = itemDataSchema.extend({
+  resolution: z.number().min(0.25).max(8).default(DEFAULT_DRAWING_RESOLUTION),
+  offsetX: z.number().default(0),
+  offsetY: z.number().default(0),
+});
+
 export const itemDataSchemas = {
   text: textDataSchema,
   image: imageDataSchema,
@@ -103,6 +112,7 @@ export const itemDataSchemas = {
   card: cardDataSchema,
   file: fileDataSchema,
   link: linkDataSchema,
+  drawing: drawingDataSchema,
 } as const;
 
 export const boardNodeSchema = z.object({
@@ -174,11 +184,29 @@ export const boardPatchSchema = z
   })
   .partial();
 
+export const MAX_TILE_BYTES = 8 * 1024 * 1024;
+
+export const boardTileKeySchema = z.object({
+  nodeId: z.string().min(1),
+  tx: z.number().int(),
+  ty: z.number().int(),
+});
+
+export const boardTileSchema = boardTileKeySchema.extend({
+  bytes: z
+    .instanceof(Uint8Array)
+    .refine((bytes) => bytes.byteLength > 0 && bytes.byteLength <= MAX_TILE_BYTES),
+});
+
+export const boardTileListSchema = z.array(boardTileSchema);
+
 export const boardChangesSchema = z.object({
   upsertNodes: z.array(boardNodeSchema).default([]),
   removeNodeIds: z.array(z.string().min(1)).default([]),
   upsertEdges: z.array(boardEdgeSchema).default([]),
   removeEdgeIds: z.array(z.string().min(1)).default([]),
+  upsertTiles: z.array(boardTileSchema).default([]),
+  removeTiles: z.array(boardTileKeySchema).default([]),
 });
 
 export const DEFAULT_BOARD_BACKGROUND = '#f4f4f5';
@@ -200,5 +228,7 @@ export type BoardChanges = Partial<z.infer<typeof boardChangesSchema>>;
 export type ItemStyle = z.infer<typeof itemStyleSchema>;
 export type CardValue = z.infer<typeof cardValueSchema>;
 export type EdgeData = z.infer<typeof edgeDataSchema>;
+export type BoardTile = z.infer<typeof boardTileSchema>;
+export type BoardTileKey = z.infer<typeof boardTileKeySchema>;
 export type EdgeHandle = (typeof EDGE_HANDLES)[number];
 export type EdgeMarker = (typeof EDGE_MARKERS)[number];

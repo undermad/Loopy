@@ -9,16 +9,29 @@ import {
   type Board,
   type BoardPatch,
   type BoardSnapshot,
+  type BoardTile,
 } from '@shared/board';
 import type { LoopyApi } from '@shared/ipc';
 
 export type BoardsFakeApi = Pick<
   LoopyApi,
-  'listBoards' | 'createBoard' | 'updateBoard' | 'deleteBoard' | 'readBoard' | 'applyBoardChanges'
+  | 'listBoards'
+  | 'createBoard'
+  | 'updateBoard'
+  | 'deleteBoard'
+  | 'readBoard'
+  | 'applyBoardChanges'
+  | 'readBoardTiles'
 >;
 
 export function createBoardsFake() {
-  const data = { boards: [] as Board[], snapshots: new Map<string, BoardSnapshot>() };
+  const data = {
+    boards: [] as Board[],
+    snapshots: new Map<string, BoardSnapshot>(),
+    tiles: new Map<string, BoardTile>(),
+  };
+  const tileId = (tile: Pick<BoardTile, 'nodeId' | 'tx' | 'ty'>) =>
+    `${tile.nodeId}:${String(tile.tx)}:${String(tile.ty)}`;
   const stamp = '2026-10-17T09:00:00.000Z';
   const find = (id: string): BoardSnapshot => {
     const snapshot = data.snapshots.get(id);
@@ -93,7 +106,18 @@ export function createBoardsFake() {
       ];
       const next = { ...snapshot, nodes, edges };
       data.snapshots.set(id, next);
+      for (const [key, tile] of data.tiles) if (removed.has(tile.nodeId)) data.tiles.delete(key);
+      for (const tile of changes.removeTiles) data.tiles.delete(tileId(tile));
+      for (const tile of changes.upsertTiles) {
+        if (!nodes.some((node) => node.id === tile.nodeId && node.type === 'drawing'))
+          return Promise.reject(new Error(`Tile for unknown drawing ${tile.nodeId}`));
+        data.tiles.set(tileId(tile), tile);
+      }
       return Promise.resolve(structuredClone(next));
+    }),
+    readBoardTiles: vi.fn((id: string) => {
+      const nodes = new Set(find(id).nodes.map((node) => node.id));
+      return Promise.resolve([...data.tiles.values()].filter((tile) => nodes.has(tile.nodeId)));
     }),
   };
   return { api, data };

@@ -1,7 +1,9 @@
 import { useStore } from 'zustand';
 import type { Board, BoardNode, BoardSnapshot } from '@shared/board';
 import { historyState } from './history';
-import { boardStore, type BoardSelection } from './store';
+import { boardStore, type BoardSelection, type TileMap } from './store';
+
+const NO_TILES: TileMap = {};
 
 export function useBoards(): Board[] | null {
   return useStore(boardStore, (state) => state.boards);
@@ -31,4 +33,8 @@ export function useBoardHistory(boardId: string): { canUndo: boolean; canRedo: b
 
 export function useLiveLayers(): Record<string, number> {
   return useStore(boardStore, (state) => state.liveLayers);
+}
+
+export function useBoardTiles(boardId: string | null): TileMap {
+  return useStore(boardStore, (state) => (boardId ? (state.tiles[boardId] ?? NO_TILES) : NO_TILES));
 }

@@ -225,6 +225,14 @@ export const projectMigrations: SqlMigrations = [
   ALTER TABLE boards ADD COLUMN folder_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL;
   ALTER TABLE palettes ADD COLUMN folder_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL;`,
   `ALTER TABLE tickets ADD COLUMN links TEXT NOT NULL DEFAULT '[]';`,
+  `CREATE TABLE board_tiles (
+    node_id TEXT NOT NULL REFERENCES board_nodes(id) ON DELETE CASCADE,
+    tx INTEGER NOT NULL,
+    ty INTEGER NOT NULL,
+    bytes BLOB NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (node_id, tx, ty)
+  );`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

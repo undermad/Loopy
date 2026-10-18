@@ -1,0 +1,26 @@
+.bar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  position: absolute;
+  width: max-content;
+  max-width: calc(100% - 2 * var(--space-2) - 96px);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-md);
+  inset-inline: 0;
+  z-index: 6;
+  top: var(--space-2);
+  margin-inline: auto;
+  flex-wrap: wrap;
+}
+
+.preset {
+  min-width: 120px;
+}
+
+.field {
+  width: 60px;
+}

@@ -47,11 +47,13 @@ import {
   boardListSchema,
   boardSchema,
   boardSnapshotSchema,
+  boardTileListSchema,
   type Board,
   type BoardChanges,
   type BoardInput,
   type BoardPatch,
   type BoardSnapshot,
+  type BoardTile,
 } from './board';
 import {
   ticketsSnapshotSchema,
@@ -139,6 +141,7 @@ export const IpcChannel = {
   boardsDelete: 'boards:delete',
   boardsRead: 'boards:read',
   boardsApplyChanges: 'boards:applyChanges',
+  boardsReadTiles: 'boardTiles:list',
   palettesList: 'palettes:list',
   palettesCreate: 'palettes:create',
   palettesUpdate: 'palettes:update',
@@ -320,6 +323,7 @@ export interface LoopyApi {
   deleteBoard: (id: string) => Promise<Board[]>;
   readBoard: (id: string) => Promise<BoardSnapshot>;
   applyBoardChanges: (id: string, changes: BoardChanges) => Promise<BoardSnapshot>;
+  readBoardTiles: (id: string) => Promise<BoardTile[]>;
   listPalettes: () => Promise<Palette[]>;
   createPalette: (input: PaletteInput) => Promise<Palette>;
   updatePalette: (id: string, patch: PalettePatch) => Promise<Palette>;
@@ -357,6 +361,7 @@ export {
   boardListSchema,
   boardSchema,
   boardSnapshotSchema,
+  boardTileListSchema,
   paletteClusterListSchema,
   paletteClusterSchema,
   cardTemplateListSchema,

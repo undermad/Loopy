@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Board, BoardSnapshot } from '@shared/board';
+import type { Board, BoardSnapshot, BoardTile } from '@shared/board';
 import { IpcChannel } from '@shared/ipc';
 import { registerBoardsHandlers } from '../../../src/main/ipc/boards';
 import { createProject, type ProjectDatabase } from '../../../src/main/storage';
@@ -197,6 +197,66 @@ describe('boards IPC handlers', () => {
       style: { fill: { hex: '#fde68a', ref: null } },
     });
     expect(templates.count).toBe(0);
+  });
+
+  it('stores drawing tiles, replaces and removes them, and drops them with their layer', async () => {
+    const call = setup();
+    const board = await call<Board>(IpcChannel.boardsCreate, { name: 'Sketch' });
+    const other = await call<Board>(IpcChannel.boardsCreate, { name: 'Other' });
+    const layer = (id: string, boardId = board.id, type = 'drawing') => ({
+      id,
+      boardId,
+      type,
+      x: 0,
+      y: 0,
+      width: 256,
+      height: 256,
+      z: 1,
+      data: { resolution: 2, offsetX: 0, offsetY: 0 },
+    });
+    const tile = (nodeId: string, tx: number, ty: number, ...bytes: number[]) => ({
+      nodeId,
+      tx,
+      ty,
+      bytes: new Uint8Array(bytes),
+    });
+    await call(IpcChannel.boardsApplyChanges, board.id, {
+      upsertNodes: [layer('ink'), layer('note', board.id, 'text')],
+      upsertTiles: [tile('ink', 0, 0, 1, 2, 3), tile('ink', -1, 2, 4)],
+    });
+    await call(IpcChannel.boardsApplyChanges, other.id, { upsertNodes: [layer('elsewhere', other.id)] });
+    await call(IpcChannel.boardsApplyChanges, other.id, { upsertTiles: [tile('elsewhere', 0, 0, 9)] });
+
+    let tiles = await call<BoardTile[]>(IpcChannel.boardsReadTiles, board.id);
+    expect(tiles.map((item) => [item.nodeId, item.tx, item.ty, [...item.bytes]])).toEqual([
+      ['ink', 0, 0, [1, 2, 3]],
+      ['ink', -1, 2, [4]],
+    ]);
+
+    await call(IpcChannel.boardsApplyChanges, board.id, {
+      upsertTiles: [tile('ink', 0, 0, 7)],
+      removeTiles: [
+        { nodeId: 'ink', tx: -1, ty: 2 },
+        { nodeId: 'elsewhere', tx: 0, ty: 0 },
+      ],
+    });
+    tiles = await call<BoardTile[]>(IpcChannel.boardsReadTiles, board.id);
+    expect(tiles.map((item) => [item.tx, item.ty, [...item.bytes]])).toEqual([[0, 0, [7]]]);
+    await expect(call<BoardTile[]>(IpcChannel.boardsReadTiles, other.id)).resolves.toHaveLength(1);
+
+    await expect(
+      call(IpcChannel.boardsApplyChanges, board.id, { upsertTiles: [tile('note', 0, 0, 1)] }),
+    ).rejects.toThrow(/unknown drawing/);
+    await expect(
+      call(IpcChannel.boardsApplyChanges, board.id, { upsertTiles: [tile('elsewhere', 1, 1, 1)] }),
+    ).rejects.toThrow(/unknown drawing/);
+    await expect(
+      call(IpcChannel.boardsApplyChanges, board.id, { upsertTiles: [tile('ink', 0, 0)] }),
+    ).rejects.toThrow();
+    await expect(call(IpcChannel.boardsReadTiles, 'missing')).rejects.toThrow(/Unknown board/);
+
+    await call(IpcChannel.boardsApplyChanges, board.id, { removeNodeIds: ['ink'] });
+    await expect(call<BoardTile[]>(IpcChannel.boardsReadTiles, board.id)).resolves.toEqual([]);
   });
 
   it('refuses every channel when no project is open', async () => {

@@ -54,6 +54,7 @@ The boundary is a convention checked in review, not a lint rule. A deep import s
 | `project`    | Current project, project list, recent projects                                      | shipped |
 | `tickets`    | Tickets snapshot, selection, ticket, state and label actions                        | shipped |
 | `board`      | Board snapshots, selection, undo, clipboard, docking, layers, alignment, item maths | shipped |
+| `drawing`    | Drawing tiles, the brush engine, brush state and presets, drawing layers            | shipped |
 | `cards`      | Card templates, field kinds and starter templates                                   | shipped |
 | `colour`     | Colour maths: conversions, contrast, harmonies, palette clusters, image extraction  | shipped |
 | `palettes`   | Palette and cluster lists and live resolution of colour references                  | shipped |
@@ -74,13 +75,13 @@ The boundary is a convention checked in review, not a lint rule. A deep import s
 
 Everything lives under Electron's user data directory. `storagePaths` in `src/main/storage/paths.ts` is the only place that knows the layout.
 
-| File                  | Holds                                                              | Format                     |
-| --------------------- | ------------------------------------------------------------------ | -------------------------- |
-| `settings.json`       | App preferences: theme, UI font, font size, editor defaults        | JSON with `schemaVersion`  |
-| `state.json`          | Device state: recent projects, workspaces, status bar              | JSON with `schemaVersion`  |
-| `projects/<id>.loopy` | One project: metadata, settings, tickets, boards, palettes, assets | SQLite with `user_version` |
-| `themes/<id>.json`    | One custom theme per file, see the theming page                    | JSON with `schemaVersion`  |
-| `layouts/<id>.json`   | One saved layout preset per file, see the shell page               | JSON with `schemaVersion`  |
+| File                  | Holds                                                                | Format                     |
+| --------------------- | -------------------------------------------------------------------- | -------------------------- |
+| `settings.json`       | App preferences: theme, UI font, font size, editor defaults, brushes | JSON with `schemaVersion`  |
+| `state.json`          | Device state: recent projects, workspaces, status bar                | JSON with `schemaVersion`  |
+| `projects/<id>.loopy` | One project: metadata, settings, tickets, boards, palettes, assets   | SQLite with `user_version` |
+| `themes/<id>.json`    | One custom theme per file, see the theming page                      | JSON with `schemaVersion`  |
+| `layouts/<id>.json`   | One saved layout preset per file, see the shell page                 | JSON with `schemaVersion`  |
 
 The user never sees these paths. The project picker lists the `projects` directory, and sharing goes through export and import.
 
@@ -107,4 +108,4 @@ The export is the same format as the working file, so there is nothing to transl
 
 Databases open in WAL mode. While a project is open, SQLite keeps `-wal` and `-shm` files next to it and removes them on close. Schema changes are SQL strings in `src/main/storage/project-migrations.ts`, applied in order inside one transaction by `migrateDatabase`. A file with a `user_version` above the current one is refused rather than guessed at. The renderer never receives a database handle; features will expose what they need through IPC.
 
-Version 1 holds the `project` row and a key-value `settings` table. Version 2 adds the tickets tables, see the tickets page. Version 3 adds boards, nodes, edges and an assets table, see the board page. Version 4 narrows ticket types. Version 5 adds board units, version 6 the grid colour and version 7 sprints, comments, templates and the ticket estimate, due date and sprint columns, see the tickets page. Version 8 adds palettes, asset folders, the asset metadata columns and the board colour references, see the colours and assets pages. Version 9 adds palette clusters, see the colours page. Version 10 adds item nesting, converts notes to text items and adds card templates, see the board and cards pages.
+Version 1 holds the `project` row and a key-value `settings` table. Version 2 adds the tickets tables, see the tickets page. Version 3 adds boards, nodes, edges and an assets table, see the board page. Version 4 narrows ticket types. Version 5 adds board units, version 6 the grid colour and version 7 sprints, comments, templates and the ticket estimate, due date and sprint columns, see the tickets page. Version 8 adds palettes, asset folders, the asset metadata columns and the board colour references, see the colours and assets pages. Version 9 adds palette clusters, see the colours page. Version 10 adds item nesting, converts notes to text items and adds card templates, see the board and cards pages. Version 13 adds drawing tiles, see the drawing page.

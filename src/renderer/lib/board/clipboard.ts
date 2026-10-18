@@ -1,6 +1,12 @@
 import { z } from 'zod';
-import { boardEdgeSchema, boardNodeSchema, type BoardEdge, type BoardNode } from '@shared/board';
-import { absolutePosition, descendants, itemData, nextZ, parentsFirst, type Point } from './items';
+import {
+  boardEdgeSchema,
+  boardNodeSchema,
+  type BoardEdge,
+  type BoardNode,
+  type BoardTile,
+} from '@shared/board';
+import { absolutePosition, copyTiles, descendants, itemData, nextZ, parentsFirst, type Point } from './items';
 
 export const BOARD_CLIPBOARD_TYPE = 'application/x-loopy-board';
 
@@ -10,15 +16,21 @@ const clipSchema = z.object({
   edges: z.array(boardEdgeSchema),
 });
 
-export type BoardClip = z.infer<typeof clipSchema>;
+export type BoardClip = z.infer<typeof clipSchema> & { tiles?: BoardTile[] };
 
 export interface Pasted {
   nodes: BoardNode[];
   edges: BoardEdge[];
+  tiles: BoardTile[];
   ids: string[];
 }
 
-export function copyItems(ids: string[], nodes: BoardNode[], edges: BoardEdge[]): BoardClip {
+export function copyItems(
+  ids: string[],
+  nodes: BoardNode[],
+  edges: BoardEdge[],
+  tiles: Record<string, BoardTile> = {},
+): BoardClip {
   const roots = ids.filter(
     (id) => !ids.some((other) => other !== id && descendants(other, nodes).includes(id)),
   );
@@ -32,6 +44,7 @@ export function copyItems(ids: string[], nodes: BoardNode[], edges: BoardEdge[])
     version: 1,
     nodes: copied,
     edges: edges.filter((edge) => included.has(edge.sourceId) && included.has(edge.targetId)),
+    tiles: Object.values(tiles).filter((tile) => included.has(tile.nodeId)),
   };
 }
 
@@ -59,7 +72,8 @@ export function recallClip(text: string): BoardClip | null {
 }
 
 export function serialiseClip(clip: BoardClip): string {
-  return JSON.stringify(clip);
+  const { tiles: _tiles, ...rest } = clip;
+  return JSON.stringify(rest);
 }
 
 export function parseClip(text: string): BoardClip | null {
@@ -113,5 +127,10 @@ export function pasteItems(
     targetId: ids.get(edge.targetId) ?? edge.targetId,
     data: structuredClone(edge.data),
   }));
-  return { nodes, edges, ids: roots.map((node) => ids.get(node.id) ?? node.id) };
+  const sources = new Map([...ids].map(([source, copy]) => [copy, source]));
+  const tiles = copyTiles(
+    sources,
+    Object.fromEntries((clip.tiles ?? []).map((tile, index) => [index, tile])),
+  );
+  return { nodes, edges, tiles, ids: roots.map((node) => ids.get(node.id) ?? node.id) };
 }
