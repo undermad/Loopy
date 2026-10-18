@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import {
+  Brush,
   Circle,
   Diamond,
+  Eraser,
   Frame,
   Hand,
   ImagePlus,
@@ -182,6 +184,9 @@ export function BoardToolbar({
       </DropdownMenu.Root>
       <span className={styles['separator']} />
       {button('arrow', t('board.tools.arrow'), <Spline aria-hidden="true" />)}
+      <span className={styles['separator']} />
+      {button('brush', t('board.tools.brush'), <Brush aria-hidden="true" />)}
+      {button('eraser', t('board.tools.eraser'), <Eraser aria-hidden="true" />)}
     </ScrollStrip>
   );
 }

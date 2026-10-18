@@ -1,4 +1,5 @@
 import {
+  Brush,
   FolderOpen,
   KanbanSquare,
   Layers,
@@ -15,6 +16,7 @@ import {
 import { registerEditor } from '@renderer/lib/editors';
 import { AssetsEditor } from './Assets/AssetsEditor';
 import { BoardEditor } from './Board/BoardEditor';
+import { BrushesEditor } from './Brushes/BrushesEditor';
 import { ColoursEditor } from './Colours/ColoursEditor';
 import { EmptyEditor } from './EmptyEditor';
 import { LayersEditor } from './Layers/LayersEditor';
@@ -47,6 +49,14 @@ export function registerEditors(): void {
     icon: Layers,
     component: LayersEditor,
     category: 'design',
+  });
+  registerEditor({
+    id: 'brushes',
+    titleKey: 'types.brushes',
+    icon: Brush,
+    component: BrushesEditor,
+    category: 'design',
+    defaultState: () => ({ tool: 'brush' }),
   });
   registerEditor({
     id: 'colours',

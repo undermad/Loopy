@@ -11,6 +11,8 @@ export const BOARD_TOOLS = [
   'container',
   'card',
   'arrow',
+  'brush',
+  'eraser',
 ] as const;
 
 export type BoardTool = (typeof BOARD_TOOLS)[number];
@@ -26,6 +28,8 @@ export const TOOL_KEYS: Record<BoardTool, string> = {
   container: 'F',
   card: 'C',
   arrow: 'A',
+  brush: 'B',
+  eraser: 'E',
 };
 
 export const SHAPE_TOOLS = ['rectangle', 'ellipse', 'diamond'] as const;

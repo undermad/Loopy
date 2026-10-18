@@ -6,6 +6,7 @@ import {
   deleteBoard,
   listBoards,
   readBoard,
+  readTiles,
   updateBoard,
 } from '../storage/boards-repository';
 import { trackRename } from '../storage/notes-repository';
@@ -29,6 +30,7 @@ export function registerBoardsHandlers(ipc: Pick<IpcMain, 'handle'>, deps: Ticke
   });
   ipc.handle(IpcChannel.boardsDelete, (_event, rawId: unknown) => deleteBoard(db(), id(rawId)));
   ipc.handle(IpcChannel.boardsRead, (_event, rawId: unknown) => readBoard(db(), id(rawId)));
+  ipc.handle(IpcChannel.boardsReadTiles, (_event, rawId: unknown) => readTiles(db(), id(rawId)));
   ipc.handle(IpcChannel.boardsApplyChanges, (_event, rawId: unknown, changes: unknown) =>
     applyChanges(db(), id(rawId), changes),
   );

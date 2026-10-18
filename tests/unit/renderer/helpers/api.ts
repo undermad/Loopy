@@ -25,6 +25,7 @@ import { resetTicketsStore } from '@renderer/lib/tickets';
 import { resetWorkspacesStore } from '@renderer/lib/workspaces';
 import { resetAssetsStore } from '@renderer/lib/assets';
 import { resetCardTemplatesStore } from '@renderer/lib/cards';
+import { resetBrushStore, resetTileCache } from '@renderer/lib/drawing';
 import { resetNotesStore } from '@renderer/lib/notes';
 import { resetPalettesStore } from '@renderer/lib/palettes';
 import { resetSettingsStore } from '@renderer/lib/settings';
@@ -235,6 +236,8 @@ export async function bootTestApp(
   resetWorkspacesStore();
   resetTicketsStore();
   resetBoardStore();
+  resetTileCache();
+  resetBrushStore();
   resetPalettesStore();
   resetCardTemplatesStore();
   resetAssetsStore();

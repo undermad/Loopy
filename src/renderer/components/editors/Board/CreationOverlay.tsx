@@ -1,7 +1,8 @@
-import { useRef, useState, type PointerEvent, type WheelEvent } from 'react';
+import { useRef, useState, type PointerEvent } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import type { BoardNode } from '@shared/board';
 import { itemAt, normaliseRect, type Point, type Rect } from '@renderer/lib/board';
+import { useCanvasNavigation } from './navigation';
 import styles from './CreationOverlay.module.scss';
 
 export type Placement = { point: Point } | { rect: Rect };
@@ -39,26 +40,9 @@ export function CreationOverlay({
   const flow = useReactFlow();
   const surface = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
-  const pan = useRef<{ pointerId: number; x: number; y: number } | null>(null);
+  const navigation = useCanvasNavigation(surface, { wheel, minZoom, maxZoom });
 
-  function scroll(event: WheelEvent<HTMLDivElement>) {
-    const viewport = flow.getViewport();
-    if (wheel === 'pan' && !event.ctrlKey) {
-      void flow.setViewport({ ...viewport, x: viewport.x - event.deltaX, y: viewport.y - event.deltaY });
-      return;
-    }
-    const point = local(event);
-    const scale = event.deltaMode === 1 ? 0.05 : event.deltaMode === 2 ? 1 : 0.002;
-    const zoom = Math.min(maxZoom, Math.max(minZoom, viewport.zoom * 2 ** (-event.deltaY * scale)));
-    const ratio = zoom / viewport.zoom;
-    void flow.setViewport({
-      zoom,
-      x: point.x - (point.x - viewport.x) * ratio,
-      y: point.y - (point.y - viewport.y) * ratio,
-    });
-  }
-
-  const local = (event: PointerEvent | WheelEvent): Point => {
+  const local = (event: PointerEvent): Point => {
     const bounds = surface.current?.getBoundingClientRect();
     return { x: event.clientX - (bounds?.left ?? 0), y: event.clientY - (bounds?.top ?? 0) };
   };
@@ -66,13 +50,7 @@ export function CreationOverlay({
     flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
 
   function down(event: PointerEvent<HTMLDivElement>) {
-    if (event.button === 1) {
-      event.preventDefault();
-      event.currentTarget.setPointerCapture(event.pointerId);
-      pan.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
-      return;
-    }
-    if (event.button !== 0) return;
+    if (navigation.startPan(event) || event.button !== 0) return;
     const start = toFlow(event);
     const sourceId = mode === 'connect' ? (itemAt(start, nodes)?.id ?? null) : null;
     if (mode === 'connect' && !sourceId) return;
@@ -82,26 +60,12 @@ export function CreationOverlay({
   }
 
   function move(event: PointerEvent<HTMLDivElement>) {
-    const panning = pan.current;
-    if (panning?.pointerId === event.pointerId) {
-      const viewport = flow.getViewport();
-      void flow.setViewport({
-        ...viewport,
-        x: viewport.x + event.clientX - panning.x,
-        y: viewport.y + event.clientY - panning.y,
-      });
-      pan.current = { ...panning, x: event.clientX, y: event.clientY };
-      return;
-    }
+    if (navigation.movePan(event)) return;
     if (drag) setDrag({ ...drag, to: local(event) });
   }
 
   function up(event: PointerEvent<HTMLDivElement>) {
-    if (pan.current?.pointerId === event.pointerId) {
-      pan.current = null;
-      return;
-    }
-    if (!drag) return;
+    if (navigation.endPan(event) || !drag) return;
     setDrag(null);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -134,9 +98,9 @@ export function CreationOverlay({
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
-      onWheel={scroll}
-      onPointerCancel={() => {
-        pan.current = null;
+      onWheel={navigation.onWheel}
+      onPointerCancel={(event) => {
+        navigation.endPan(event);
         setDrag(null);
       }}
     >

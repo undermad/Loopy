@@ -9,6 +9,7 @@ const appSettingsMigrations: MigrationMap = {
     return { ...rest, theme: { mode, light: 'light', dark: 'dark' } };
   },
   2: (data) => data,
+  3: (data) => data,
 };
 
 export function createAppSettingsStore(path: string): JsonStore<AppSettings> {

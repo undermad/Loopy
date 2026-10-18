@@ -29,6 +29,10 @@ export async function updateSettings(patch: AppSettingsPatch): Promise<AppSettin
   return saved;
 }
 
+export function currentSettings(): AppSettings | null {
+  return settingsStore.getState().settings;
+}
+
 export function resetSettingsStore(): void {
   settingsStore.setState({ settings: null, api: null });
 }

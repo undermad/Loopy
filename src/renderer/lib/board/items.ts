@@ -5,6 +5,7 @@ import {
   type BoardEdge,
   type BoardNode,
   type BoardNodeType,
+  type BoardTile,
   type EdgeData,
   type EdgeHandle,
   type ItemStyle,
@@ -130,6 +131,7 @@ const TYPE_STYLE: Record<BoardNodeType, Partial<ResolvedStyle>> = {
     padding: 8,
   },
   link: { padding: 0 },
+  drawing: { padding: 0 },
 };
 
 export function resolveItemStyle(type: BoardNodeType, ...layers: (ItemStyle | undefined)[]): ResolvedStyle {
@@ -304,6 +306,20 @@ export interface Duplicated {
   nodes: BoardNode[];
   edges: BoardEdge[];
   ids: string[];
+  sources: Map<string, string>;
+}
+
+export function isDrawing(node: Pick<BoardNode, 'type'>): boolean {
+  return node.type === 'drawing';
+}
+
+export function copyTiles(sources: Map<string, string>, tiles: Record<string, BoardTile>): BoardTile[] {
+  const byNode = new Map<string, BoardTile[]>();
+  for (const tile of Object.values(tiles))
+    byNode.set(tile.nodeId, [...(byNode.get(tile.nodeId) ?? []), tile]);
+  return [...sources].flatMap(([copyId, sourceId]) =>
+    (byNode.get(sourceId) ?? []).map((tile) => ({ ...tile, nodeId: copyId })),
+  );
 }
 
 export function duplicateItems(
@@ -347,6 +363,7 @@ export function duplicateItems(
     nodes: copies,
     edges: edgeCopies,
     ids: roots.map((id) => mapping.get(id) ?? id),
+    sources: new Map([...mapping].map(([source, copy]) => [copy, source])),
   };
 }
 
@@ -367,7 +384,7 @@ export function sendToBack(ids: string[], nodes: BoardNode[]): BoardNode[] {
 
 export function itemAt(point: Point, nodes: BoardNode[], exclude: string[] = []): BoardNode | null {
   const candidates = nodes.filter(
-    (node) => !exclude.includes(node.id) && contains(absoluteRect(node, nodes), point),
+    (node) => !isDrawing(node) && !exclude.includes(node.id) && contains(absoluteRect(node, nodes), point),
   );
   candidates.sort((a, b) => effectiveZ(b, nodes) - effectiveZ(a, nodes));
   return candidates[0] ?? null;

@@ -1,0 +1,27 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  cursor: none;
+  z-index: 5;
+  overflow: hidden;
+  touch-action: none;
+
+  &[data-small] {
+    cursor: crosshair;
+  }
+
+  &:not(:hover) .cursor,
+  &[data-small] .cursor {
+    display: none;
+  }
+}
+
+.cursor {
+  position: absolute;
+  border: 1px solid rgb(255 255 255 / 85%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 55%);
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}

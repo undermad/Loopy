@@ -22,12 +22,14 @@ The toolbar on the left of the canvas holds every tool. A creation tool places a
 | Container | F     | A titled frame. Items placed or dropped inside it belong to it and move with it                   |
 | Card      | C     | A card from the chosen card template, see the cards page                                          |
 | Arrow     | A     | Drag from one item to another; the arrow joins the sides that face each other                     |
+| Brush     | B     | Paints on a drawing layer, created on the first stroke; see the drawing page                      |
+| Eraser    | E     | Erases paint from the active drawing layer                                                        |
 
-Escape returns to Select. Every item also has four connection handles that appear on hover, so an arrow can be dragged from any side without the Arrow tool. The toolbar scrolls with the wheel or a middle-button drag when the area is too short for it.
+Escape returns to Select. The Brush and Eraser stay active until you change tool. Every item also has four connection handles that appear on hover, so an arrow can be dragged from any side without the Arrow tool. The toolbar scrolls with the wheel or a middle-button drag when the area is too short for it.
 
 ## Navigation
 
-The wheel zooms around the pointer and a middle-button drag pans, whichever tool is active; the Hand tool also pans with the left button. Creation and arrow tools cover the canvas with `CreationOverlay`, which applies the same wheel zoom and middle-button pan itself. Preferences, Editors tab, can make the wheel pan instead.
+The wheel zooms around the pointer and a middle-button drag pans, whichever tool is active; the Hand tool also pans with the left button. Creation and arrow tools cover the canvas with `CreationOverlay`, and the Brush and Eraser with `DrawingOverlay`; both apply the same wheel zoom and middle-button pan through `useCanvasNavigation` in `navigation.ts`. Preferences, Editors tab, can make the wheel pan instead.
 
 ## Quick create
 
@@ -148,6 +150,7 @@ An item's `data` holds a shared base and its own content. The base is `style`, `
 | `container` | `title` and `showTitle`. Children point at it through `parent_id` |
 | `card`      | `templateId` and `values`, keyed by field id                      |
 | `file`      | `assetId` of a non-image asset                                    |
+| `drawing`   | `resolution`, `offsetX` and `offsetY`; paint lives in tiles       |
 
 `ItemFrame` in `src/renderer/components/editors/Board/items` draws the shape in SVG under the content, clips the content to the shape, and adds the resizer, the handles and the lock badge. A new item type supplies its content component, a data schema in `src/shared/board.ts`, a preset in `items.ts` and a Properties section. Items with no fill take their text colour from the board background, so they stay readable on dark boards.
 
@@ -180,15 +183,19 @@ Project migration 3 adds `boards`, `board_nodes` and `board_edges`; migrations 5
 | `boards`      | `id`, `name`, `background_color`, `grid_color`, refs, `unit`, `unit_scale`, timestamps           |
 | `board_nodes` | `id`, `board_id`, `parent_id`, `type`, `x`, `y`, `width`, `height`, `z`, `data` JSON, timestamps |
 | `board_edges` | `id`, `board_id`, `source_id`, `target_id`, `data` JSON                                          |
+| `board_tiles` | `node_id`, `tx`, `ty`, `bytes` PNG, `updated_at`                                                 |
+
+Migration 13 adds `board_tiles`, the paint of drawing layers, see the drawing page.
 
 A child's position is relative to its container. `applyChanges` in `src/main/storage/boards-repository.ts` stores parents before children and refuses a parent on another board or one that would contain itself.
 
 ## Channels and library
 
-| Channel                                                          | Does                                                            |
-| ---------------------------------------------------------------- | --------------------------------------------------------------- |
-| `boards:list`, `boards:create`, `boards:update`, `boards:delete` | Board lifecycle                                                 |
-| `boards:read`                                                    | A board with its items and arrows                               |
-| `boards:applyChanges`                                            | One transaction of item and arrow inserts, updates and removals |
+| Channel                                                          | Does                                                    |
+| ---------------------------------------------------------------- | ------------------------------------------------------- |
+| `boards:list`, `boards:create`, `boards:update`, `boards:delete` | Board lifecycle                                         |
+| `boards:read`                                                    | A board with its items and arrows                       |
+| `boards:applyChanges`                                            | One transaction of item, arrow and drawing tile changes |
+| `boardTiles:list`                                                | The drawing tiles of a board                            |
 
-`src/renderer/lib/board` keeps the board list, one snapshot per open board, the active board and the selection, and `items.ts` holds the pure item maths: presets, style resolution, nesting and reparenting, duplication, z-order, hit testing and connection sides. `layers.ts`, `clipboard.ts` and `history.ts` add layer order, copy and paste, and undo. `commitChanges` records each change with its inverse; edits to the same items within half a second, and changes from one gesture, merge into one step. Undo and redo keys work in the board, Properties and Layers, which carry `boardScopeProps`. The canvas keeps React Flow's nodes in local state so a drag follows the pointer, and `commitChanges` applies the result to the store first and sends it when the gesture ends. The editor components live in `src/renderer/components/editors/Board` and the panels in `src/renderer/components/editors/Properties`.
+`src/renderer/lib/board` keeps the board list, one snapshot and one tile map per open board, the active board and the selection, and `items.ts` holds the pure item maths: presets, style resolution, nesting and reparenting, duplication, z-order, hit testing and connection sides. `layers.ts`, `clipboard.ts` and `history.ts` add layer order, copy and paste, and undo. `commitChanges` records each change with its inverse; edits to the same items within half a second, and changes from one gesture, merge into one step. Undo and redo keys work in the board, Properties and Layers, which carry `boardScopeProps`. The canvas keeps React Flow's nodes in local state so a drag follows the pointer, and `commitChanges` applies the result to the store first and sends it when the gesture ends. The editor components live in `src/renderer/components/editors/Board` and the panels in `src/renderer/components/editors/Properties`.

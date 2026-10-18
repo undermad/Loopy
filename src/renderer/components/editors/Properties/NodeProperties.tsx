@@ -33,6 +33,7 @@ import {
   rotationOf,
   toUnits,
   undock,
+  useBoardTiles,
   useBoards,
   useLiveNode,
   withData,
@@ -84,6 +85,7 @@ function TransformSection({
   const { t } = useTranslation('editors');
   const node = useLiveNode(stored);
   const docked = typeof node.data['dock'] === 'string';
+  const fixed = docked || node.type === 'drawing';
   const patch = (changes: Partial<Pick<BoardNode, 'x' | 'y' | 'width' | 'height'>>) => {
     save({ ...node, ...changes });
   };
@@ -110,6 +112,7 @@ function TransformSection({
       </div>
       <NumberField
         label={t('properties.rotation')}
+        disabled={node.type === 'drawing'}
         value={rotationOf(node.data)}
         step={1}
         digits={1}
@@ -123,7 +126,7 @@ function TransformSection({
       <div className={styles['pair']}>
         <NumberField
           label={label('width')}
-          disabled={docked}
+          disabled={fixed}
           value={toUnits(node.width, board)}
           min={toUnits(MIN_ITEM_SIZE.width, board)}
           onCommit={(value) => {
@@ -132,7 +135,7 @@ function TransformSection({
         />
         <NumberField
           label={label('height')}
-          disabled={docked}
+          disabled={fixed}
           value={toUnits(node.height, board)}
           min={toUnits(MIN_ITEM_SIZE.height, board)}
           onCommit={(value) => {
@@ -644,6 +647,35 @@ function LinkSection({ node }: { node: BoardNode }) {
   );
 }
 
+function DrawingSection({ node }: { node: BoardNode }) {
+  const { t } = useTranslation('editors');
+  const tiles = Object.values(useBoardTiles(node.boardId)).filter((tile) => tile.nodeId === node.id).length;
+  const { resolution } = itemData({ type: 'drawing', data: node.data });
+  const own = (node.data['style'] ?? {}) as ItemStyle;
+  const style = resolveItemStyle('drawing', own);
+  return (
+    <>
+      <NumberField
+        label={t('properties.opacity')}
+        value={Math.round(style.opacity * 100)}
+        min={0}
+        max={100}
+        step={1}
+        digits={0}
+        onCommit={(value) => {
+          setStyle(node, 'opacity', Math.min(1, Math.max(0, value / 100)));
+        }}
+      />
+      <dl className={styles['facts']}>
+        <dt>{t('drawing.resolution')}</dt>
+        <dd>{t('drawing.resolutionValue', { value: resolution })}</dd>
+        <dt>{t('drawing.tilesLabel')}</dt>
+        <dd>{t('drawing.tiles', { count: tiles })}</dd>
+      </dl>
+    </>
+  );
+}
+
 const TYPE_SECTIONS: Record<BoardNodeType, ComponentType<{ node: BoardNode }>> = {
   text: TextSection,
   image: ImageSection,
@@ -651,6 +683,7 @@ const TYPE_SECTIONS: Record<BoardNodeType, ComponentType<{ node: BoardNode }>> =
   card: CardSection,
   file: FileSection,
   link: LinkSection,
+  drawing: DrawingSection,
 };
 
 function CardStyleSection({ node }: { node: BoardNode }) {
@@ -674,7 +707,8 @@ export function NodeProperties({ board, node, nodes }: NodePropertiesProps) {
       <TransformSection board={board} node={node} nodes={nodes} />
       <ArrangeSection boardId={board.id} ids={[node.id]} nodes={nodes} />
       <TypeSection node={node} />
-      {node.type === 'card' ? <CardStyleSection node={node} /> : <StyleSection node={node} />}
+      {node.type === 'card' ? <CardStyleSection node={node} /> : null}
+      {node.type !== 'card' && node.type !== 'drawing' ? <StyleSection node={node} /> : null}
     </section>
   );
 }

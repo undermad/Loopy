@@ -111,7 +111,7 @@ Notes are the third kind of internal asset. The Assets editor lists them under I
 
 ## How it works
 
-Notes are rows in the project file. Project migration 14 adds `note_versions`, deleted with their note. Project migration 13 adds the `notes` table and widens `asset_folders.scope` to include `notes`. SQLite cannot change a check constraint, so the migration rebuilds `asset_folders` and restores every folder parent and every board, palette and asset folder link.
+Notes are rows in the project file. Project migration 15 adds `note_versions`, deleted with their note. Project migration 14 adds the `notes` table and widens `asset_folders.scope` to include `notes`. SQLite cannot change a check constraint, so the migration rebuilds `asset_folders` and restores every folder parent and every board, palette and asset folder link.
 
 | Column      | Holds                                                             |
 | ----------- | ----------------------------------------------------------------- |

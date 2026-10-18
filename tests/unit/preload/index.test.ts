@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { brushStateSchema } from '@shared/brushes';
 import { IpcChannel, type LoopyApi } from '@shared/ipc';
 import { lightTheme } from '@shared/theme';
 
@@ -33,7 +34,7 @@ describe('preload API', () => {
 
   it('passes arguments through for setSettings and saveTheme', async () => {
     electronMock.ipcRenderer.invoke.mockResolvedValueOnce({
-      schemaVersion: 3,
+      schemaVersion: 4,
       theme: { mode: 'dark', light: 'light', dark: 'dark' },
       language: 'en',
       uiFont: 'Inter',
@@ -74,7 +75,7 @@ describe('preload API', () => {
 
 describe('preload API coverage', () => {
   const settings = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     theme: { mode: 'dark', light: 'light', dark: 'dark' },
     language: 'en',
     uiFont: 'Inter',
@@ -84,6 +85,7 @@ describe('preload API coverage', () => {
       board: { grid: true, snap: false, minimap: false, wheel: 'zoom', quickButtons: true },
       assets: { layout: 'grid', details: true },
     },
+    brushes: brushStateSchema.parse({}),
   };
   const project = {
     id: '0b5d1a8e-2c4f-4e7a-9b3c-1d2e3f4a5b6c',
@@ -205,6 +207,7 @@ describe('preload API coverage', () => {
     ['deleteBoard', ['b'], []],
     ['readBoard', ['b'], { board, nodes: [], edges: [] }],
     ['applyBoardChanges', ['b', {}], { board, nodes: [], edges: [] }],
+    ['readBoardTiles', ['b'], [{ nodeId: 'n', tx: 0, ty: -1, bytes: new Uint8Array([1, 2]) }]],
     ['listPalettes', [], [palette]],
     ['createPalette', [{ name: 'P', colours: [{ hex: '#ff0000' }] }], palette],
     ['updatePalette', ['p', { name: 'P2' }], palette],
