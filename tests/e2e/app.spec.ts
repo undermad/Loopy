@@ -108,13 +108,13 @@ test('places items from the toolbar and connects them with an arrow', async ({ w
   if (!box) throw new Error('missing pane');
 
   for (const [x, name] of [
-    [200, 'Door'],
-    [600, 'Key'],
+    [0.3, 'Door'],
+    [0.75, 'Key'],
   ] as const) {
     await window.getByRole('button', { name: 'Sticky note (N)' }).click();
-    await window.mouse.click(box.x + x, box.y + 250);
+    await window.mouse.click(box.x + box.width * x, box.y + box.height * 0.4);
     await window.getByRole('textbox', { name: 'Text' }).fill(name);
-    await window.mouse.click(box.x + 900, box.y + 700);
+    await window.mouse.click(box.x + box.width / 2, box.y + box.height - 30);
     await expect(window.getByRole('group', { name })).toBeVisible();
   }
 
