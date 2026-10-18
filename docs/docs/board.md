@@ -125,6 +125,8 @@ Drag a board or colour palette card from the Assets editor onto the canvas to pl
 
 Select a link item, then click its card to open it. Dragging the card moves the item instead. A palette opens like a ticket link: in an open Colours editor, or in the Palette workspace. A board opens in the same board area and remembers the board you came from. A back button below the tools returns to it. Links can go several boards deep, and the button steps back one board at a time. Picking a board from the header clears the trail.
 
+A note dragged from the Assets editor or the Notes editor becomes a link item too. Its card shows the note's title and first line, and clicking it opens the note in the Idea Map workspace, see the notes page.
+
 The item type is `link`, with `target` in its data. Properties can point it at another board or palette. The trail is the area state `boardTrail`, a list of board ids, so each board area keeps its own. `AssetLinkCard` in `src/renderer/components/AssetLinkCard` draws the card for boards and tickets.
 
 ## Items

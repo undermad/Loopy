@@ -1,9 +1,10 @@
 import { useState, type DragEvent } from 'react';
-import { Palette, PenTool } from 'lucide-react';
+import type { PenTool } from 'lucide-react';
 import { ASSET_KINDS, type AssetKind } from '@shared/assets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { cx } from '@renderer/ui';
-import { KIND_ICONS, hasFiles, type InternalKind } from './kinds';
+import { INTERNAL_ICONS, INTERNAL_KINDS } from './internalActions';
+import { INTERNAL_SCOPES, KIND_ICONS, hasFiles, type InternalKind } from './kinds';
 import styles from './FolderTree.module.scss';
 
 export type KindChoice = AssetKind | InternalKind;
@@ -15,8 +16,6 @@ export interface KindListProps {
   onSelect: (kind: KindChoice) => void;
   onImport: (files: FileList) => void;
 }
-
-const INTERNAL_ICONS: Record<InternalKind, typeof PenTool> = { board: PenTool, palette: Palette };
 
 export function KindList({ counts, internalCounts, selected, onSelect, onImport }: KindListProps) {
   const { t } = useTranslation('assets');
@@ -86,14 +85,8 @@ export function KindList({ counts, internalCounts, selected, onSelect, onImport 
       <div role="presentation" className={styles['section']}>
         {t('internal')}
       </div>
-      {(['board', 'palette'] as const).map((kind) =>
-        row(
-          kind,
-          t(kind === 'board' ? 'boards' : 'palettes'),
-          internalCounts[kind],
-          INTERNAL_ICONS[kind],
-          false,
-        ),
+      {INTERNAL_KINDS.map((kind) =>
+        row(kind, t(INTERNAL_SCOPES[kind]), internalCounts[kind], INTERNAL_ICONS[kind], false),
       )}
     </div>
   );

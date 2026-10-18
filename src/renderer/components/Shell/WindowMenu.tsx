@@ -28,6 +28,7 @@ export function WindowMenu({ onDialog }: { onDialog: (dialog: 'saveLayout') => v
     design: t('layout.presets.design'),
     palette: t('layout.presets.palette'),
     assets: t('layout.presets.assets'),
+    ideas: t('layout.presets.ideas'),
   });
 
   async function runImport() {

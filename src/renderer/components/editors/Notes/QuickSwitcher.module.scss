@@ -1,0 +1,48 @@
+@use '../../../styles/mixins' as *;
+
+.switcher {
+  @include stack(var(--space-2));
+}
+
+.list {
+  @include stack(2px);
+
+  max-height: 50vh;
+  padding: 0;
+  margin: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.option {
+  @include row(var(--space-2));
+
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: var(--color-fg-muted);
+    flex-shrink: 0;
+  }
+}
+
+.selected {
+  background: var(--color-selection);
+}
+
+.name {
+  overflow: hidden;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.path,
+.hint,
+.empty {
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+}

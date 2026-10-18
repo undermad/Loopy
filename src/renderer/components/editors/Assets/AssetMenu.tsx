@@ -88,7 +88,7 @@ export function AssetMenuItems({ entry, group, folders, actions }: AssetMenuProp
             : t('item.deleteMany', { count: group.length })
           : file
             ? t('asset.delete')
-            : t(entry.kind === 'board' ? 'item.delete.board' : 'item.delete.palette')}
+            : t(`item.delete.${entry.kind as InternalKind}`)}
       </ContextMenu.Item>
     </>
   );

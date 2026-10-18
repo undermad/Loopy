@@ -8,6 +8,10 @@
     "layers": "Layers",
     "colours": "Colours",
     "assets": "Assets",
+    "notes": "Notes",
+    "note": "Note",
+    "graph": "Graph",
+    "backlinks": "Note details",
     "gallery": "Component gallery",
     "empty": "Empty"
   },
@@ -274,9 +278,10 @@
     "links": {
       "title": "Linked assets",
       "add": "Link asset",
-      "search": "Search boards, palettes and files",
+      "search": "Search boards, palettes, notes and files",
       "boards": "Boards",
       "palettes": "Colour palettes",
+      "notes": "Notes",
       "files": "Files",
       "none": "Nothing to link yet",
       "remove": "Unlink {{name}}"
@@ -543,7 +548,8 @@
     "kinds": {
       "board": "Board",
       "palette": "Colour palette",
-      "asset": "File"
+      "asset": "File",
+      "note": "Note"
     }
   }
 }

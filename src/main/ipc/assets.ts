@@ -16,6 +16,7 @@ import {
   updateAssetSettings,
   updateFolder,
 } from '../storage/assets-repository';
+import { trackRename } from '../storage/notes-repository';
 import type { FileDialogs } from './themes';
 import type { TicketsHandlerDeps } from './tickets';
 import { NoProjectError } from './tickets';
@@ -68,9 +69,11 @@ export function registerAssetsHandlers(ipc: Pick<IpcMain, 'handle'>, deps: Asset
     return { status: 'imported', snapshot: imported.snapshot, ids: imported.ids };
   });
   ipc.handle(IpcChannel.assetsPick, (_event, target: unknown) => pick(target));
-  ipc.handle(IpcChannel.assetsUpdate, (_event, rawId: unknown, patch: unknown) =>
-    updateAsset(db(), id(rawId), patch),
-  );
+  ipc.handle(IpcChannel.assetsUpdate, (_event, rawId: unknown, patch: unknown) => {
+    const database = db();
+    const assetId = id(rawId);
+    return trackRename(database, 'asset', assetId, () => updateAsset(database, assetId, patch));
+  });
   ipc.handle(IpcChannel.assetsMove, (_event, ids: unknown, folderId: unknown) =>
     moveAssets(db(), ids, entityIdSchema.nullable().parse(folderId)),
   );

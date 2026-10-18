@@ -88,7 +88,7 @@ export const fileDataSchema = itemDataSchema.extend({
   assetId: z.string().min(1).nullable().default(null),
 });
 
-export const BOARD_LINK_KINDS = ['board', 'palette'] as const;
+export const BOARD_LINK_KINDS = ['board', 'palette', 'note'] as const;
 export const boardLinkSchema = z.object({ kind: z.enum(BOARD_LINK_KINDS), id: z.string().min(1) });
 export type BoardLink = z.infer<typeof boardLinkSchema>;
 

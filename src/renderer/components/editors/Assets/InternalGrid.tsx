@@ -1,12 +1,13 @@
 import { useDraggable } from '@dnd-kit/core';
-import { Palette, PenTool, SearchX, Shapes } from 'lucide-react';
+import { SearchX, Shapes } from 'lucide-react';
 import type { AssetFolder } from '@shared/assets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { ContextMenu, EmptyState, cx } from '@renderer/ui';
 import { modifiersOf, type SelectModifiers } from './AssetGrid';
 import { AssetMenuItems, type AssetMenuActions } from './AssetMenu';
 import { InlineName } from './InlineName';
-import { folderLabel, internalKey, type AssetDragData, type InternalItem } from './kinds';
+import { INTERNAL_ICONS } from './internalActions';
+import { INTERNAL_SCOPES, folderLabel, internalKey, type AssetDragData, type InternalItem } from './kinds';
 import gridStyles from './AssetGrid.module.scss';
 import styles from './InternalGrid.module.scss';
 
@@ -42,7 +43,7 @@ export function InternalThumbnail({
       </span>
     );
   }
-  const Icon = item.kind === 'board' ? PenTool : Palette;
+  const Icon = INTERNAL_ICONS[item.kind];
   return <Icon aria-hidden="true" className={className} />;
 }
 
@@ -172,7 +173,7 @@ export function InternalGrid({
                     showPath
                       ? item.folderId
                         ? folderLabel(folders, item.folderId)
-                        : t(item.kind === 'board' ? 'boards' : 'palettes')
+                        : t(INTERNAL_SCOPES[item.kind])
                       : null
                   }
                   onSelect={(modifiers) => {

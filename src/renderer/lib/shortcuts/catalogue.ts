@@ -30,6 +30,15 @@ export const SHORTCUT_CATEGORIES: readonly ShortcutCategory[] = [
     ],
   },
   {
+    id: 'notes',
+    entries: [
+      entry('quickSwitcher', keymap.quickSwitcher.keys),
+      entry('noteLink', '[['),
+      entry('noteSearch', '$mod+F'),
+      entry('noteFollow', '$mod+Click'),
+    ],
+  },
+  {
     id: 'edit',
     entries: [
       entry('undo', '$mod+Z'),

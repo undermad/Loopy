@@ -14,7 +14,7 @@ export const ticketStateSchema = z.object({
   color: hexColorSchema,
 });
 
-export const TICKET_LINK_KINDS = ['board', 'palette', 'asset'] as const;
+export const TICKET_LINK_KINDS = ['board', 'palette', 'asset', 'note'] as const;
 export const ticketLinkSchema = z.object({ kind: z.enum(TICKET_LINK_KINDS), id: z.string().min(1) });
 export type TicketLink = z.infer<typeof ticketLinkSchema>;
 export const ticketLinksSchema = z.array(ticketLinkSchema).max(100);

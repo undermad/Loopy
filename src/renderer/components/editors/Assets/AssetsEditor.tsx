@@ -27,6 +27,7 @@ import {
   LayoutGrid,
   List,
   ListTree,
+  NotebookText,
   Palette,
   PanelRight,
   PenTool,
@@ -37,9 +38,10 @@ import {
 } from 'lucide-react';
 import { ASSET_KINDS, assetKindOf, type Asset, type AssetScope, type AssetTarget } from '@shared/assets';
 import type { BoardLink } from '@shared/board';
-import { createBoard, deleteBoard, updateBoard, useBoards } from '@renderer/lib/board';
+import { createBoard, updateBoard, useBoards } from '@renderer/lib/board';
 import { harmonyColours } from '@renderer/lib/colour';
-import { createPalette, deletePalette, updatePalette, usePalettes } from '@renderer/lib/palettes';
+import { createNote, nextNoteTitle, useNotes } from '@renderer/lib/notes';
+import { createPalette, updatePalette, usePalettes } from '@renderer/lib/palettes';
 import { openLinked, useWorkspaceNames } from '@renderer/lib/workspaces';
 import type { EditorProps } from '@renderer/lib/editors';
 import {
@@ -81,6 +83,13 @@ import { AssetOptionsDialog } from './AssetOptionsDialog';
 import { FolderTree, type TreeLeaf } from './FolderTree';
 import { InternalDetails } from './InternalDetails';
 import { InternalGrid, InternalThumbnail } from './InternalGrid';
+import {
+  INTERNAL_ICONS,
+  INTERNAL_KINDS,
+  deleteInternal,
+  isInternalKind,
+  saveInternal,
+} from './internalActions';
 import { KindList, type KindChoice } from './KindList';
 import {
   INTERNAL_SCOPES,
@@ -102,22 +111,22 @@ import styles from './AssetsEditor.module.scss';
 type View = 'folders' | 'types';
 type Layout = 'grid' | 'list';
 type Place = 'tree' | 'main';
-type Dialog = 'folder' | 'board' | 'palette' | 'options' | null;
+type Dialog = 'folder' | InternalKind | 'options' | null;
 
 const NEW_PALETTE_BASE = '#4f46e5';
 
 function isKind(value: string): value is KindChoice {
-  return value === 'board' || value === 'palette' || (ASSET_KINDS as readonly string[]).includes(value);
+  return isInternalKind(value) || (ASSET_KINDS as readonly string[]).includes(value);
 }
 
 function isInternalKey(key: string): boolean {
-  return key.startsWith('board:') || key.startsWith('palette:');
+  return INTERNAL_KINDS.some((kind) => key.startsWith(`${kind}:`));
 }
 
 function linkOf(key: string): BoardLink | null {
   const [kind, ...rest] = key.split(':');
   const id = rest.join(':');
-  return (kind === 'board' || kind === 'palette') && id ? { kind, id } : null;
+  return kind && isInternalKind(kind) && id ? { kind, id } : null;
 }
 
 function matchesName(name: string, query: string): boolean {
@@ -170,6 +179,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
   const { folders, assets, settings } = useAssetsSnapshot();
   const boards = useBoards();
   const palettes = usePalettes();
+  const notes = useNotes();
   const names = useWorkspaceNames();
   const editorRef = useRef<HTMLDivElement>(null);
   const [portrait, setPortrait] = useState(false);
@@ -222,17 +232,26 @@ export function AssetsEditor({ state, setState }: EditorProps) {
       folderId: palette.folderId,
       colours: palette.colours.map((colour) => colour.hex),
     })),
+    ...notes.map((note) => ({
+      kind: 'note' as const,
+      id: note.id,
+      name: note.title,
+      folderId: note.folderId,
+      colours: [],
+    })),
   ].sort((a, b) => a.name.localeCompare(b.name));
   const internalKind: InternalKind | null =
     view === 'types'
-      ? kind === 'board' || kind === 'palette'
+      ? isInternalKind(kind)
         ? kind
         : null
       : scope === 'boards'
         ? 'board'
         : scope === 'palettes'
           ? 'palette'
-          : null;
+          : scope === 'notes'
+            ? 'note'
+            : null;
   const searching = search.trim().length > 0;
   const shownInternal = internalItems.filter(
     (item) =>
@@ -250,7 +269,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
   const byName = (a: Asset, b: Asset) => a.name.localeCompare(b.name);
   const visible = (
     view === 'types'
-      ? kind === 'board' || kind === 'palette'
+      ? isInternalKind(kind)
         ? []
         : assetsOfKind(assets, kind, search)
       : folderId === null
@@ -357,8 +376,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
     const entry = entryOf(key);
     if (!entry || name === null) return;
     if (entry.kind === 'file') void assetActions.update(entry.id, { name });
-    else if (entry.kind === 'board') void updateBoard(entry.id, { name });
-    else void updatePalette(entry.id, { name });
+    else void saveInternal(entry.kind, entry.id, { name });
   }
 
   function moveKeys(keys: string[], kindOf: MenuEntry['kind'], target: string | null) {
@@ -369,8 +387,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
       return;
     }
     for (const entry of entries) {
-      if (entry.kind === 'board') void updateBoard(entry.id, { folderId: target });
-      else void updatePalette(entry.id, { folderId: target });
+      if (entry.kind !== 'file') void saveInternal(entry.kind, entry.id, { folderId: target });
     }
   }
 
@@ -379,14 +396,19 @@ export function AssetsEditor({ state, setState }: EditorProps) {
     const files = entries.filter((entry) => entry.kind === 'file').map((entry) => entry.id);
     if (files.length > 0) await assetActions.remove(files);
     for (const entry of entries) {
-      if (entry.kind === 'board') await deleteBoard(entry.id);
-      if (entry.kind === 'palette') await deletePalette(entry.id);
+      if (entry.kind !== 'file') await deleteInternal(entry.kind, entry.id);
     }
     clearSelection();
   }
 
   async function createInternal(of: InternalKind, name: string) {
     const target = scope === INTERNAL_SCOPES[of] ? folderId : null;
+    if (of === 'note') {
+      const note = await createNote({ title: nextNoteTitle(name), folderId: target });
+      setSelection([`note:${note.id}`]);
+      setState({ internalId: `note:${note.id}` });
+      return;
+    }
     if (of === 'board') {
       const board = await createBoard({ name });
       if (target) await updateBoard(board.id, { folderId: target });
@@ -558,8 +580,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
     }
     for (const link of data.links) {
       if (INTERNAL_SCOPES[link.kind] !== target.scope) continue;
-      if (link.kind === 'board') void updateBoard(link.id, { folderId: target.id });
-      else void updatePalette(link.id, { folderId: target.id });
+      void saveInternal(link.kind, link.id, { folderId: target.id });
     }
   }
 
@@ -591,6 +612,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
 
   function internalLeaves(of: InternalKind): TreeLeaf[] | undefined {
     if (!treeFiles) return undefined;
+    const Icon = INTERNAL_ICONS[of];
     return internalItems
       .filter((item) => item.kind === of && matchesName(item.name, search))
       .map((item) => {
@@ -599,7 +621,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
           key,
           name: item.name,
           folderId: item.folderId,
-          icon: of === 'board' ? <PenTool /> : <Palette />,
+          icon: <Icon />,
           drag: dragFor(key),
           menu: leafMenu({ key, kind: item.kind, id: item.id, name: item.name, folderId: item.folderId }),
         };
@@ -713,6 +735,14 @@ export function AssetsEditor({ state, setState }: EditorProps) {
               <Palette aria-hidden="true" />
               {t('create.palette')}
             </DropdownMenu.Item>
+            <DropdownMenu.Item
+              onSelect={() => {
+                setDialog('note');
+              }}
+            >
+              <NotebookText aria-hidden="true" />
+              {t('create.note')}
+            </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       </div>
@@ -737,8 +767,9 @@ export function AssetsEditor({ state, setState }: EditorProps) {
               renameLabel={t('asset.fileName')}
             />
             <div className={styles['section']}>{t('internal')}</div>
-            {(['board', 'palette'] as const).map((item) => {
+            {INTERNAL_KINDS.map((item) => {
               const itemScope = INTERNAL_SCOPES[item];
+              const RootIcon = INTERNAL_ICONS[item];
               const own = internalItems.filter((candidate) => candidate.kind === item);
               return (
                 <FolderTree
@@ -747,7 +778,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
                   scope={itemScope}
                   label={t(itemScope)}
                   rootLabel={t(itemScope)}
-                  rootIcon={item === 'board' ? <PenTool /> : <Palette />}
+                  rootIcon={<RootIcon />}
                   counts={folderTally(own)}
                   total={own.length}
                   selectedId={shownFolder(itemScope)}
@@ -765,6 +796,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
             internalCounts={{
               board: internalItems.filter((item) => item.kind === 'board').length,
               palette: internalItems.filter((item) => item.kind === 'palette').length,
+              note: internalItems.filter((item) => item.kind === 'note').length,
             }}
             counts={kindCounts(assets)}
             selected={kind}
@@ -1065,15 +1097,15 @@ export function AssetsEditor({ state, setState }: EditorProps) {
           }
         />
       ) : null}
-      {dialog === 'board' || dialog === 'palette' ? (
+      {dialog !== null && isInternalKind(dialog) ? (
         <PromptDialog
           open
           onOpenChange={(open) => {
             if (!open) setDialog(null);
           }}
-          title={t(dialog === 'board' ? 'create.board' : 'create.palette')}
+          title={t(`create.${dialog}`)}
           label={t('item.name')}
-          initialValue={t(dialog === 'board' ? 'create.boardName' : 'create.paletteName')}
+          initialValue={t(`create.${dialog}Name`)}
           submitLabel={tc('actions.create')}
           onSubmit={(name) => createInternal(dialog, name)}
         />

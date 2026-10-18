@@ -6,6 +6,7 @@ import { bootAssets, loadAssets } from '@renderer/lib/assets';
 import { bootBoardShortcuts, bootBoards, refreshBoards } from '@renderer/lib/board';
 import { applyLanguage, initI18n } from '@renderer/lib/i18n';
 import { bootCardTemplates, loadCardTemplates } from '@renderer/lib/cards';
+import { bootNotes, flushNotes, loadNotes } from '@renderer/lib/notes';
 import { bootPalettes, loadPalettes } from '@renderer/lib/palettes';
 import { bootProject, currentProject } from '@renderer/lib/project';
 import { bootSettings, useSettings } from '@renderer/lib/settings';
@@ -29,6 +30,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
   await bootPalettes(api, currentProject() !== null);
   await bootCardTemplates(api, currentProject() !== null);
   await bootAssets(api, currentProject() !== null);
+  await bootNotes(api, currentProject() !== null);
   await bootWorkspaces(api, () => {
     const names = {
       default: i18next.t('shell:layout.presets.default'),
@@ -36,6 +38,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
       design: i18next.t('shell:layout.presets.design'),
       palette: i18next.t('shell:layout.presets.palette'),
       assets: i18next.t('shell:layout.presets.assets'),
+      ideas: i18next.t('shell:layout.presets.ideas'),
     };
     return builtInLayoutPresets(names)[0]?.workspaces ?? [];
   });
@@ -46,7 +49,11 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
     palettes: loadPalettes,
     cards: loadCardTemplates,
     assets: loadAssets,
+    notes: loadNotes,
   };
+  window.addEventListener('beforeunload', () => {
+    void flushNotes();
+  });
   api.onProjectDataChanged(({ domain }) => {
     if (currentProject()) void refresh[domain]().catch(() => undefined);
   });

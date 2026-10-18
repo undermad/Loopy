@@ -225,6 +225,52 @@ export const projectMigrations: SqlMigrations = [
   ALTER TABLE boards ADD COLUMN folder_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL;
   ALTER TABLE palettes ADD COLUMN folder_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL;`,
   `ALTER TABLE tickets ADD COLUMN links TEXT NOT NULL DEFAULT '[]';`,
+  `CREATE TEMP TABLE folder_parents_notes AS SELECT id, parent_id FROM asset_folders;
+  CREATE TEMP TABLE folder_refs_notes AS
+    SELECT 'assets' AS owner, id, folder_id FROM assets WHERE folder_id IS NOT NULL
+    UNION ALL SELECT 'boards', id, folder_id FROM boards WHERE folder_id IS NOT NULL
+    UNION ALL SELECT 'palettes', id, folder_id FROM palettes WHERE folder_id IS NOT NULL;
+  CREATE TABLE asset_folders_notes (
+    id TEXT PRIMARY KEY,
+    parent_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL,
+    name TEXT NOT NULL CHECK (length(name) > 0),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    scope TEXT NOT NULL DEFAULT 'files' CHECK (scope IN ('files', 'boards', 'palettes', 'notes'))
+  );
+  INSERT INTO asset_folders_notes (id, parent_id, name, created_at, updated_at, scope)
+    SELECT id, NULL, name, created_at, updated_at, scope FROM asset_folders;
+  DROP TABLE asset_folders;
+  ALTER TABLE asset_folders_notes RENAME TO asset_folders;
+  CREATE INDEX asset_folders_by_parent ON asset_folders(parent_id);
+  UPDATE asset_folders SET parent_id = (SELECT parent_id FROM folder_parents_notes p WHERE p.id = asset_folders.id);
+  UPDATE assets SET folder_id = (SELECT folder_id FROM folder_refs_notes r WHERE r.owner = 'assets' AND r.id = assets.id)
+    WHERE id IN (SELECT id FROM folder_refs_notes WHERE owner = 'assets');
+  UPDATE boards SET folder_id = (SELECT folder_id FROM folder_refs_notes r WHERE r.owner = 'boards' AND r.id = boards.id)
+    WHERE id IN (SELECT id FROM folder_refs_notes WHERE owner = 'boards');
+  UPDATE palettes SET folder_id = (SELECT folder_id FROM folder_refs_notes r WHERE r.owner = 'palettes' AND r.id = palettes.id)
+    WHERE id IN (SELECT id FROM folder_refs_notes WHERE owner = 'palettes');
+  DROP TABLE folder_parents_notes;
+  DROP TABLE folder_refs_notes;
+  CREATE TABLE notes (
+    id TEXT PRIMARY KEY,
+    folder_id TEXT REFERENCES asset_folders(id) ON DELETE SET NULL,
+    title TEXT NOT NULL CHECK (length(title) > 0),
+    body TEXT NOT NULL DEFAULT '',
+    starred INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE UNIQUE INDEX notes_by_title ON notes(title COLLATE NOCASE);
+  CREATE INDEX notes_by_folder ON notes(folder_id);`,
+  `CREATE TABLE note_versions (
+    id TEXT PRIMARY KEY,
+    note_id TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX note_versions_by_note ON note_versions(note_id, created_at);`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

@@ -11,6 +11,7 @@ import {
   updatePalette,
   updatePaletteCluster,
 } from '../storage/palettes-repository';
+import { trackRename } from '../storage/notes-repository';
 import type { TicketsHandlerDeps } from './tickets';
 import { NoProjectError } from './tickets';
 
@@ -24,9 +25,11 @@ export function registerPalettesHandlers(ipc: Pick<IpcMain, 'handle'>, deps: Tic
 
   ipc.handle(IpcChannel.palettesList, () => listPalettes(db()));
   ipc.handle(IpcChannel.palettesCreate, (_event, input: unknown) => createPalette(db(), input));
-  ipc.handle(IpcChannel.palettesUpdate, (_event, rawId: unknown, patch: unknown) =>
-    updatePalette(db(), id(rawId), patch),
-  );
+  ipc.handle(IpcChannel.palettesUpdate, (_event, rawId: unknown, patch: unknown) => {
+    const database = db();
+    const paletteId = id(rawId);
+    return trackRename(database, 'palette', paletteId, () => updatePalette(database, paletteId, patch));
+  });
   ipc.handle(IpcChannel.palettesDelete, (_event, rawId: unknown) => deletePalette(db(), id(rawId)));
   ipc.handle(IpcChannel.paletteClustersList, () => listPaletteClusters(db()));
   ipc.handle(IpcChannel.paletteClustersCreate, (_event, input: unknown) => createPaletteCluster(db(), input));

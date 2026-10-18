@@ -1,5 +1,6 @@
 atlaskit
 bgra
+blockout
 boxshadow
 cimode
 colorful
@@ -21,8 +22,11 @@ gltf
 godot
 hitbox
 ignis
+instr
+katex
 knip
 konva
+lezer
 lingui
 linted
 lintstagedrc
@@ -33,6 +37,7 @@ maximizable
 minimap
 minimizable
 moodboards
+nocase
 nodrag
 nopan
 nowheel
@@ -55,11 +60,14 @@ tinykeys
 tldraw
 undermad
 undock
+unstar
 unstub
 upserts
 vars
 vitest
 wcag
+wikilink
+wikilinks
 winstaller
 xyflow
 zoomable

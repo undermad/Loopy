@@ -1,9 +1,11 @@
-import { Palette, PenTool, Unlink } from 'lucide-react';
+import { NotebookText, Palette, PenTool, Unlink } from 'lucide-react';
 import { assetUrl, type Asset } from '@shared/assets';
+import { frontmatterEnd } from '@shared/markdown';
 import type { TicketLink } from '@shared/tickets';
 import { useAssetsSnapshot } from '@renderer/lib/assets';
 import { useBoards } from '@renderer/lib/board';
 import { useTranslation } from '@renderer/lib/i18n';
+import { useNotes } from '@renderer/lib/notes';
 import { usePalettes } from '@renderer/lib/palettes';
 import { cx } from '@renderer/ui';
 import { KIND_ICONS } from '../editors/Assets/kinds';
@@ -23,6 +25,7 @@ export function useResolvedLink(link: TicketLink): ResolvedLink {
   const boards = useBoards() ?? [];
   const palettes = usePalettes() ?? [];
   const { assets } = useAssetsSnapshot();
+  const notes = useNotes();
   const detail = t(`assetLink.kinds.${link.kind}`);
   if (link.kind === 'board') {
     const board = boards.find((item) => item.id === link.id);
@@ -46,8 +49,28 @@ export function useResolvedLink(link: TicketLink): ResolvedLink {
       missing: !palette,
     };
   }
+  if (link.kind === 'note') {
+    const note = notes.find((item) => item.id === link.id);
+    return {
+      link,
+      name: note?.title ?? t('assetLink.missing'),
+      detail: (note ? noteExcerpt(note.body) : '') || detail,
+      colours: [],
+      asset: null,
+      missing: !note,
+    };
+  }
   const asset = assets.find((item) => item.id === link.id) ?? null;
   return { link, name: asset?.name ?? t('assetLink.missing'), detail, colours: [], asset, missing: !asset };
+}
+
+function noteExcerpt(body: string): string {
+  const line = body
+    .slice(frontmatterEnd(body))
+    .split('\n')
+    .map((text) => text.trim())
+    .find((text) => text.length > 0 && !text.startsWith('#'));
+  return (line ?? '').replace(/!?\[\[([^\]|]*\|)?([^\]]*)\]\]/g, '$2').slice(0, 80);
 }
 
 function LinkIcon({ item }: { item: ResolvedLink }) {
@@ -69,7 +92,9 @@ function LinkIcon({ item }: { item: ResolvedLink }) {
       ? PenTool
       : item.link.kind === 'palette'
         ? Palette
-        : KIND_ICONS[item.asset?.kind ?? 'other'];
+        : item.link.kind === 'note'
+          ? NotebookText
+          : KIND_ICONS[item.asset?.kind ?? 'other'];
   return <Icon aria-hidden="true" />;
 }
 

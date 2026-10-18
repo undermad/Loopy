@@ -13,7 +13,7 @@ export interface AreaHeaderProps {
   slotRef: (element: HTMLElement | null) => void;
 }
 
-const CATEGORIES = ['planning', 'design', 'palette', 'assets', 'general'] as const;
+const CATEGORIES = ['planning', 'design', 'palette', 'assets', 'ideas', 'general'] as const;
 
 export function AreaHeader({ area, slotRef }: AreaHeaderProps) {
   const { t } = useTranslation('shell');
