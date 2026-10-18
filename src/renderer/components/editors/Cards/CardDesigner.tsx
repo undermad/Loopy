@@ -26,7 +26,6 @@ import {
   type CardTemplate,
   type SavedCard,
 } from '@shared/cards';
-import { resolveItemStyle } from '@renderer/lib/board';
 import {
   STARTER_TEMPLATES,
   blankTemplate,
@@ -44,10 +43,8 @@ import {
   useCardTemplates,
   useSavedCards,
 } from '@renderer/lib/cards';
-import { readableTextColour } from '@renderer/lib/colour';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
-import { useResolvedColour } from '@renderer/lib/palettes';
 import {
   Button,
   ConfirmDialog,
@@ -59,7 +56,8 @@ import {
   cx,
   useToast,
 } from '@renderer/ui';
-import { CardView } from './CardView';
+import { BoardCardDesigner } from './BoardCardDesigner';
+import { CardPreview } from './CardPreview';
 import { CardSettings, FieldSettings } from './TemplateSettings';
 import styles from './CardDesigner.module.scss';
 
@@ -166,58 +164,6 @@ function FieldRow({
         <Trash2 aria-hidden="true" />
       </IconButton>
     </li>
-  );
-}
-
-function CardPreview({
-  layout,
-  values,
-  selectedFieldId,
-  onValue,
-  onSelectField,
-}: {
-  layout: CardLayout;
-  values: Record<string, CardValue>;
-  selectedFieldId: string | null;
-  onValue: (fieldId: string, value: CardValue) => void;
-  onSelectField?: ((fieldId: string) => void) | undefined;
-}) {
-  const style = resolveItemStyle('card', layout.style);
-  const fill = useResolvedColour(style.fill);
-  const stroke = useResolvedColour(style.stroke);
-  const textOverride = useResolvedColour(style.textColour);
-  const accent = useResolvedColour(layout.accent);
-  const text = textOverride ?? (fill ? readableTextColour(fill) : '#1a1a1a');
-  return (
-    <div
-      className={styles['previewCard']}
-      style={{
-        width: layout.width,
-        height: layout.height,
-        background: fill ?? 'transparent',
-        border:
-          stroke && style.strokeWidth > 0
-            ? `${String(style.strokeWidth)}px ${style.strokeStyle} ${stroke}`
-            : 'none',
-        borderRadius: style.radius,
-        boxShadow: style.shadow ? '0 2px 10px rgb(0 0 0 / 18%)' : 'none',
-        padding: style.padding,
-        color: text,
-        fontSize: style.fontSize,
-        opacity: style.opacity,
-      }}
-    >
-      {accent ? <span className={styles['accent']} style={{ background: accent }} /> : null}
-      <CardView
-        layout={layout}
-        values={values}
-        editable
-        onChange={onValue}
-        selectedFieldId={selectedFieldId}
-        {...(onSelectField ? { onSelectField } : {})}
-        className={styles['previewBody']}
-      />
-    </div>
   );
 }
 
@@ -685,7 +631,33 @@ function Designer({
   );
 }
 
+function readItem(state: Record<string, unknown>): { id: string; boardId: string } | null {
+  const raw = state['target'];
+  if (typeof raw !== 'object' || raw === null) return null;
+  const { kind, id, boardId } = raw as Record<string, unknown>;
+  return kind === 'item' && typeof id === 'string' && typeof boardId === 'string' ? { id, boardId } : null;
+}
+
 export function CardDesigner({ state, setState }: EditorProps) {
+  const item = readItem(state);
+  if (item) {
+    return (
+      <BoardCardDesigner
+        boardId={item.boardId}
+        nodeId={item.id}
+        onOpenTemplate={(templateId) => {
+          setState({ target: templateId ? { kind: 'template', id: templateId } : null });
+        }}
+        onSavedCard={(cardId) => {
+          setState({ target: { kind: 'card', id: cardId } });
+        }}
+      />
+    );
+  }
+  return <TemplateOrCardDesigner state={state} setState={setState} />;
+}
+
+function TemplateOrCardDesigner({ state, setState }: Pick<EditorProps, 'state' | 'setState'>) {
   const templates = useCardTemplates();
   const cards = useSavedCards();
   const target = readTarget(state);

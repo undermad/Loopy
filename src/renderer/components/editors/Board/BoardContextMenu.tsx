@@ -13,6 +13,7 @@ export interface BoardMenuActions {
   release: (node: BoardNode) => void;
   detach: (node: BoardNode) => void;
   editTemplate: (node: BoardNode) => void;
+  editCard: (node: BoardNode) => void;
   removeNode: (node: BoardNode) => void;
   reverseEdge: (edge: BoardEdge) => void;
   removeEdge: (edge: BoardEdge) => void;
@@ -123,13 +124,22 @@ export function BoardContextMenu({ nodes, edges, actions, className, children }:
               </ContextMenu.Item>
             ) : null}
             {node.type === 'card' ? (
-              <ContextMenu.Item
-                onSelect={() => {
-                  actions.editTemplate(node);
-                }}
-              >
-                {t('board.menu.editTemplate')}
-              </ContextMenu.Item>
+              <>
+                <ContextMenu.Item
+                  onSelect={() => {
+                    actions.editCard(node);
+                  }}
+                >
+                  {t('board.menu.editCard')}
+                </ContextMenu.Item>
+                <ContextMenu.Item
+                  onSelect={() => {
+                    actions.editTemplate(node);
+                  }}
+                >
+                  {t('board.menu.editTemplate')}
+                </ContextMenu.Item>
+              </>
             ) : null}
             <ContextMenu.Separator />
             <ContextMenu.Item

@@ -94,10 +94,10 @@ export function linkTarget(link: TicketLink, names: WorkspaceNames): OpenTarget 
   }
 }
 
-export function cardTarget(
-  target: { kind: 'template' | 'card'; id: string } | null,
-  names: WorkspaceNames,
-): OpenTarget {
+export type CardTarget =
+  { kind: 'template' | 'card'; id: string } | { kind: 'item'; id: string; boardId: string };
+
+export function cardTarget(target: CardTarget | null, names: WorkspaceNames): OpenTarget {
   return {
     editor: 'cardDesigner',
     state: { target },

@@ -50,6 +50,8 @@ An asset link shows each target as the card a ticket's linked asset uses. Click 
 
 A card placed with the Card tool shows its template and keeps its values on the item. Dropping a saved card places a card that follows it: edits on the board, in Properties or in the designer show wherever it is placed. Properties offers Save as card asset for a template card, and Make independent copy for a following card. A copy needs a template, because a board item has no layout of its own.
 
+Right-click a board card for Edit card or Edit card template. Edit card opens the saved card it follows, or else that board card itself in the designer: its name, template and values save back to the board, and Save as card asset turns it into a saved card it then follows. Edit card template opens the template, also for a following card.
+
 A following card also keeps the values it last showed on the board. If the saved card is deleted, the board card stays with those values and its template.
 
 ## Model
@@ -67,4 +69,4 @@ A board card item stores `templateId`, `cardId` and `values`. A card link is `{ 
 
 ## Library
 
-`src/renderer/lib/cards` keeps templates and saved cards, reloads them when the project changes, and exposes `useCardTemplates`, `useSavedCards`, `useBoardCard`, `resolveCardLayout`, the create, update, duplicate and delete actions, the field kinds and the starter templates. The components live in `src/renderer/components/editors/Cards`: `CardLibrary`, `CardDesigner`, `CardView` and `TemplateSettings`. A new field kind is an entry in `CARD_FIELD_KINDS`, its value rule in `FIELD_KINDS`, a case in `CardView` and a label in `editors.json`.
+`src/renderer/lib/cards` keeps templates and saved cards, reloads them when the project changes, and exposes `useCardTemplates`, `useSavedCards`, `useBoardCard`, `resolveCardLayout`, the create, update, duplicate and delete actions, the field kinds and the starter templates. The components live in `src/renderer/components/editors/Cards`: `CardLibrary`, `CardDesigner`, `BoardCardDesigner` for a card on a board, `CardPreview`, `CardView` and `TemplateSettings`. The designer's area state is `target`: a template, a saved card, or `{ kind: 'item', id, boardId }` for a board card. A new field kind is an entry in `CARD_FIELD_KINDS`, its value rule in `FIELD_KINDS`, a case in `CardView` and a label in `editors.json`.

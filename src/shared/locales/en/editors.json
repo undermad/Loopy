@@ -439,6 +439,7 @@
       "release": "Take out of container",
       "detach": "Detach",
       "editTemplate": "Edit card template",
+      "editCard": "Edit card",
       "delete": "Delete"
     },
     "back": "Back to {{name}}",
@@ -572,6 +573,8 @@
     "deleteCardConfirm": "Delete the card \"{{name}}\"? Boards that show it keep a copy of its values.",
     "duplicateCard": "Duplicate card",
     "missingTarget": "This card or template was deleted.",
+    "onBoard": "This card lives on the board {{board}}.",
+    "pickTemplate": "Pick a template to lay out this card.",
     "noTemplates": "No templates yet",
     "noCards": "No saved cards yet",
     "savedCards": "Cards",

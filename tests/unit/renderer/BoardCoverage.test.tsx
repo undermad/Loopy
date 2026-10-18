@@ -964,6 +964,38 @@ describe('board context menu', () => {
     fireEvent.contextMenu(item('blank'));
     await user.click(await screen.findByRole('menuitem', { name: 'Edit card template' }));
     expect(designerTarget()).toBeNull();
+
+    fireEvent.contextMenu(item('card'));
+    await user.click(await screen.findByRole('menuitem', { name: 'Edit card' }));
+    expect(designerTarget()).toEqual({ kind: 'item', id: 'card', boardId });
+  });
+
+  it('edits the saved card behind a card and its template from the menu', async () => {
+    const user = userEvent.setup();
+    const template = await createCardTemplate({ name: 'Hero', fields: [] });
+    const saved = await createSavedCard({ name: 'Knight', templateId: template.id });
+    await open([
+      {
+        ...createItem({
+          boardId,
+          preset: 'card',
+          rect: { x: 0, y: 0 },
+          z: 1,
+          data: { templateId: template.id, cardId: saved.id, values: {} },
+        }),
+        id: 'linked',
+      },
+    ]);
+    const element = document.querySelector<HTMLElement>('.react-flow__node[data-id="linked"]');
+    if (!element) throw new Error('missing card');
+
+    fireEvent.contextMenu(element);
+    await user.click(await screen.findByRole('menuitem', { name: 'Edit card' }));
+    expect(designerTarget()).toEqual({ kind: 'card', id: saved.id });
+
+    fireEvent.contextMenu(element);
+    await user.click(await screen.findByRole('menuitem', { name: 'Edit card template' }));
+    expect(designerTarget()).toEqual({ kind: 'template', id: template.id });
   });
 
   it('reverses and deletes arrows and ignores drags and empty space', async () => {

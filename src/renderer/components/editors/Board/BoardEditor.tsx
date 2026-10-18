@@ -1235,12 +1235,15 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
         commit({ upsertNodes: undock([node.id], allNodes) });
       },
       editTemplate: (node) => {
-        const cardId = node.data['cardId'];
-        if (typeof cardId === 'string' && findSavedCard(cardId)) {
-          openInEditor(cardTarget({ kind: 'card', id: cardId }, names));
-          return;
-        }
-        onEditTemplate(typeof node.data['templateId'] === 'string' ? node.data['templateId'] : null);
+        const saved = typeof node.data['cardId'] === 'string' ? findSavedCard(node.data['cardId']) : null;
+        const templateId = saved ? saved.templateId : node.data['templateId'];
+        onEditTemplate(typeof templateId === 'string' ? templateId : null);
+      },
+      editCard: (node) => {
+        const saved = typeof node.data['cardId'] === 'string' ? findSavedCard(node.data['cardId']) : null;
+        openInEditor(
+          cardTarget(saved ? { kind: 'card', id: saved.id } : { kind: 'item', id: node.id, boardId }, names),
+        );
       },
       removeNode: (node) => {
         commit({ removeNodeIds: [node.id, ...descendants(node.id, allNodes)] });
@@ -1267,7 +1270,7 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
         select([]);
       },
     }),
-    [allNodes, commit, duplicate, names, onEditTemplate, select],
+    [allNodes, boardId, commit, duplicate, names, onEditTemplate, select],
   );
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {

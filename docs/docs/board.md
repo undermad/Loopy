@@ -73,7 +73,7 @@ Docked items select as a group first: a click on any of them selects the whole g
 | Resize evenly      | Hold Shift while dragging a corner to keep the proportions                                              |
 | Snap               | Hold Ctrl while moving, resizing or rotating; with grid snap on it is always on                         |
 
-Right-click an item or arrow for its context menu. A right-button drag still pans; the menu opens only when the pointer did not move.
+Right-click an item or arrow for its context menu. A right-button drag still pans; the menu opens only when the pointer did not move. A card's menu has Edit card and Edit card template, see the cards page.
 
 Pasting an image from the clipboard imports it into assets and places it. Plain text becomes a text item. Copied items carry their children, the arrows between them and their docks.
 

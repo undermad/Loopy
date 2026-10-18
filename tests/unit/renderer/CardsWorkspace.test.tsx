@@ -6,6 +6,7 @@ import type { LayoutNode } from '@shared/layout';
 import { buildWorkspace, builtInLayoutPresets } from '@shared/layout-presets';
 import { CardDesigner } from '@renderer/components/editors/Cards/CardDesigner';
 import { CardLibrary } from '@renderer/components/editors/Cards/CardLibrary';
+import { commitChanges, createBoard, createItem, getBoardNodes, loadBoard } from '@renderer/lib/board';
 import { createCardTemplate, createSavedCard } from '@renderer/lib/cards';
 import type { EditorProps } from '@renderer/lib/editors';
 import { cardTarget, linkTarget, useActiveWorkspace } from '@renderer/lib/workspaces';
@@ -253,6 +254,67 @@ describe('card designer', () => {
     expect(api.createCard).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Hero', templateId: 'template-1', layout: null }) as object,
     );
+  });
+
+  it('edits a card that lives on a board and can save it as a card asset', async () => {
+    const user = userEvent.setup();
+    const onState = vi.fn();
+    const template = await createCardTemplate({
+      name: 'Hero',
+      fields: [{ id: 'title', kind: 'heading', label: 'Title' }],
+    });
+    const board = await createBoard({ name: 'Castle' });
+    await loadBoard(board.id);
+    await commitChanges(
+      board.id,
+      {
+        upsertNodes: [
+          {
+            ...createItem({
+              boardId: board.id,
+              preset: 'card',
+              rect: { x: 0, y: 0 },
+              z: 1,
+              data: { templateId: template.id, values: { title: 'Ignis' } },
+            }),
+            id: 'node',
+          },
+        ],
+      },
+      { history: false },
+    );
+    render(
+      <Stateful
+        editor={CardDesigner}
+        initial={{ target: { kind: 'item', id: 'node', boardId: board.id } }}
+        onState={onState}
+      />,
+    );
+    expect(await screen.findByText('This card lives on the board Castle.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete card' })).not.toBeInTheDocument();
+    const title = screen.getByRole('textbox', { name: 'Title' });
+    expect(title).toHaveValue('Ignis');
+    await user.clear(title);
+    await user.type(title, 'Ember');
+    await user.tab();
+    await user.type(screen.getByRole('textbox', { name: 'Card name' }), 'Fire mage');
+    await user.click(screen.getByRole('button', { name: 'Save card' }));
+    expect(getBoardNodes(board.id)[0]?.data).toMatchObject({
+      name: 'Fire mage',
+      templateId: template.id,
+      values: { title: 'Ember' },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Save as card asset' }));
+    expect(api.createCard).toHaveBeenCalledWith({
+      name: 'Fire mage',
+      templateId: template.id,
+      values: { title: 'Ember' },
+    });
+    await vi.waitFor(() => {
+      expect(getBoardNodes(board.id)[0]?.data['cardId']).toBe('card-2');
+    });
+    expect(onState).toHaveBeenLastCalledWith({ target: { kind: 'card', id: 'card-2' } });
   });
 
   it('says when its card or template is gone', async () => {
