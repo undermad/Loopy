@@ -43,7 +43,7 @@ export interface ParsedNote {
 }
 
 const LINK = /(!?)\[\[([^[\]\n]+?)\]\]/g;
-const KIND_PREFIX = /^(board|palette|asset|ticket):\s*(.*)$/i;
+const KIND_PREFIX = new RegExp(String.raw`^(${LOOPY_LINK_KINDS.join('|')}):\s*(.*)$`, 'i');
 const TAG = /(^|[\s(,])#([\p{L}\p{N}_\-/]+)/gu;
 const HEADING = /^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$/;
 const BLOCK = /[ \t]\^([A-Za-z0-9-]+)[ \t]*$/;

@@ -121,7 +121,7 @@ Built-in templates cover a character, a game mechanic, a level, an enemy, an ite
 
 ## Elsewhere in Loopy
 
-Notes are the third kind of internal asset. The Assets editor lists them under Internal with their own folder tree, and moves, renames and deletes them like boards and palettes. A note dropped on a board becomes a link item, and on a ticket a linked asset; both show the title and the first line, and open the note in the Idea Map workspace. The ticket link picker has a Notes group. Renaming a board, palette or file rewrites `[[board:…]]`, `[[palette:…]]` and `[[asset:…]]` links in notes. Deleting one leaves the links in place, shown as missing.
+Notes are the third kind of internal asset. The Assets editor lists them under Internal with their own folder tree, and moves, renames and deletes them like boards and palettes. A note dropped on a board becomes a link item, and on a ticket a linked asset; both show the title and the first line, and open the note in the Idea Map workspace. The ticket link picker has a Notes group. Renaming a board, palette, file or saved card rewrites `[[board:…]]`, `[[palette:…]]`, `[[asset:…]]` and `[[card:…]]` links in notes. Deleting one leaves the links in place, shown as missing.
 
 ## How it works
 

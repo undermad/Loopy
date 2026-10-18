@@ -7,6 +7,7 @@ import { IpcChannel } from '@shared/ipc';
 import { registerCardTemplatesHandlers } from '../../../src/main/ipc/card-templates';
 import { createProject, type ProjectDatabase } from '../../../src/main/storage';
 import { createFolder, deleteFolder } from '../../../src/main/storage/assets-repository';
+import { createNote, listNotes } from '../../../src/main/storage/notes-repository';
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown;
 
@@ -150,6 +151,21 @@ describe('saved cards IPC handlers', () => {
     expect(moved?.folderId).toBe(top);
 
     await expect(call(IpcChannel.cardsDelete, card.id)).resolves.toEqual([]);
+  });
+
+  it('rewrites card links in notes when a card is renamed and keeps them when it is deleted', async () => {
+    const call = setup();
+    const card = await call<SavedCard>(IpcChannel.cardsCreate, { name: 'Knight' });
+    createNote(project.db, { title: 'Cast', body: 'Lead: [[card:Knight]], see ![[card:knight|the hero]]' });
+
+    await call(IpcChannel.cardsUpdate, card.id, { values: { title: 'x' } });
+    expect(listNotes(project.db)[0]?.body).toBe('Lead: [[card:Knight]], see ![[card:knight|the hero]]');
+
+    await call(IpcChannel.cardsUpdate, card.id, { name: 'Paladin' });
+    expect(listNotes(project.db)[0]?.body).toBe('Lead: [[card:Paladin]], see ![[card:Paladin|the hero]]');
+
+    await call(IpcChannel.cardsDelete, card.id);
+    expect(listNotes(project.db)[0]?.body).toContain('[[card:Paladin]]');
   });
 
   it('needs an open project', async () => {

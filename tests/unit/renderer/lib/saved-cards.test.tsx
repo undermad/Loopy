@@ -1,6 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { cardFieldSchema } from '@shared/cards';
+import { parseLinkText } from '@shared/markdown';
+import { useLoopyItems } from '@renderer/components/editors/Notes/useLoopyItems';
 import {
   blankTemplate,
   coerceValue,
@@ -122,5 +124,13 @@ describe('saved cards store', () => {
     expect(resolveCardLayout(onTemplate, [template])?.width).toBe(300);
     expect(resolveCardLayout(onTemplate, [])).toBeNull();
     expect(resolveCardLayout(loose, [template])?.width).toBe(500);
+  });
+
+  it('resolves card links written in notes', async () => {
+    const card = await act(() => createSavedCard({ name: 'Knight' }));
+    const { result } = renderHook(() => useLoopyItems());
+    const link = parseLinkText('card: knight|the hero');
+    expect(link.kind).toBe('card');
+    expect(result.current.find('card', link.target)?.id).toBe(card.id);
   });
 });
