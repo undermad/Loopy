@@ -76,6 +76,14 @@ The boundary is a convention checked in review, not a lint rule. A deep import s
 
 Everything lives under Electron's user data directory. `storagePaths` in `src/main/storage/paths.ts` is the only place that knows the layout.
 
+| Build                       | User data directory      |
+| --------------------------- | ------------------------ |
+| Installed app               | `%APPDATA%\Loopy`        |
+| `npm run dev`, unpacked app | `%APPDATA%\loopy-dev`    |
+| `LOOPY_USER_DATA` set       | That path, for any build |
+
+`userDataOverride` in `src/main/env.ts` picks the directory. Windows paths ignore case, so without the separate dev directory a dev build would share, and migrate, the installed app's projects.
+
 | File                  | Holds                                                                     | Format                     |
 | --------------------- | ------------------------------------------------------------------------- | -------------------------- |
 | `settings.json`       | App preferences: theme, UI font, font size, editor defaults, brushes      | JSON with `schemaVersion`  |

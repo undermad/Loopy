@@ -13,7 +13,7 @@ import {
 } from 'electron';
 import { ASSET_PROTOCOL } from '@shared/assets';
 import { assetSchemePrivileges, handleAssetRequest } from './asset-protocol';
-import { parseEnv } from './env';
+import { parseEnv, userDataOverride } from './env';
 import { registerAppHandlers } from './ipc/app';
 import { registerAssetsHandlers } from './ipc/assets';
 import { registerBoardsHandlers } from './ipc/boards';
@@ -57,7 +57,8 @@ import { syncingIpc, type DataNotifier } from './ipc/sync';
 loadDotenv({ quiet: true });
 const env = parseEnv(process.env);
 const logger = createLogger(env.LOOPY_LOG_LEVEL);
-if (env.LOOPY_USER_DATA) app.setPath('userData', env.LOOPY_USER_DATA);
+const userData = userDataOverride(env, { packaged: app.isPackaged, appData: app.getPath('appData') });
+if (userData) app.setPath('userData', userData);
 protocol.registerSchemesAsPrivileged([assetSchemePrivileges, pickerSchemePrivileges]);
 
 function pickerWindow(window: BrowserWindow): Omit<PickerWindow, 'webContentsId'> {
