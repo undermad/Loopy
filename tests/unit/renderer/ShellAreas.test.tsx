@@ -19,7 +19,6 @@ function at<T>(items: T[], index: number): T {
 beforeEach(async () => {
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
 });

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { workspacesSchema } from './layout';
 import { projectNameSchema } from './project';
 
-export const DEVICE_STATE_SCHEMA_VERSION = 1;
+export const DEVICE_STATE_SCHEMA_VERSION = 2;
 
 export const windowBoundsSchema = z.object({
   x: z.number().int(),
@@ -14,13 +14,13 @@ export const windowBoundsSchema = z.object({
 export const recentProjectSchema = z.object({
   id: z.uuid(),
   name: projectNameSchema,
+  path: z.string().min(1),
   openedAt: z.iso.datetime(),
 });
 
 export const deviceStateSchema = z.object({
   schemaVersion: z.literal(DEVICE_STATE_SCHEMA_VERSION),
   windowBounds: windowBoundsSchema.optional(),
-  lastProjectId: z.uuid().optional(),
   recentProjects: z.array(recentProjectSchema).max(10).default([]),
   workspaces: workspacesSchema.optional(),
   statusBar: z.boolean().default(true),

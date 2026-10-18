@@ -1,13 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { openFailedDialog, projectPathFromArgv, replaceDialog } from '../../../src/main/open-file';
+import {
+  openFailedDialog,
+  projectPathFromArgv,
+  saveChangesDialog,
+  saveChoice,
+} from '../../../src/main/open-file';
 
-describe('replaceDialog', () => {
-  it('names the local project and keeps it unless the user picks Replace', () => {
-    const options = replaceDialog('en', 'Quest');
+describe('saveChangesDialog', () => {
+  it("names the project and offers Save, Don't save and Cancel, with Cancel on Escape", () => {
+    const options = saveChangesDialog('en', 'Quest');
     expect(options.message).toContain('"Quest"');
-    expect(options.buttons).toEqual(['Keep mine', 'Replace']);
+    expect(options.buttons).toEqual(['Save', "Don't save", 'Cancel']);
     expect(options.defaultId).toBe(0);
-    expect(options.cancelId).toBe(0);
+    expect(options.cancelId).toBe(2);
+    expect(options.noLink).toBe(true);
+  });
+
+  it('maps each button to a choice', () => {
+    expect(saveChoice(0)).toBe('save');
+    expect(saveChoice(1)).toBe('discard');
+    expect(saveChoice(2)).toBe('cancel');
+    expect(saveChoice(7)).toBe('cancel');
   });
 });
 

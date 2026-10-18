@@ -13,8 +13,6 @@ export const projectInfoSchema = z.object({
 
 export type ProjectInfo = z.infer<typeof projectInfoSchema>;
 
-export const DEFAULT_PROJECT_NAME = 'Untitled';
-
 export const recoverableProjectSchema = z.object({
   id: z.uuid(),
   name: projectNameSchema,

@@ -75,7 +75,6 @@ describe('board shortcuts', () => {
   it('undoes and redoes the active board from any board panel', async () => {
     const api = await bootTestApp();
     const project = makeProject('Keys');
-    api.projects = [project];
     api.current = project;
     api.emitProject();
     const board = await createBoard({ name: 'Keys' });

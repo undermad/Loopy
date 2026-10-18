@@ -8,7 +8,7 @@ import {
   layoutNodeSchema,
   type LayoutNode,
 } from './layout';
-import { projectInfoSchema, projectNameSchema, type ProjectInfo } from './project';
+import { projectInfoSchema, recoverableProjectSchema, type ProjectInfo } from './project';
 import { hexColorSchema, themeSchema, type Theme } from './theme';
 import {
   assetPickResultSchema,
@@ -88,6 +88,7 @@ import {
 
 export const IpcChannel = {
   getAppVersion: 'app:getVersion',
+  appQuit: 'app:quit',
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
   settingsChanged: 'settings:changed',
@@ -109,11 +110,14 @@ export const IpcChannel = {
   projectList: 'project:list',
   projectCreate: 'project:create',
   projectOpen: 'project:open',
+  projectOpenRecent: 'project:openRecent',
   projectClose: 'project:close',
   projectState: 'project:state',
-  projectImport: 'project:import',
-  projectExport: 'project:export',
-  projectDelete: 'project:delete',
+  projectSave: 'project:save',
+  projectSaveAs: 'project:saveAs',
+  projectRename: 'project:rename',
+  projectRecover: 'project:recover',
+  projectDiscardRecovery: 'project:discardRecovery',
   projectReveal: 'project:reveal',
   projectRemoveRecent: 'project:removeRecent',
   projectChanged: 'project:changed',
@@ -225,28 +229,29 @@ export const projectFailureCodeSchema = z.enum([
   'UNSUPPORTED_VERSION',
   'CORRUPT',
 ]);
-export const projectSummarySchema = projectInfoSchema.extend({ lastOpenedAt: z.iso.datetime().optional() });
-export const projectListSchema = z.array(projectSummarySchema);
+export const projectPathSchema = z.string().min(1);
+export const recentProjectEntrySchema = recentProjectSchema.extend({ missing: z.boolean() });
+export const projectListSchema = z.array(recentProjectEntrySchema);
 export const projectStateSchema = z.object({
   current: projectInfoSchema.nullable(),
+  path: projectPathSchema.nullable(),
+  dirty: z.boolean(),
   recent: z.array(recentProjectSchema),
+  recoverable: z.array(recoverableProjectSchema),
 });
 
 export const openProjectResultSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('opened'), project: projectInfoSchema }),
-  z.object({ status: z.literal('failed'), code: projectFailureCodeSchema }),
-]);
-
-export const importProjectResultSchema = z.discriminatedUnion('status', [
-  z.object({ status: z.literal('imported'), project: projectInfoSchema }),
   z.object({ status: z.literal('cancelled') }),
   z.object({ status: z.literal('failed'), code: projectFailureCodeSchema }),
 ]);
 
+export const saveProjectResultSchema = z.object({ status: z.enum(['saved', 'cancelled', 'failed']) });
+
 export const shellStateSchema = z.object({ workspaces: workspacesSchema.nullable(), statusBar: z.boolean() });
 export const shellStatePatchSchema = shellStateSchema.partial();
 
-export { appSettingsSchema, layoutPresetSchema, projectInfoSchema, projectNameSchema, themeSchema };
+export { appSettingsSchema, layoutPresetSchema, projectInfoSchema, themeSchema };
 
 export type AppVersion = z.infer<typeof appVersionSchema>;
 export type ColorScheme = z.infer<typeof colorSchemeSchema>;
@@ -254,10 +259,10 @@ export type ExportResult = z.infer<typeof exportResultSchema>;
 export type ImportThemeResult = z.infer<typeof importThemeResultSchema>;
 export type ImportLayoutResult = z.infer<typeof importLayoutResultSchema>;
 export type ProjectFailureCode = z.infer<typeof projectFailureCodeSchema>;
-export type ProjectSummary = z.infer<typeof projectSummarySchema>;
+export type RecentProjectEntry = z.infer<typeof recentProjectEntrySchema>;
 export type ProjectState = z.infer<typeof projectStateSchema>;
 export type OpenProjectResult = z.infer<typeof openProjectResultSchema>;
-export type ImportProjectResult = z.infer<typeof importProjectResultSchema>;
+export type SaveProjectResult = z.infer<typeof saveProjectResultSchema>;
 export type ShellState = z.infer<typeof shellStateSchema>;
 export type ShellStatePatch = z.infer<typeof shellStatePatchSchema>;
 export type EditCommand = z.infer<typeof editCommandSchema>;
@@ -280,6 +285,7 @@ export const detachedLayoutSchema = layoutNodeSchema.nullable();
 
 export interface LoopyApi {
   getAppVersion: () => Promise<AppVersion>;
+  quitApp: () => Promise<void>;
   getSettings: () => Promise<AppSettings>;
   setSettings: (patch: AppSettingsPatch) => Promise<AppSettings>;
   onSettingsChanged: (listener: (settings: AppSettings) => void) => Unsubscribe;
@@ -298,16 +304,19 @@ export interface LoopyApi {
   deleteTheme: (id: string) => Promise<void>;
   exportTheme: (id: string) => Promise<ExportResult>;
   importTheme: () => Promise<ImportThemeResult>;
-  listProjects: () => Promise<ProjectSummary[]>;
-  createProject: (name: string) => Promise<ProjectInfo>;
-  openProject: (id: string) => Promise<OpenProjectResult>;
+  listProjects: () => Promise<RecentProjectEntry[]>;
+  createProject: (name: string) => Promise<OpenProjectResult>;
+  openProject: () => Promise<OpenProjectResult>;
+  openRecentProject: (path: string) => Promise<OpenProjectResult>;
   closeProject: () => Promise<void>;
   getProjectState: () => Promise<ProjectState>;
-  importProject: () => Promise<ImportProjectResult>;
-  exportProject: () => Promise<ExportResult>;
-  deleteProject: (id: string) => Promise<void>;
-  revealProject: (id: string) => Promise<void>;
-  removeRecentProject: (id: string) => Promise<ProjectState>;
+  saveProject: () => Promise<SaveProjectResult>;
+  saveProjectAs: () => Promise<SaveProjectResult>;
+  renameProject: (name: string) => Promise<ProjectInfo>;
+  recoverProject: (id: string) => Promise<OpenProjectResult>;
+  discardRecovery: (id: string) => Promise<ProjectState>;
+  revealProject: (path: string) => Promise<void>;
+  removeRecentProject: (path: string) => Promise<ProjectState>;
   onProjectChanged: (listener: (state: ProjectState) => void) => Unsubscribe;
   getShellState: () => Promise<ShellState>;
   setShellState: (patch: ShellStatePatch) => Promise<ShellState>;

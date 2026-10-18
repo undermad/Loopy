@@ -48,7 +48,6 @@ beforeEach(async () => {
   patches.mockReset();
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await importFiles([file('hero.png', 'image/png'), file('theme.mp3', 'audio/mpeg')], 'auto');

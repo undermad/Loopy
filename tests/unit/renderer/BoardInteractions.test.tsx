@@ -99,7 +99,6 @@ function clipboard(initial: Record<string, string> = {}, files: File[] = []) {
 beforeEach(async () => {
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   const board = await createBoard({ name: 'Ideas' });

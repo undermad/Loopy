@@ -77,7 +77,6 @@ async function press(target: Element | Document, code: string) {
 beforeEach(async () => {
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await ticketActions.create({ title: 'Alpha', stateId: 'todo' });

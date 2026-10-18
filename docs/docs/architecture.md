@@ -84,15 +84,17 @@ Everything lives under Electron's user data directory. `storagePaths` in `src/ma
 
 `userDataOverride` in `src/main/env.ts` picks the directory. Windows paths ignore case, so without the separate dev directory a dev build would share, and migrate, the installed app's projects.
 
-| File                  | Holds                                                                     | Format                     |
-| --------------------- | ------------------------------------------------------------------------- | -------------------------- |
-| `settings.json`       | App preferences: theme, UI font, font size, editor defaults, brushes      | JSON with `schemaVersion`  |
-| `state.json`          | Device state: recent projects, workspaces, status bar                     | JSON with `schemaVersion`  |
-| `projects/<id>.loopy` | One project: metadata, settings, tickets, boards, palettes, assets, notes | SQLite with `user_version` |
-| `themes/<id>.json`    | One custom theme per file, see the theming page                           | JSON with `schemaVersion`  |
-| `layouts/<id>.json`   | One saved layout preset per file, see the shell page                      | JSON with `schemaVersion`  |
+| File                  | Holds                                                                | Format                     |
+| --------------------- | -------------------------------------------------------------------- | -------------------------- |
+| `settings.json`       | App preferences: theme, UI font, font size, editor defaults, brushes | JSON with `schemaVersion`  |
+| `state.json`          | Device state: recent project paths, workspaces, status bar           | JSON with `schemaVersion`  |
+| `working/<id>.loopy`  | The working copy of the open project, see the projects page          | SQLite with `user_version` |
+| `working/<id>.json`   | Where the working copy saves to and whether it has unsaved changes   | JSON                       |
+| `projects/<id>.loopy` | Projects from before version 2 of `state.json`, opened like any file | SQLite with `user_version` |
+| `themes/<id>.json`    | One custom theme per file, see the theming page                      | JSON with `schemaVersion`  |
+| `layouts/<id>.json`   | One saved layout preset per file, see the shell page                 | JSON with `schemaVersion`  |
 
-The user never sees these paths. The project picker lists the `projects` directory, and sharing goes through export and import.
+The user never sees these paths. Project files live wherever the user saves them; see ADR 0022.
 
 ### Settings and device state
 
@@ -109,11 +111,12 @@ A project is one SQLite database opened through `node:sqlite`, which ships with 
 | `createProject`   | Creates the file, stamps the `application_id`, runs all migrations, inserts the project row |
 | `openProject`     | Checks the SQLite header and `application_id`, migrates, validates the project row          |
 | `isProjectFile`   | Header and `application_id` check without migrating, for dialogs and drag and drop          |
-| `exportProject`   | `VACUUM INTO` a compacted copy at a path the user picked                                    |
-| `importProject`   | Copies a `.loopy` file into the projects directory and opens it, which migrates it          |
+| `saveProjectFile` | `VACUUM INTO` a temporary file beside the target, then renames it over the target           |
+| `importProject`   | Copies a `.loopy` file to a working copy and opens it, which migrates it                    |
+| `renameProject`   | Updates the name in the singleton `project` row                                             |
 | `readProjectInfo` | The id, name and timestamps from the singleton `project` row                                |
 
-The export is the same format as the working file, so there is nothing to translate and a backup is a copy. Imports are copied rather than opened in place, so a file on removable or synced storage is never written live.
+The saved file is the same format as the working copy, so there is nothing to translate and a backup is a copy. Files are copied rather than opened in place, so a file on removable or synced storage is never written live, and a crash during a save leaves the old file whole.
 
 Databases open in WAL mode. While a project is open, SQLite keeps `-wal` and `-shm` files next to it and removes them on close. Schema changes are SQL strings in `src/main/storage/project-migrations.ts`, applied in order inside one transaction by `migrateDatabase`. A file with a `user_version` above the current one is refused rather than guessed at. The renderer never receives a database handle; features will expose what they need through IPC.
 

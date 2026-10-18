@@ -343,7 +343,6 @@ describe('history', () => {
     vi.setSystemTime(0);
     const api = await bootTestApp();
     const project = makeProject('History');
-    api.projects = [project];
     api.current = project;
     api.emitProject();
     const board = await createBoard({ name: 'Undo' });
@@ -429,7 +428,6 @@ describe('docks follow touch', () => {
   it('unlinks the outer items when the middle one is removed', async () => {
     const api = await bootTestApp();
     const project = makeProject('Docks');
-    api.projects = [project];
     api.current = project;
     api.emitProject();
     const board = await createBoard({ name: 'Docks' });

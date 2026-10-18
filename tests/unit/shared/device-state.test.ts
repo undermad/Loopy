@@ -12,24 +12,26 @@ describe('device state schema', () => {
     });
   });
 
-  it('accepts window bounds, the last project and recent projects', () => {
+  it('accepts window bounds and recent projects with their paths', () => {
     const state = {
       schemaVersion: DEVICE_STATE_SCHEMA_VERSION,
       windowBounds: { x: -8, y: 0, width: 1280, height: 800 },
-      lastProjectId: id,
-      recentProjects: [{ id, name: 'Demo', openedAt: '2026-10-17T09:00:00.000Z' }],
+      recentProjects: [
+        { id, name: 'Demo', path: 'D:/Games/Demo.loopy', openedAt: '2026-10-17T09:00:00.000Z' },
+      ],
       statusBar: false,
     };
     expect(deviceStateSchema.parse(state)).toEqual(state);
   });
 
-  it('rejects a zero-sized window, a malformed id and more than ten recent projects', () => {
+  it('rejects a zero-sized window, a recent project without a path and more than ten recent projects', () => {
     const valid = { schemaVersion: DEVICE_STATE_SCHEMA_VERSION };
     expect(
       deviceStateSchema.safeParse({ ...valid, windowBounds: { x: 0, y: 0, width: 0, height: 1 } }).success,
     ).toBe(false);
-    expect(deviceStateSchema.safeParse({ ...valid, lastProjectId: 'demo' }).success).toBe(false);
-    const recent = { id, name: 'Demo', openedAt: '2026-10-17T09:00:00.000Z' };
+    const recent = { id, name: 'Demo', path: 'D:/Games/Demo.loopy', openedAt: '2026-10-17T09:00:00.000Z' };
+    const { path: _path, ...withoutPath } = recent;
+    expect(deviceStateSchema.safeParse({ ...valid, recentProjects: [withoutPath] }).success).toBe(false);
     expect(
       deviceStateSchema.safeParse({ ...valid, recentProjects: Array<typeof recent>(11).fill(recent) })
         .success,

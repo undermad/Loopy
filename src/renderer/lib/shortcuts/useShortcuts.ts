@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { tinykeys } from 'tinykeys';
 import { SHORTCUT_IDS, keymap, type ShortcutId } from './keymap';
 
-const ALWAYS: ReadonlySet<ShortcutId> = new Set(['preferences', 'quickSwitcher']);
+const ALWAYS: ReadonlySet<ShortcutId> = new Set(['preferences', 'quickSwitcher', 'save', 'saveAs']);
 
 export type ShortcutHandlers = Partial<Record<ShortcutId, (event: KeyboardEvent) => void>>;
 

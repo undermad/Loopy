@@ -22,7 +22,6 @@ function first(items: HTMLElement[]): HTMLElement {
 beforeEach(async () => {
   api = await bootTestApp();
   const project = makeProject('Space Game');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await act(async () => {

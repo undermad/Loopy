@@ -146,12 +146,6 @@ export async function openProject(path: string): Promise<ProjectDatabase> {
   }
 }
 
-export async function exportProject(project: ProjectDatabase, destination: string): Promise<void> {
-  await mkdir(dirname(destination), { recursive: true });
-  await removeDatabaseFiles(destination);
-  project.db.exec(`VACUUM INTO '${destination.replaceAll("'", "''")}'`);
-}
-
 export function renameProject(project: ProjectDatabase, name: string, now: Date = new Date()): ProjectInfo {
   const projectName = projectNameSchema.parse(name);
   project.db

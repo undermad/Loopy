@@ -104,7 +104,6 @@ function renderArrow(
 beforeEach(async () => {
   const api = await bootTestApp();
   const project = makeProject('Items');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await act(async () => {

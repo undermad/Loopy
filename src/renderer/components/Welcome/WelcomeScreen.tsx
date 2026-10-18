@@ -1,19 +1,20 @@
-import { useState } from 'react';
-import { FolderOpen, Inbox, Plus } from 'lucide-react';
+import { FolderOpen, Plus } from 'lucide-react';
 import { useFormat, useTranslation } from '@renderer/lib/i18n';
 import {
-  deleteProject,
-  exportProject,
-  importProject,
+  discardRecovery,
   openProject,
+  openRecentProject,
+  recoverProject,
   removeRecentProject,
   revealProject,
-  useProjectList,
+  startCreatingProject,
+  useCreatingProject,
   useRecentProjects,
+  useRecoverableProjects,
 } from '@renderer/lib/project';
-import { Button, ConfirmDialog, ContextMenu, EmptyState, useToast } from '@renderer/ui';
-import type { ProjectSummary } from '@shared/ipc';
-import { NewProjectDialog } from './NewProjectDialog';
+import { Button, ContextMenu, useToast } from '@renderer/ui';
+import type { OpenProjectResult } from '@shared/ipc';
+import { ProjectCreateView } from './ProjectCreateView';
 import { ProjectRow } from './ProjectRow';
 import styles from './WelcomeScreen.module.scss';
 
@@ -22,26 +23,17 @@ export function WelcomeScreen() {
   const { t: tc } = useTranslation('common');
   const format = useFormat();
   const toast = useToast();
-  const projects = useProjectList();
+  const creating = useCreatingProject();
   const recent = useRecentProjects();
-  const [createOpen, setCreateOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<ProjectSummary | null>(null);
+  const recoverable = useRecoverableProjects();
 
-  async function open(id: string) {
-    const result = await openProject(id);
+  async function report(pending: Promise<OpenProjectResult>) {
+    const result = await pending;
     if (result.status === 'failed')
       toast.show({ title: t('openFailed'), description: result.code, variant: 'danger' });
   }
 
-  async function importFile() {
-    const result = await importProject();
-    if (result.status === 'imported')
-      toast.show({ title: t('imported', { name: result.project.name }), variant: 'success' });
-    if (result.status === 'failed')
-      toast.show({ title: t('openFailed'), description: result.code, variant: 'danger' });
-  }
-
-  const projectIds = new Set(projects.map((project) => project.id));
+  if (creating) return <ProjectCreateView />;
 
   return (
     <div className={styles['welcome']}>
@@ -49,62 +41,52 @@ export function WelcomeScreen() {
         <h1 className={styles['title']}>{t('title')}</h1>
         <p className={styles['tagline']}>{tc('app.tagline')}</p>
         <div className={styles['actions']}>
-          <Button
-            variant="primary"
-            icon={<Plus aria-hidden="true" />}
-            onClick={() => {
-              setCreateOpen(true);
-            }}
-          >
+          <Button variant="primary" icon={<Plus aria-hidden="true" />} onClick={startCreatingProject}>
             {t('newProject')}
           </Button>
-          <Button icon={<FolderOpen aria-hidden="true" />} onClick={() => void importFile()}>
+          <Button icon={<FolderOpen aria-hidden="true" />} onClick={() => void report(openProject())}>
             {t('openFile')}
           </Button>
-          <p className={styles['hint']}>{t('openFileHint')}</p>
         </div>
       </section>
       <div className={styles['lists']}>
-        <section className={styles['section']} aria-labelledby="welcome-projects">
-          <h2 id="welcome-projects" className={styles['heading']}>
-            {t('projects')}
-          </h2>
-          {projects.length === 0 ? (
-            <EmptyState icon={<Inbox />} title={t('noProjects')} description={t('noProjectsHint')} />
-          ) : (
+        {recoverable.length > 0 ? (
+          <section className={styles['recover']} aria-labelledby="welcome-recover">
+            <h2 id="welcome-recover" className={styles['heading']}>
+              {t('recoverTitle')}
+            </h2>
+            <p className={styles['hint']}>{t('recoverHint')}</p>
             <ul className={styles['list']}>
-              {projects.map((project) => (
-                <ProjectRow
-                  key={project.id}
-                  name={project.name}
-                  meta={t('lastOpened', { when: format.relative(project.lastOpenedAt ?? project.updatedAt) })}
-                  onOpen={() => void open(project.id)}
-                  menu={
-                    <>
-                      <ContextMenu.Item onSelect={() => void open(project.id)}>
-                        {tc('actions.open')}
-                      </ContextMenu.Item>
-                      <ContextMenu.Item onSelect={() => void revealProject(project.id)}>
-                        {t('reveal')}
-                      </ContextMenu.Item>
-                      <ContextMenu.Item onSelect={() => void open(project.id).then(() => exportProject())}>
-                        {tc('actions.export')}
-                      </ContextMenu.Item>
-                      <ContextMenu.Separator />
-                      <ContextMenu.Item
-                        onSelect={() => {
-                          setDeleteTarget(project);
-                        }}
-                      >
-                        {tc('actions.delete')}
-                      </ContextMenu.Item>
-                    </>
-                  }
-                />
+              {recoverable.map((entry) => (
+                <li key={entry.id} className={styles['recoverRow']}>
+                  <span className={styles['rowText']}>
+                    <span className={styles['rowName']}>{entry.name}</span>
+                    <span className={styles['rowMeta']}>
+                      {entry.path ?? t('notSaved')} ·{' '}
+                      {t('changed', { when: format.relative(entry.modifiedAt) })}
+                    </span>
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    aria-label={t('restoreNamed', { name: entry.name })}
+                    onClick={() => void report(recoverProject(entry.id))}
+                  >
+                    {t('restore')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={t('discardNamed', { name: entry.name })}
+                    onClick={() => void discardRecovery(entry.id)}
+                  >
+                    {t('discard')}
+                  </Button>
+                </li>
               ))}
             </ul>
-          )}
-        </section>
+          </section>
+        ) : null}
         <section className={styles['section']} aria-labelledby="welcome-recent">
           <h2 id="welcome-recent" className={styles['heading']}>
             {t('recent')}
@@ -113,43 +95,42 @@ export function WelcomeScreen() {
             <p className={styles['hint']}>{t('noRecent')}</p>
           ) : (
             <ul className={styles['list']}>
-              {recent.map((entry) => {
-                const missing = !projectIds.has(entry.id);
-                return (
-                  <ProjectRow
-                    key={entry.id}
-                    name={entry.name}
-                    meta={missing ? t('missing') : t('lastOpened', { when: format.relative(entry.openedAt) })}
-                    disabled={missing}
-                    onOpen={() => void open(entry.id)}
-                    menu={
-                      <ContextMenu.Item onSelect={() => void removeRecentProject(entry.id)}>
+              {recent.map((entry) => (
+                <ProjectRow
+                  key={entry.path}
+                  name={entry.name}
+                  path={entry.path}
+                  meta={
+                    entry.missing ? t('missing') : t('lastOpened', { when: format.relative(entry.openedAt) })
+                  }
+                  disabled={entry.missing}
+                  onOpen={() => void report(openRecentProject(entry.path))}
+                  menu={
+                    <>
+                      <ContextMenu.Item
+                        disabled={entry.missing}
+                        onSelect={() => void report(openRecentProject(entry.path))}
+                      >
+                        {tc('actions.open')}
+                      </ContextMenu.Item>
+                      <ContextMenu.Item
+                        disabled={entry.missing}
+                        onSelect={() => void revealProject(entry.path)}
+                      >
+                        {t('reveal')}
+                      </ContextMenu.Item>
+                      <ContextMenu.Separator />
+                      <ContextMenu.Item onSelect={() => void removeRecentProject(entry.path)}>
                         {t('removeRecent')}
                       </ContextMenu.Item>
-                    }
-                  />
-                );
-              })}
+                    </>
+                  }
+                />
+              ))}
             </ul>
           )}
         </section>
       </div>
-      <NewProjectDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <ConfirmDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-        title={tc('actions.delete')}
-        description={t('deleteConfirm', { name: deleteTarget?.name ?? '' })}
-        confirmLabel={tc('actions.delete')}
-        cancelLabel={tc('actions.cancel')}
-        closeLabel={tc('actions.close')}
-        destructive
-        onConfirm={async () => {
-          if (deleteTarget) await deleteProject(deleteTarget.id);
-        }}
-      />
     </div>
   );
 }

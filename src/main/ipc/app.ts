@@ -6,10 +6,17 @@ export interface AppInfo {
   electronVersion: string;
 }
 
+export interface AppHandlerDeps extends AppInfo {
+  quit: () => void;
+}
+
 export function getAppVersion(info: AppInfo): AppVersion {
   return appVersionSchema.parse({ app: info.appVersion, electron: info.electronVersion });
 }
 
-export function registerAppHandlers(ipc: Pick<IpcMain, 'handle'>, info: AppInfo): void {
-  ipc.handle(IpcChannel.getAppVersion, () => getAppVersion(info));
+export function registerAppHandlers(ipc: Pick<IpcMain, 'handle'>, deps: AppHandlerDeps): void {
+  ipc.handle(IpcChannel.getAppVersion, () => getAppVersion(deps));
+  ipc.handle(IpcChannel.appQuit, () => {
+    deps.quit();
+  });
 }

@@ -63,7 +63,6 @@ function snapshot(nodes: BoardNode[]): BoardSnapshot {
 async function openBoard(): Promise<{ boardId: string }> {
   const api = await bootTestApp();
   const project = makeProject('Tiles');
-  api.projects = [project];
   api.current = project;
   api.emitProject();
   await act(async () => {
