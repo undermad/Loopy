@@ -2,6 +2,8 @@ import { useState, type ComponentType } from 'react';
 import {
   IMAGE_FITS,
   MIN_ITEM_SIZE,
+  boardLinkSchema,
+  type BoardLink,
   type Board,
   type BoardNode,
   type BoardNodeType,
@@ -15,9 +17,11 @@ import {
   fromUnits,
   itemData,
   normaliseAngle,
+  resizeTable,
   resolveItemStyle,
   rotateCluster,
   rotationOf,
+  tableSize,
   toUnits,
   undock,
   useBoardTiles,
@@ -31,11 +35,14 @@ import {
   useBoardCard,
   useCardTemplate,
   useCardTemplates,
+  useSavedCards,
 } from '@renderer/lib/cards';
+import { useNotes } from '@renderer/lib/notes';
 import { usePalettes } from '@renderer/lib/palettes';
 import { cardTarget, openInEditor, useWorkspaceNames } from '@renderer/lib/workspaces';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Button, Field, Input, PropertySection, Select, Switch, TextArea } from '@renderer/ui';
+import { GAME_ICON_NAMES } from '../../GameIcon/GameIcon';
 import { CardView } from '../Cards/CardView';
 import { ArrangeSection } from './ArrangeSection';
 import { NumberField } from './NumberField';
@@ -489,6 +496,132 @@ function DrawingSection({ node }: { node: BoardNode }) {
   );
 }
 
+function IconSection({ node }: { node: BoardNode }) {
+  const { t } = useTranslation('editors');
+  const { icon } = itemData({ type: 'icon', data: node.data });
+  return (
+    <Field label={t('properties.icon')}>
+      <Select
+        size="sm"
+        value={icon}
+        aria-label={t('properties.icon')}
+        options={GAME_ICON_NAMES.map((name) => ({ value: name, label: t(`icons.${name}`) }))}
+        onValueChange={(value) => {
+          save(withData(node, { icon: value }));
+        }}
+      />
+    </Field>
+  );
+}
+
+function ChecklistSection({ node }: { node: BoardNode }) {
+  const { t } = useTranslation('editors');
+  const data = itemData({ type: 'checklist', data: node.data });
+  const [title, setTitle] = useState<string | null>(null);
+  return (
+    <>
+      <Field label={t('properties.title')}>
+        <Input
+          size="sm"
+          value={title ?? data.title}
+          maxLength={80}
+          onChange={(event) => {
+            setTitle(event.target.value);
+          }}
+          onBlur={() => {
+            if (title !== null && title !== data.title) save(withData(node, { title }));
+            setTitle(null);
+          }}
+        />
+      </Field>
+      <Switch
+        size="sm"
+        label={t('properties.showProgress')}
+        checked={data.showProgress}
+        onCheckedChange={(showProgress) => {
+          save(withData(node, { showProgress }));
+        }}
+      />
+    </>
+  );
+}
+
+function TableSection({ node }: { node: BoardNode }) {
+  const { t } = useTranslation('editors');
+  const data = itemData({ type: 'table', data: node.data });
+  const size = tableSize(data.rows);
+  return (
+    <>
+      <div className={styles['pair']}>
+        <NumberField
+          label={t('properties.rows')}
+          value={size.rows}
+          min={1}
+          step={1}
+          digits={0}
+          onCommit={(rows) => {
+            save(withData(node, { rows: resizeTable(data.rows, rows, size.columns) }));
+          }}
+        />
+        <NumberField
+          label={t('properties.columns')}
+          value={size.columns}
+          min={1}
+          step={1}
+          digits={0}
+          onCommit={(columns) => {
+            save(withData(node, { rows: resizeTable(data.rows, size.rows, columns) }));
+          }}
+        />
+      </div>
+      <Switch
+        size="sm"
+        label={t('properties.headerRow')}
+        checked={data.header}
+        onCheckedChange={(header) => {
+          save(withData(node, { header }));
+        }}
+      />
+    </>
+  );
+}
+
+function EmbedSection({ node }: { node: BoardNode }) {
+  const { t } = useTranslation('editors');
+  const { target } = itemData({ type: 'embed', data: node.data });
+  const boards = useBoards() ?? [];
+  const palettes = usePalettes() ?? [];
+  const notes = useNotes();
+  const cards = useSavedCards() ?? [];
+  const option = (kind: BoardLink['kind'], id: string, name: string) => ({
+    value: `${kind}:${id}`,
+    label: `${t(`assetLink.kinds.${kind}`)}: ${name}`,
+  });
+  return (
+    <Field label={t('properties.embedTarget')}>
+      <Select
+        size="sm"
+        value={target ? `${target.kind}:${target.id}` : NONE}
+        aria-label={t('properties.embedTarget')}
+        options={[
+          { value: NONE, label: t('board.embedEmpty') },
+          ...notes.map((note) => option('note', note.id, note.title)),
+          ...cards.map((card) => option('card', card.id, card.name)),
+          ...palettes.map((palette) => option('palette', palette.id, palette.name)),
+          ...boards
+            .filter((board) => board.id !== node.boardId)
+            .map((board) => option('board', board.id, board.name)),
+        ]}
+        onValueChange={(next) => {
+          const [kind, ...rest] = next.split(':');
+          const parsed = boardLinkSchema.safeParse({ kind, id: rest.join(':') });
+          save(withData(node, { target: next === NONE || !parsed.success ? null : parsed.data }));
+        }}
+      />
+    </Field>
+  );
+}
+
 const TYPE_SECTIONS: Record<BoardNodeType, ComponentType<{ node: BoardNode }>> = {
   text: TextSection,
   image: ImageSection,
@@ -497,6 +630,10 @@ const TYPE_SECTIONS: Record<BoardNodeType, ComponentType<{ node: BoardNode }>> =
   file: FileSection,
   link: LinkSection,
   drawing: DrawingSection,
+  icon: IconSection,
+  checklist: ChecklistSection,
+  table: TableSection,
+  embed: EmbedSection,
 };
 
 function useStyleLayers(node: BoardNode): (ItemStyle | undefined)[] {

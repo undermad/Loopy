@@ -154,7 +154,11 @@ import { SelectionGuard } from './SelectionGuard';
 import { useViewportSave } from './viewportSave';
 import { CardItem } from './items/CardItem';
 import { ContainerItem } from './items/ContainerItem';
+import { ChecklistItem } from './items/ChecklistItem';
 import { DrawingItem } from './items/DrawingItem';
+import { EmbedItem } from './items/EmbedItem';
+import { IconItem } from './items/IconItem';
+import { TableItem } from './items/TableItem';
 import { FileItem } from './items/FileItem';
 import { LinkItem } from './items/LinkItem';
 import { ImageItem } from './items/ImageItem';
@@ -171,6 +175,10 @@ const nodeTypes = {
   file: FileItem,
   link: LinkItem,
   drawing: DrawingItem,
+  icon: IconItem,
+  checklist: ChecklistItem,
+  table: TableItem,
+  embed: EmbedItem,
 };
 const edgeTypes = { arrow: ArrowEdge };
 export const PROPERTIES_WIDTH = 320;

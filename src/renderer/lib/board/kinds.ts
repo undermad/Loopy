@@ -17,4 +17,8 @@ export const ITEM_KINDS: Record<BoardNodeType, ItemKindDefinition> = {
   file: BOX,
   link: BOX,
   drawing: { appearance: false, text: false, rotatable: false, resizable: false },
+  icon: BOX,
+  checklist: BOX,
+  table: BOX,
+  embed: { ...BOX, text: false },
 };

@@ -124,3 +124,4 @@ export {
   sharedStyleValue,
 } from './styles';
 export type { StylePatch } from './styles';
+export { addStep, removeStep, resizeTable, setCell, stepProgress, tableSize, toggleStep } from './content';

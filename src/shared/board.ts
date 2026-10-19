@@ -18,7 +18,19 @@ export const boardSchema = z.object({
   updatedAt: z.iso.datetime(),
 });
 
-export const BOARD_NODE_TYPES = ['text', 'image', 'container', 'card', 'file', 'link', 'drawing'] as const;
+export const BOARD_NODE_TYPES = [
+  'text',
+  'image',
+  'container',
+  'card',
+  'file',
+  'link',
+  'drawing',
+  'icon',
+  'checklist',
+  'table',
+  'embed',
+] as const;
 export const boardNodeTypeSchema = z.enum(BOARD_NODE_TYPES);
 
 export const ITEM_SHAPES = ['rectangle', 'rounded', 'ellipse', 'diamond', 'pill'] as const;
@@ -120,6 +132,41 @@ export const linkDataSchema = itemDataSchema.extend({
   target: boardLinkSchema.nullable().default(null),
 });
 
+export const TABLE_MAX_ROWS = 50;
+export const TABLE_MAX_COLUMNS = 12;
+
+export const iconDataSchema = itemDataSchema.extend({
+  icon: z.string().min(1).max(40).default('star'),
+});
+
+export const checklistStepSchema = z.object({
+  id: z.string().min(1).max(40),
+  text: z.string().min(1).max(200),
+  done: z.boolean().default(false),
+});
+
+export const checklistDataSchema = itemDataSchema.extend({
+  title: z.string().max(80).default(''),
+  items: z.array(checklistStepSchema).max(100).default([]),
+  showProgress: z.boolean().default(true),
+});
+
+export const tableDataSchema = itemDataSchema.extend({
+  rows: z
+    .array(z.array(z.string().max(200)).max(TABLE_MAX_COLUMNS))
+    .max(TABLE_MAX_ROWS)
+    .default([
+      ['', '', ''],
+      ['', '', ''],
+      ['', '', ''],
+    ]),
+  header: z.boolean().default(true),
+});
+
+export const embedDataSchema = itemDataSchema.extend({
+  target: boardLinkSchema.nullable().default(null),
+});
+
 export const DRAWING_TILE_SIZE = 512;
 export const DEFAULT_DRAWING_RESOLUTION = 2;
 
@@ -137,6 +184,10 @@ export const itemDataSchemas = {
   file: fileDataSchema,
   link: linkDataSchema,
   drawing: drawingDataSchema,
+  icon: iconDataSchema,
+  checklist: checklistDataSchema,
+  table: tableDataSchema,
+  embed: embedDataSchema,
 } as const;
 
 export const boardNodeSchema = z.object({
@@ -253,6 +304,7 @@ export type ItemStyle = z.infer<typeof itemStyleSchema>;
 export type CardValue = z.infer<typeof cardValueSchema>;
 export type FontFamily = (typeof FONT_FAMILIES)[number];
 export type ChecklistItem = z.infer<typeof checklistItemSchema>;
+export type ChecklistStep = z.infer<typeof checklistStepSchema>;
 export type NumberRange = z.infer<typeof numberRangeSchema>;
 export type EdgeData = z.infer<typeof edgeDataSchema>;
 export type BoardTile = z.infer<typeof boardTileSchema>;

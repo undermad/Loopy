@@ -6,7 +6,7 @@ description: Richer card fields, card styling, a reordered Properties panel and 
 # Item and card customisation
 
 :::note Status
-In progress on one branch. [Cards](../cards.md) and [Board](../board.md) describe what ships; this page keeps the reasoning.
+Implemented on one branch. [Cards](../cards.md) and [Board](../board.md) describe what ships; this page keeps the reasoning and what was left out.
 :::
 
 ## Goals
@@ -46,6 +46,13 @@ Style presets are a new `item_styles` table, so the project version rises and an
 | 4     | Card size presets, background, accent placement, zones, font, accent from a choice         |
 | 5     | Properties sections, item capabilities, editing several items, style presets, new styles   |
 | 6     | Icon, checklist, table and embed items                                                     |
+
+## Changes from the plan
+
+- The field picker is a grouped menu; Radix type-ahead finds a kind by its first letters, so there is no separate search box.
+- Choices keep their colour on the option, so Accent from reads it straight from the field.
+- Grow to fit fields grows the designer preview. A card on a board keeps the size it was given, because measuring it would add a resize to the undo history on every edit.
+- Old projects need no migration: the application has not shipped, and older fields still parse.
 
 ## Out of scope
 

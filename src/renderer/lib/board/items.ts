@@ -13,7 +13,20 @@ import {
 import type { ColourValue } from '@shared/colours';
 
 export type ItemPreset =
-  'text' | 'sticky' | 'rectangle' | 'ellipse' | 'diamond' | 'image' | 'container' | 'card' | 'file' | 'link';
+  | 'text'
+  | 'sticky'
+  | 'rectangle'
+  | 'ellipse'
+  | 'diamond'
+  | 'image'
+  | 'container'
+  | 'card'
+  | 'file'
+  | 'link'
+  | 'icon'
+  | 'checklist'
+  | 'table'
+  | 'embed';
 
 export interface Rect {
   x: number;
@@ -63,6 +76,10 @@ const PRESETS: Record<ItemPreset, PresetDefinition> = {
   card: { type: 'card', width: 320, height: 360, style: {} },
   file: { type: 'file', width: 260, height: 72, style: {} },
   link: { type: 'link', width: 240, height: 56, style: {} },
+  icon: { type: 'icon', width: 96, height: 96, style: {} },
+  checklist: { type: 'checklist', width: 240, height: 200, style: {} },
+  table: { type: 'table', width: 360, height: 160, style: {} },
+  embed: { type: 'embed', width: 320, height: 240, style: {} },
 };
 
 export function presetSize(preset: ItemPreset): { width: number; height: number } {
@@ -148,6 +165,30 @@ const TYPE_STYLE: Record<BoardNodeType, Partial<ResolvedStyle>> = {
   },
   link: { padding: 0 },
   drawing: { padding: 0 },
+  icon: { padding: 8, align: 'center', verticalAlign: 'middle' },
+  checklist: {
+    fill: colour('#ffffff'),
+    stroke: colour('#cbd5e1'),
+    strokeWidth: 1,
+    radius: 8,
+    padding: 10,
+  },
+  table: {
+    fill: colour('#ffffff'),
+    stroke: colour('#cbd5e1'),
+    strokeWidth: 1,
+    radius: 6,
+    padding: 0,
+    fontSize: 13,
+  },
+  embed: {
+    fill: colour('#ffffff'),
+    stroke: colour('#cbd5e1'),
+    strokeWidth: 1,
+    radius: 10,
+    shadow: true,
+    padding: 10,
+  },
 };
 
 export function resolveItemStyle(type: BoardNodeType, ...layers: (ItemStyle | undefined)[]): ResolvedStyle {

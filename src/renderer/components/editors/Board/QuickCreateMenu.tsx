@@ -3,12 +3,16 @@ import {
   Circle,
   Copy,
   Diamond,
+  Eye,
   Frame,
   Image,
   LayoutTemplate,
+  ListTodo,
   Search,
+  Shapes,
   Square,
   StickyNote,
+  Table2,
   Type,
 } from 'lucide-react';
 import type { Asset } from '@shared/assets';
@@ -103,6 +107,16 @@ export function QuickCreateMenu({
         id: 'layout',
         label: t('board.quickMenu.categories.layout'),
         entries: [preset('container', t('board.tools.container'), <Frame aria-hidden="true" />)],
+      },
+      {
+        id: 'content',
+        label: t('board.quickMenu.categories.content'),
+        entries: [
+          preset('icon', t('board.tools.icon'), <Shapes aria-hidden="true" />),
+          preset('checklist', t('board.tools.checklist'), <ListTodo aria-hidden="true" />),
+          preset('table', t('board.tools.table'), <Table2 aria-hidden="true" />),
+          preset('embed', t('board.tools.embed'), <Eye aria-hidden="true" />),
+        ],
       },
       {
         id: 'cards',

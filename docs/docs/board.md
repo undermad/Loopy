@@ -33,7 +33,7 @@ The wheel zooms around the pointer and a middle-button drag pans, whichever tool
 
 ## Quick create
 
-Press Space on the board for a quick create menu at the pointer. It lists every item kind by category: basics, shapes, layout, card templates and images from assets. Type to filter, use the arrow keys and Enter, or click. The item lands under the pointer.
+Press Space on the board for a quick create menu at the pointer. It lists every item kind by category: basics, shapes, layout, content (icon, checklist, table and embed), card templates and images from assets. Type to filter, use the arrow keys and Enter, or click. The item lands under the pointer.
 
 The same menu opens when you drop an arrow on empty canvas, from a handle or with the Arrow tool. The new item is placed there and the arrow connects to it. The + buttons around a selected item open it too, with Same as this item first; the choice is placed one gap away on that side and joined with an arrow.
 
@@ -157,8 +157,16 @@ An item's `data` holds a shared base and its own content. The base is `style`, `
 | `card`      | `templateId`, `cardId` and `values`, keyed by field id            |
 | `file`      | `assetId` of a non-image asset                                    |
 | `drawing`   | `resolution`, `offsetX` and `offsetY`; paint lives in tiles       |
+| `icon`      | `icon`, one of the game icons, drawn in the text colour           |
+| `checklist` | `title`, `items` (`id`, `text`, `done`) and `showProgress`        |
+| `table`     | `rows`, up to 50 rows of 12 cells, and `header`                   |
+| `embed`     | `target`, a board, palette, note or card shown live               |
 
-`ItemFrame` in `src/renderer/components/editors/Board/items` draws the shape in SVG under the content, clips the content to the shape, and adds the resizer, the handles and the lock badge. A new item type supplies its content component, a data schema in `src/shared/board.ts`, a preset in `items.ts` and a Properties section. Items with no fill take their text colour from the board background, so they stay readable on dark boards.
+`ItemFrame` in `src/renderer/components/editors/Board/items` draws the shape in SVG under the content, clips the content to the shape, and adds the resizer, the handles and the lock badge. A new item type supplies its content component, a data schema in `src/shared/board.ts`, a preset in `items.ts`, an entry in `ITEM_KINDS`, a Layers icon and a Properties section; the maps are typed per kind, so a missing entry fails the type check. Items with no fill take their text colour from the board background, so they stay readable on dark boards.
+
+### Content items
+
+An icon scales to fit its box. A checklist ticks steps on the board; while it is selected, steps can be added and removed, and the title and Show progress live in Properties. A table edits its cells in place while selected, and Properties sets the number of rows and columns and whether the first row is a header. An embed shows a note's opening text, a palette's swatches, a saved card's face or a board's name, keeps up with changes, and opens the target from its header.
 
 ## Arrows
 

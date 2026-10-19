@@ -226,7 +226,16 @@
     "deletePreset": "Delete a preset",
     "deletePresetItem": "Delete {{name}}",
     "copyStyle": "Copy style",
-    "pasteStyle": "Paste style"
+    "pasteStyle": "Paste style",
+    "icon": "Icon",
+    "checklist": "Checklist",
+    "table": "Table",
+    "embed": "Embed",
+    "showProgress": "Show progress",
+    "rows": "Rows",
+    "columns": "Columns",
+    "headerRow": "Header row",
+    "embedTarget": "Shows"
   },
   "placeholder": {
     "title": "{{editor}} arrives soon",
@@ -437,7 +446,8 @@
         "shapes": "Shapes",
         "layout": "Layout",
         "cards": "Cards",
-        "media": "Images"
+        "media": "Images",
+        "content": "Content"
       }
     },
     "quick": {
@@ -476,7 +486,11 @@
       "arrow": "Arrow",
       "brush": "Brush",
       "eraser": "Eraser",
-      "shortcut": "{{tool}} ({{key}})"
+      "shortcut": "{{tool}} ({{key}})",
+      "icon": "Icon",
+      "checklist": "Checklist",
+      "table": "Table",
+      "embed": "Embed"
     },
     "menu": {
       "label": "Item actions",
@@ -492,7 +506,10 @@
       "delete": "Delete"
     },
     "back": "Back to {{name}}",
-    "backTitle": "Back to the board you came from"
+    "backTitle": "Back to the board you came from",
+    "cellLabel": "Row {{row}}, column {{column}}",
+    "embedEmpty": "Pick something to show",
+    "openEmbed": "Open {{name}}"
   },
   "richText": {
     "editor": "Text editor",

@@ -24,21 +24,21 @@ The rest follow demand. Each one is a new editor registered in `registerEditors.
 
 ## Features
 
-| Feature                     | Status     | Builds on                    |
-| --------------------------- | ---------- | ---------------------------- |
-| Game data tables            | Considered | Project file                 |
-| Runnable loop diagrams      | Considered | Board, Properties type map   |
-| Design and ticket links     | Considered | Tickets, data tables, board  |
-| Balancing sheets            | Considered | Data tables                  |
-| Loot and probability tables | Considered | Data tables                  |
-| Dialogue graphs             | Considered | Board, data tables           |
-| Progression trees           | Considered | Board                        |
-| Design document             | Considered | Tiptap, tickets              |
-| Level paper maps            | Considered | Board units and grid         |
-| Playtest log                | Considered | Tickets                      |
-| Lore wiki                   | Considered | Design document              |
-| Moodboards                  | Considered | Board images, Colours editor |
-| Item and card customisation | Planned    | Cards, board, Properties     |
+| Feature                     | Status      | Builds on                    |
+| --------------------------- | ----------- | ---------------------------- |
+| Game data tables            | Considered  | Project file                 |
+| Runnable loop diagrams      | Considered  | Board, Properties type map   |
+| Design and ticket links     | Considered  | Tickets, data tables, board  |
+| Balancing sheets            | Considered  | Data tables                  |
+| Loot and probability tables | Considered  | Data tables                  |
+| Dialogue graphs             | Considered  | Board, data tables           |
+| Progression trees           | Considered  | Board                        |
+| Design document             | Considered  | Tiptap, tickets              |
+| Level paper maps            | Considered  | Board units and grid         |
+| Playtest log                | Considered  | Tickets                      |
+| Lore wiki                   | Considered  | Design document              |
+| Moodboards                  | Considered  | Board images, Colours editor |
+| Item and card customisation | In progress | Cards, board, Properties     |
 
 ## Game data tables
 

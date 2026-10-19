@@ -29,8 +29,11 @@ import {
   Layers,
   LayoutTemplate,
   Link2,
+  ListTodo,
   Lock,
   LockOpen,
+  Shapes,
+  Table2,
   Type,
 } from 'lucide-react';
 import type { BoardNode, BoardNodeType } from '@shared/board';
@@ -65,6 +68,10 @@ const ICONS: Record<BoardNodeType, typeof Type> = {
   file: File,
   link: Link2,
   drawing: Brush,
+  icon: Shapes,
+  checklist: ListTodo,
+  table: Table2,
+  embed: Eye,
 };
 
 function firstLine(text: string): string {
