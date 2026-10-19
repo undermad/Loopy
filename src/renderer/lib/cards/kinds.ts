@@ -3,41 +3,51 @@ import { CARD_FIELD_KINDS, type CardFieldKind, type CardSpan } from '@shared/car
 export const FIELD_GROUPS = ['text', 'number', 'choice', 'media', 'reference', 'layout'] as const;
 
 export type FieldGroup = (typeof FIELD_GROUPS)[number];
-export type FieldValueKind = 'text' | 'number' | 'boolean' | 'list' | 'link' | 'none';
 
 export interface FieldKindDefinition {
   group: FieldGroup;
   span: CardSpan;
-  value: FieldValueKind;
   textStyle: boolean;
   defaults?: Record<string, unknown>;
 }
 
+const OPTIONS = { options: ['Option 1', 'Option 2'] };
+const NO_LABEL = { showLabel: false };
+
 export const FIELD_KINDS: Record<CardFieldKind, FieldKindDefinition> = {
-  heading: { group: 'text', span: 12, value: 'text', textStyle: true },
-  text: { group: 'text', span: 12, value: 'text', textStyle: true },
-  longText: { group: 'text', span: 12, value: 'text', textStyle: true },
-  number: { group: 'number', span: 6, value: 'number', textStyle: true },
-  stat: {
+  heading: { group: 'text', span: 12, textStyle: true },
+  text: { group: 'text', span: 12, textStyle: true },
+  longText: { group: 'text', span: 12, textStyle: true },
+  date: { group: 'text', span: 6, textStyle: true },
+  number: { group: 'number', span: 6, textStyle: true },
+  stat: { group: 'number', span: 12, textStyle: true, defaults: { min: 0, max: 100, defaultValue: 50 } },
+  rating: { group: 'number', span: 6, textStyle: true },
+  range: { group: 'number', span: 6, textStyle: true },
+  attributes: {
     group: 'number',
     span: 12,
-    value: 'number',
     textStyle: true,
-    defaults: { min: 0, max: 100, defaultValue: 50 },
+    defaults: {
+      rows: [
+        { id: 'strength', label: 'Strength' },
+        { id: 'agility', label: 'Agility' },
+      ],
+    },
   },
-  select: {
-    group: 'choice',
-    span: 6,
-    value: 'text',
-    textStyle: true,
-    defaults: { options: ['Option 1', 'Option 2'] },
-  },
-  checkbox: { group: 'choice', span: 6, value: 'boolean', textStyle: true },
-  tags: { group: 'choice', span: 12, value: 'list', textStyle: true },
-  image: { group: 'media', span: 12, value: 'text', textStyle: false },
-  colour: { group: 'media', span: 6, value: 'text', textStyle: true },
-  link: { group: 'reference', span: 12, value: 'link', textStyle: true },
-  divider: { group: 'layout', span: 12, value: 'none', textStyle: false, defaults: { showLabel: false } },
+  formula: { group: 'number', span: 6, textStyle: true },
+  dice: { group: 'number', span: 6, textStyle: true },
+  select: { group: 'choice', span: 6, textStyle: true, defaults: OPTIONS },
+  multiSelect: { group: 'choice', span: 12, textStyle: true, defaults: OPTIONS },
+  checkbox: { group: 'choice', span: 6, textStyle: true },
+  tags: { group: 'choice', span: 12, textStyle: true },
+  checklist: { group: 'choice', span: 12, textStyle: true },
+  image: { group: 'media', span: 12, textStyle: false },
+  icon: { group: 'media', span: 4, textStyle: true },
+  colour: { group: 'media', span: 6, textStyle: true },
+  link: { group: 'reference', span: 12, textStyle: true },
+  staticText: { group: 'layout', span: 12, textStyle: true, defaults: NO_LABEL },
+  divider: { group: 'layout', span: 12, textStyle: false, defaults: NO_LABEL },
+  spacer: { group: 'layout', span: 12, textStyle: false, defaults: NO_LABEL },
 };
 
 export function fieldKindsByGroup(): { group: FieldGroup; kinds: CardFieldKind[] }[] {

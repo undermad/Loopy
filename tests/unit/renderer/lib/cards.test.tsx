@@ -49,7 +49,9 @@ describe('card fields', () => {
       max: 100,
       defaultValue: 50,
     });
-    expect(newField('select', 'Rarity')).toMatchObject({ options: ['Option 1', 'Option 2'] });
+    expect(newField('select', 'Rarity')).toMatchObject({
+      options: [{ value: 'Option 1' }, { value: 'Option 2' }],
+    });
     expect(newField('divider', '').showLabel).toBe(false);
     expect(newField('number', 'Cost').span).toBe(6);
   });
@@ -115,7 +117,7 @@ describe('card fields', () => {
       label: 'Role',
       span: 6,
       style: { weight: 'bold' },
-      options: ['Option 1', 'Option 2'],
+      options: [{ value: 'Option 1' }, { value: 'Option 2' }],
     });
     expect(changeFieldKind(text, 'stat')).toMatchObject({ min: 0, max: 100, defaultValue: 50 });
     expect(changeFieldKind(text, 'divider')).not.toHaveProperty('placeholder');

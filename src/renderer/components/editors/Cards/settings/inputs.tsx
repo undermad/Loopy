@@ -41,6 +41,40 @@ export function DraftInput({
   );
 }
 
+export function DraftArea({
+  label,
+  value,
+  maxLength,
+  hint,
+  error,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  maxLength: number;
+  hint?: string;
+  error?: string;
+  onCommit: (next: string) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <Field label={label} {...(hint ? { hint } : {})} {...(error ? { error } : {})}>
+      <TextArea
+        rows={3}
+        value={draft ?? value}
+        maxLength={maxLength}
+        onChange={(event) => {
+          setDraft(event.target.value);
+        }}
+        onBlur={() => {
+          if (draft !== null && draft !== value) onCommit(draft);
+          setDraft(null);
+        }}
+      />
+    </Field>
+  );
+}
+
 export function LinesInput({
   label,
   hint,

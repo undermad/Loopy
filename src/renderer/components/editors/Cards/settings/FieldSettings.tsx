@@ -6,6 +6,7 @@ import { Field, Input, PropertySection, Select, Switch } from '@renderer/ui';
 import { ColourRow } from './ColourRow';
 import { DraftInput, NONE } from './inputs';
 import { hasKindSettings, renderKindSettings } from './kindSettings';
+import { VisibilityRule } from './VisibilityRule';
 import styles from '../CardDesigner.module.scss';
 
 function withStyle<K extends keyof CardField['style']>(
@@ -75,9 +76,11 @@ function TextStyleSettings({ field, onChange }: { field: CardField; onChange: (n
 
 export function FieldSettings({
   field,
+  fields = [],
   onChange,
 }: {
   field: CardField;
+  fields?: readonly CardField[];
   onChange: (next: CardField) => void;
 }) {
   const { t } = useTranslation('editors');
@@ -119,7 +122,7 @@ export function FieldSettings({
       </PropertySection>
       {hasKindSettings(field) ? (
         <PropertySection title={t('cards.sections.value')}>
-          {renderKindSettings({ field, onChange })}
+          {renderKindSettings({ field, fields, onChange })}
         </PropertySection>
       ) : null}
       <PropertySection title={t('cards.sections.layout')}>
@@ -148,6 +151,7 @@ export function FieldSettings({
             onChange({ ...field, help });
           }}
         />
+        <VisibilityRule field={field} fields={fields} onChange={onChange} />
         <Switch
           size="sm"
           label={t('cards.hidden')}

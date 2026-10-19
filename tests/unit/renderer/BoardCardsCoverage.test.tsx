@@ -17,7 +17,7 @@ import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
 
 let api: FakeApi;
 
-function field(input: Partial<CardField> & Pick<CardField, 'id' | 'kind'>): CardField {
+function field(input: Record<string, unknown> & Pick<CardField, 'id' | 'kind'>): CardField {
   return cardFieldSchema.parse(input);
 }
 
@@ -203,13 +203,6 @@ describe('template field settings', () => {
         <FieldSettings field={choice} onChange={onChange} />
       </Providers>,
     );
-
-    const options = screen.getByRole('textbox', { name: /Choices/ });
-    fireEvent.change(options, { target: { value: 'Common\n Rare \nRare\n\nEpic' } });
-    fireEvent.blur(options);
-    expect(onChange.mock.lastCall?.[0]).toMatchObject({ options: ['Common', 'Rare', 'Epic'] });
-    fireEvent.blur(options);
-    expect(onChange).toHaveBeenCalledTimes(1);
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Placeholder' }), { target: { value: 'Pick' } });
     fireEvent.blur(screen.getByRole('textbox', { name: 'Placeholder' }));

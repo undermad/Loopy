@@ -52,6 +52,9 @@ export const boardLinkKindSchema = z.enum(BOARD_LINK_KINDS);
 export const boardLinkSchema = z.object({ kind: boardLinkKindSchema, id: z.string().min(1) });
 export type BoardLink = z.infer<typeof boardLinkSchema>;
 
+export const checklistItemSchema = z.object({ text: z.string().min(1).max(200), done: z.boolean() });
+export const numberRangeSchema = z.object({ min: z.number(), max: z.number() });
+
 export const cardValueSchema = z.union([
   z.string().max(5000),
   z.number(),
@@ -59,6 +62,9 @@ export const cardValueSchema = z.union([
   z.array(z.string().max(80)).max(50),
   boardLinkSchema,
   z.array(boardLinkSchema).max(50),
+  z.array(checklistItemSchema).max(50),
+  numberRangeSchema,
+  z.record(z.string().max(64), z.number().nullable()),
   z.null(),
 ]);
 
@@ -231,6 +237,8 @@ export type BoardPatch = z.infer<typeof boardPatchSchema>;
 export type BoardChanges = Partial<z.infer<typeof boardChangesSchema>>;
 export type ItemStyle = z.infer<typeof itemStyleSchema>;
 export type CardValue = z.infer<typeof cardValueSchema>;
+export type ChecklistItem = z.infer<typeof checklistItemSchema>;
+export type NumberRange = z.infer<typeof numberRangeSchema>;
 export type EdgeData = z.infer<typeof edgeDataSchema>;
 export type BoardTile = z.infer<typeof boardTileSchema>;
 export type BoardTileKey = z.infer<typeof boardTileKeySchema>;

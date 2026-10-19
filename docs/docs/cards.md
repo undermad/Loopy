@@ -39,24 +39,43 @@ Field settings always come in the same order, and each group folds away:
 
 A hidden field keeps its value and shows, dimmed, in the designer and in Properties, but not on the card face.
 
-| Kind       | Value                                        | Extra settings                               |
-| ---------- | -------------------------------------------- | -------------------------------------------- |
-| Heading    | Text, larger and bold by default             | Placeholder, default value                   |
-| Text       | One line of text                             | Placeholder, default value                   |
-| Long text  | Several lines                                | Placeholder, default value                   |
-| Number     | A number                                     | Minimum, maximum, default, prefix and suffix |
-| Choice     | One of a list                                | Choices, default                             |
-| Checkbox   | Yes or no                                    | Default                                      |
-| Tags       | A list of short labels                       | Default, comma separated                     |
-| Image      | An image from assets                         |                                              |
-| Stat bar   | A number drawn as a bar                      | Minimum, maximum, default, prefix and suffix |
-| Colour     | A hex colour                                 | Default                                      |
-| Asset link | One or more boards, palettes, notes or cards | Links to, Allow several                      |
-| Divider    | None                                         |                                              |
+| Group      | Kind            | Value                                                          | Extra settings                             |
+| ---------- | --------------- | -------------------------------------------------------------- | ------------------------------------------ |
+| Text       | Heading         | Text, larger and bold by default                               | Placeholder, default                       |
+| Text       | Text, Long text | One line or several                                            | Placeholder, default                       |
+| Text       | Date            | A calendar date                                                |                                            |
+| Numbers    | Number          | A number, held inside its bounds                               | Minimum, maximum, default, prefix, suffix  |
+| Numbers    | Stat bar        | A number drawn as a bar                                        | Minimum, maximum, default, prefix, suffix  |
+| Numbers    | Rating          | Stars, hearts, circles or pips; click the current one to clear | Maximum up to 10, symbol, default          |
+| Numbers    | Range           | A low and a high number, kept in order                         | Minimum, maximum, prefix, suffix           |
+| Numbers    | Attributes      | A number per named row                                         | One row per line                           |
+| Numbers    | Formula         | Worked out from other fields, never typed                      | Formula, decimal places, prefix, suffix    |
+| Numbers    | Dice            | Dice notation such as `2d6+1`, with its range and average      | Default                                    |
+| Choices    | Choice          | One of a list                                                  | Choices with colours, placeholder, default |
+| Choices    | Multiple choice | Any of a list                                                  | Choices with colours                       |
+| Choices    | Checkbox        | Yes or no                                                      | Default                                    |
+| Choices    | Tags            | Short labels                                                   | Default, comma separated                   |
+| Choices    | Checklist       | Steps to tick, with a done count                               |                                            |
+| Media      | Image           | An image from assets                                           |                                            |
+| Media      | Icon            | One of the game icons                                          |                                            |
+| Media      | Colour          | A hex colour                                                   | Default                                    |
+| References | Asset link      | One or more boards, palettes, notes or cards                   | Links to, Allow several                    |
+| Layout     | Static text     | Fixed text the template writes on every card                   | Text                                       |
+| Layout     | Divider, Spacer | A line, or empty space of a set height                         | Height for a spacer                        |
 
 An asset link shows each target as the card a ticket's linked asset uses. Click it to open the target. Drop an internal asset on the field to set it; with Allow several the drop adds to the list. Links to limits the kinds, and a link to a deleted asset shows as Missing asset.
 
 `coerceValue` in `src/renderer/lib/cards` checks every value against its field. A value that no longer fits, such as a removed choice or a link of a kind the field no longer takes, falls back to the field's default. Removing a field leaves its value on the card unused; adding it back with the same id brings the value back.
+
+### Formulas
+
+A formula names other fields by id: `attack * 2 + level`. It knows numbers, `+ - * / % ^`, brackets, the comparisons `== != > < >= <=`, which give 1 or 0, and `min`, `max`, `round`, `floor`, `ceil`, `abs`, `sqrt`, `clamp` and `if`. Number, stat bar, rating and checkbox fields count, a ticked checkbox as 1, and so do other formulas. An empty number counts as 0.
+
+The settings list the ids a formula can use and say what is wrong: an unknown name, a formula that depends on itself, or a mistake in the text. The card shows Check the formula until it is fixed. `evaluateFormula` in `src/renderer/lib/cards` parses the text itself; nothing is passed to `eval`.
+
+### Show when
+
+Advanced, Show when ties a field to another one: it shows only while that field has a value, is empty, is or is not a given value, or is above or below a number. A rule that points at a removed field is ignored. The designer and Properties show such fields dimmed, so they stay editable.
 
 ## Board cards
 

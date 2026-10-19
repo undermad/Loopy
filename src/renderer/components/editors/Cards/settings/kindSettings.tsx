@@ -1,13 +1,32 @@
 import { createElement, type ComponentType, type ReactNode } from 'react';
 import { BOARD_LINK_KINDS } from '@shared/board';
-import { CARD_MAX_OPTIONS, type CardField, type CardFieldKind, type FieldOf } from '@shared/cards';
+import {
+  CARD_MAX_ROWS,
+  RATING_SYMBOLS,
+  type CardField,
+  type CardFieldKind,
+  type FieldOf,
+} from '@shared/cards';
+import { computeFormulas, uniqueFieldId } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
-import { Switch } from '@renderer/ui';
-import { BooleanDefault, BoundsInput, ChoiceDefault, DraftInput, LinesInput, NumberDefault } from './inputs';
+import { Field, Select, Switch } from '@renderer/ui';
+import { NumberField } from '../../Properties/NumberField';
+import {
+  BooleanDefault,
+  BoundsInput,
+  ChoiceDefault,
+  DraftArea,
+  DraftInput,
+  LinesInput,
+  NONE,
+  NumberDefault,
+} from './inputs';
+import { OptionsEditor } from './OptionsEditor';
 import styles from '../CardDesigner.module.scss';
 
 export interface KindSettingsProps<F extends CardField = CardField> {
   field: F;
+  fields: readonly CardField[];
   onChange: (next: F) => void;
 }
 
@@ -37,28 +56,24 @@ function TextSettings<F extends FieldOf<'heading' | 'text' | 'longText'>>({
   );
 }
 
-function NumberSettings<F extends FieldOf<'number' | 'stat'>>({ field, onChange }: KindSettingsProps<F>) {
+function StaticTextSettings({ field, onChange }: KindSettingsProps<FieldOf<'staticText'>>) {
+  const { t } = useTranslation('editors');
   return (
-    <>
-      <BoundsInput
-        min={field.min}
-        max={field.max}
-        onCommit={(bounds) => {
-          onChange({ ...field, ...bounds });
-        }}
-      />
-      <NumberDefault
-        value={field.defaultValue}
-        onCommit={(defaultValue) => {
-          onChange({ ...field, defaultValue });
-        }}
-      />
-      <AffixInputs field={field} onChange={onChange} />
-    </>
+    <DraftArea
+      label={t('cards.staticText')}
+      value={field.text}
+      maxLength={2000}
+      onCommit={(text) => {
+        onChange({ ...field, text });
+      }}
+    />
   );
 }
 
-function AffixInputs<F extends FieldOf<'number' | 'stat'>>({ field, onChange }: KindSettingsProps<F>) {
+function AffixInputs<F extends FieldOf<'number' | 'stat' | 'range' | 'formula'>>({
+  field,
+  onChange,
+}: Pick<KindSettingsProps<F>, 'field' | 'onChange'>) {
   const { t } = useTranslation('editors');
   return (
     <div className={styles['pair']}>
@@ -82,8 +97,171 @@ function AffixInputs<F extends FieldOf<'number' | 'stat'>>({ field, onChange }: 
   );
 }
 
+function NumberSettings<F extends FieldOf<'number' | 'stat'>>({ field, onChange }: KindSettingsProps<F>) {
+  return (
+    <>
+      <BoundsInput
+        min={field.min}
+        max={field.max}
+        onCommit={(bounds) => {
+          onChange({ ...field, ...bounds });
+        }}
+      />
+      <NumberDefault
+        value={field.defaultValue}
+        onCommit={(defaultValue) => {
+          onChange({ ...field, defaultValue });
+        }}
+      />
+      <AffixInputs field={field} onChange={onChange} />
+    </>
+  );
+}
+
+function RatingSettings({ field, onChange }: KindSettingsProps<FieldOf<'rating'>>) {
+  const { t } = useTranslation('editors');
+  return (
+    <>
+      <div className={styles['pair']}>
+        <NumberField
+          label={t('cards.max')}
+          value={field.max}
+          min={1}
+          step={1}
+          digits={0}
+          onCommit={(max) => {
+            onChange({ ...field, max: Math.min(10, Math.max(1, Math.round(max))) });
+          }}
+        />
+        <Field label={t('cards.symbol')}>
+          <Select
+            size="sm"
+            value={field.symbol}
+            options={RATING_SYMBOLS.map((symbol) => ({ value: symbol, label: t(`cards.symbols.${symbol}`) }))}
+            onValueChange={(symbol) => {
+              onChange({ ...field, symbol: symbol as FieldOf<'rating'>['symbol'] });
+            }}
+          />
+        </Field>
+      </div>
+      <NumberDefault
+        value={field.defaultValue}
+        onCommit={(defaultValue) => {
+          onChange({ ...field, defaultValue });
+        }}
+      />
+    </>
+  );
+}
+
+function RangeSettings({ field, onChange }: KindSettingsProps<FieldOf<'range'>>) {
+  return (
+    <>
+      <BoundsInput
+        min={field.min}
+        max={field.max}
+        onCommit={(bounds) => {
+          onChange({ ...field, ...bounds });
+        }}
+      />
+      <AffixInputs field={field} onChange={onChange} />
+    </>
+  );
+}
+
+function AttributesSettings({ field, onChange }: KindSettingsProps<FieldOf<'attributes'>>) {
+  const { t } = useTranslation('editors');
+  return (
+    <LinesInput
+      label={t('cards.attributeRows')}
+      hint={t('cards.attributeRowsHint')}
+      value={field.rows.map((row) => row.label)}
+      onCommit={(labels) => {
+        const rows: FieldOf<'attributes'>['rows'] = [];
+        for (const label of labels.slice(0, CARD_MAX_ROWS)) {
+          const short = label.slice(0, 40);
+          const existing = field.rows.find((row) => row.label === short);
+          rows.push(existing ?? { id: uniqueFieldId(short, rows, 'attribute'), label: short });
+        }
+        onChange({ ...field, rows });
+      }}
+    />
+  );
+}
+
+function formulaMessage(
+  t: ReturnType<typeof useTranslation<'editors'>>['t'],
+  result: ReturnType<typeof computeFormulas>[string] | undefined,
+): string | undefined {
+  if (!result || !('error' in result) || result.error === 'empty') return undefined;
+  if (result.error === 'unknown' && result.name) return t('cards.formulaUnknown', { name: result.name });
+  if (result.error === 'cycle') return t('cards.formulaCycle');
+  return t('cards.formulaError');
+}
+
+function FormulaSettings({ field, fields, onChange }: KindSettingsProps<FieldOf<'formula'>>) {
+  const { t } = useTranslation('editors');
+  const others = fields.filter((item) => item.id !== field.id);
+  const usable = others.filter((item) =>
+    ['number', 'stat', 'rating', 'checkbox', 'formula'].includes(item.kind),
+  );
+  const result = computeFormulas([...others, field], {})[field.id];
+  const error = formulaMessage(t, result);
+  return (
+    <>
+      <DraftArea
+        label={t('cards.formula')}
+        hint={t('cards.formulaHint')}
+        value={field.expression}
+        maxLength={500}
+        {...(error ? { error } : {})}
+        onCommit={(expression) => {
+          onChange({ ...field, expression });
+        }}
+      />
+      {usable.length > 0 ? (
+        <div className={styles['formulaFields']}>
+          <span>{t('cards.formulaFields')}</span>
+          {usable.map((item) => (
+            <code key={item.id}>{item.id}</code>
+          ))}
+        </div>
+      ) : null}
+      <Field label={t('cards.decimals')}>
+        <Select
+          size="sm"
+          value={field.decimals === null ? NONE : String(field.decimals)}
+          options={[
+            { value: NONE, label: t('cards.autoDecimals') },
+            ...[0, 1, 2, 3, 4, 5, 6].map((count) => ({ value: String(count), label: String(count) })),
+          ]}
+          onValueChange={(value) => {
+            onChange({ ...field, decimals: value === NONE ? null : Number(value) });
+          }}
+        />
+      </Field>
+      <AffixInputs field={field} onChange={onChange} />
+    </>
+  );
+}
+
+function DiceSettings({ field, onChange }: KindSettingsProps<FieldOf<'dice'>>) {
+  const { t } = useTranslation('editors');
+  return (
+    <DraftInput
+      label={t('cards.defaultValue')}
+      value={field.defaultValue ?? ''}
+      maxLength={40}
+      onCommit={(value) => {
+        onChange({ ...field, defaultValue: value.trim() === '' ? null : value.trim() });
+      }}
+    />
+  );
+}
+
 function SelectSettings({ field, onChange }: KindSettingsProps<FieldOf<'select'>>) {
   const { t } = useTranslation('editors');
+  const values = field.options.map((option) => option.value);
   return (
     <>
       <DraftInput
@@ -94,25 +272,36 @@ function SelectSettings({ field, onChange }: KindSettingsProps<FieldOf<'select'>
           onChange({ ...field, placeholder });
         }}
       />
-      <LinesInput
-        label={t('cards.options')}
-        hint={t('cards.optionsHint')}
-        value={field.options}
-        onCommit={(lines) => {
-          const options = lines.slice(0, CARD_MAX_OPTIONS).map((item) => item.slice(0, 40));
+      <OptionsEditor
+        options={field.options}
+        onChange={(options) => {
+          const kept = options.map((option) => option.value);
           const defaultValue =
-            field.defaultValue !== null && options.includes(field.defaultValue) ? field.defaultValue : null;
+            field.defaultValue !== null && kept.includes(field.defaultValue) ? field.defaultValue : null;
           onChange({ ...field, options, defaultValue });
         }}
       />
       <ChoiceDefault
-        options={field.options}
+        options={values}
         value={field.defaultValue}
         onCommit={(defaultValue) => {
           onChange({ ...field, defaultValue });
         }}
       />
     </>
+  );
+}
+
+function MultiSelectSettings({ field, onChange }: KindSettingsProps<FieldOf<'multiSelect'>>) {
+  return (
+    <OptionsEditor
+      options={field.options}
+      onChange={(options) => {
+        const kept = options.map((option) => option.value);
+        const defaultValue = field.defaultValue?.filter((item) => kept.includes(item)) ?? null;
+        onChange({ ...field, options, defaultValue: defaultValue?.length ? defaultValue : null });
+      }}
+    />
   );
 }
 
@@ -195,21 +384,48 @@ function LinkSettings({ field, onChange }: KindSettingsProps<FieldOf<'link'>>) {
   );
 }
 
+function SpacerSettings({ field, onChange }: KindSettingsProps<FieldOf<'spacer'>>) {
+  const { t } = useTranslation('editors');
+  return (
+    <NumberField
+      label={t('cards.spacerSize')}
+      value={field.size}
+      min={4}
+      step={4}
+      digits={0}
+      onCommit={(size) => {
+        onChange({ ...field, size: Math.min(200, Math.max(4, size)) });
+      }}
+    />
+  );
+}
+
 type KindSettingsMap = { [K in CardFieldKind]: ComponentType<KindSettingsProps<FieldOf<K>>> | null };
 
 const KIND_SETTINGS: KindSettingsMap = {
   heading: TextSettings,
   text: TextSettings,
   longText: TextSettings,
+  staticText: StaticTextSettings,
+  date: null,
   number: NumberSettings,
   stat: NumberSettings,
+  rating: RatingSettings,
+  range: RangeSettings,
+  attributes: AttributesSettings,
+  formula: FormulaSettings,
+  dice: DiceSettings,
   select: SelectSettings,
+  multiSelect: MultiSelectSettings,
   checkbox: CheckboxSettings,
   tags: TagsSettings,
+  checklist: null,
   image: null,
+  icon: null,
   colour: ColourSettings,
   link: LinkSettings,
   divider: null,
+  spacer: SpacerSettings,
 };
 
 export function hasKindSettings(field: CardField): boolean {

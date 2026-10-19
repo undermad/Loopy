@@ -20,15 +20,9 @@ export {
   useSavedCards,
 } from './store';
 export { FIELD_GROUPS, FIELD_KINDS, fieldKindsByGroup } from './kinds';
-export {
-  changeFieldKind,
-  coerceValue,
-  fieldValue,
-  linkTargets,
-  moveField,
-  newField,
-  statFraction,
-  uniqueFieldId,
-  valueText,
-} from './fields';
+export { changeFieldKind, moveField, newField, uniqueFieldId } from './fields';
+export { coerceValue, fieldValue, linkTargets, statFraction, valueText } from './values';
+export { evaluateFormula, type FormulaResult } from './expressions';
+export { parseDice } from './dice';
+export { computeFormulas, isFieldVisible } from './rules';
 export { STARTER_TEMPLATES, blankTemplate } from './presets';

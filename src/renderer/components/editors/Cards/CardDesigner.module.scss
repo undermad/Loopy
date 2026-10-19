@@ -279,3 +279,38 @@
   color: var(--color-fg-muted);
   margin-right: var(--space-2);
 }
+
+.options {
+  @include stack(var(--space-2));
+
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.optionList {
+  @include stack(var(--space-1));
+
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.option {
+  @include row(var(--space-1));
+}
+
+.formulaFields {
+  @include row(var(--space-1));
+
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  flex-wrap: wrap;
+
+  code {
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+    font-family: var(--font-family-mono);
+  }
+}

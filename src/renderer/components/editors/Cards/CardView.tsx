@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { Info } from 'lucide-react';
 import type { CardValue } from '@shared/board';
 import type { CardField, CardLayout, CardTextSize } from '@shared/cards';
-import { fieldValue } from '@renderer/lib/cards';
+import { computeFormulas, fieldValue, isFieldVisible, type FormulaResult } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useResolvedColour } from '@renderer/lib/palettes';
 import { cx } from '@renderer/ui';
@@ -33,12 +33,13 @@ const WEIGHTS = { normal: 400, medium: 500, bold: 700 } as const;
 interface FieldBodyProps {
   field: CardField;
   value: CardValue;
+  result: FormulaResult | undefined;
   editable: boolean;
   label: string;
   onChange: (value: CardValue) => void;
 }
 
-function FieldBody({ field, value, editable, label, onChange }: FieldBodyProps) {
+function FieldBody({ field, value, result, editable, label, onChange }: FieldBodyProps) {
   const colour = useResolvedColour(field.style.colour ?? null);
   const heading = field.kind === 'heading';
   const textStyle: CSSProperties = {
@@ -47,7 +48,7 @@ function FieldBody({ field, value, editable, label, onChange }: FieldBodyProps) 
     color: colour ?? undefined,
     textAlign: field.style.align,
   };
-  return renderFieldView({ field, value, editable, label, colour, textStyle, onChange });
+  return renderFieldView({ field, value, result, editable, label, colour, textStyle, onChange });
 }
 
 export function CardView({
@@ -61,10 +62,11 @@ export function CardView({
   className,
 }: CardViewProps) {
   const { t } = useTranslation('editors');
+  const formulas = computeFormulas(layout.fields, values);
   return (
     <div className={cx(styles['card'], className)} style={{ gap: layout.gap }}>
       {layout.fields
-        .filter((field) => showHidden || !field.hidden)
+        .filter((field) => showHidden || (!field.hidden && isFieldVisible(field, layout.fields, values)))
         .map((field) => {
           const label = field.label || t(`cards.kinds.${field.kind}`);
           return (
@@ -74,7 +76,7 @@ export function CardView({
                 styles['field'],
                 selectedFieldId === field.id && styles['fieldSelected'],
                 onSelectField && styles['fieldPickable'],
-                field.hidden && styles['fieldHidden'],
+                (field.hidden || !isFieldVisible(field, layout.fields, values)) && styles['fieldHidden'],
               )}
               style={{ gridColumn: `span ${String(field.span)}` }}
               data-kind={field.kind}
@@ -100,6 +102,7 @@ export function CardView({
               <FieldBody
                 field={field}
                 value={fieldValue(field, values)}
+                result={formulas[field.id]}
                 editable={editable}
                 label={label}
                 onChange={(value) => onChange?.(field.id, value)}

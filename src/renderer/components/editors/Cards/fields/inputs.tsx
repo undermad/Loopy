@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import type { CardValue } from '@shared/board';
 import type { CardField } from '@shared/cards';
+import type { FormulaResult } from '@renderer/lib/cards';
 import { NumberInput, cx } from '@renderer/ui';
 import styles from '../CardView.module.scss';
 
@@ -17,6 +18,7 @@ export interface FieldViewProps<F extends CardField = CardField> {
   label: string;
   colour: string | null;
   textStyle: CSSProperties;
+  result?: FormulaResult | undefined;
   onChange: (value: CardValue) => void;
 }
 

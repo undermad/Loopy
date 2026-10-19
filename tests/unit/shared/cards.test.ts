@@ -50,7 +50,7 @@ describe('card schemas', () => {
     expect(field).not.toHaveProperty('linkKinds');
     expect(field).not.toHaveProperty('multiple');
     expect(cardFieldSchema.parse({ id: 'r', kind: 'select', options: ['A', 'B'] })).toMatchObject({
-      options: ['A', 'B'],
+      options: [{ value: 'A' }, { value: 'B' }],
     });
     expect(cardFieldSchema.parse({ id: 's', kind: 'stat', min: 1, max: 9 })).toMatchObject({
       min: 1,
@@ -112,6 +112,59 @@ describe('card schemas', () => {
     });
     expect(cardFieldSchema.parse({ id: 's', kind: 'stat' })).toMatchObject({ prefix: '', suffix: '' });
     expect(() => cardFieldSchema.parse({ id: 'h', kind: 'text', help: 'x'.repeat(201) })).toThrow();
+  });
+
+  it('gives the new field kinds sensible defaults', () => {
+    expect(cardFieldSchema.parse({ id: 'r', kind: 'rating' })).toMatchObject({ max: 5, symbol: 'star' });
+    expect(cardFieldSchema.parse({ id: 's', kind: 'spacer' })).toMatchObject({ size: 16 });
+    expect(cardFieldSchema.parse({ id: 't', kind: 'staticText', text: 'Rules' })).toMatchObject({
+      text: 'Rules',
+    });
+    expect(cardFieldSchema.parse({ id: 'f', kind: 'formula' })).toMatchObject({
+      expression: '',
+      decimals: null,
+    });
+    expect(
+      cardFieldSchema.parse({ id: 'a', kind: 'attributes', rows: [{ id: 'str', label: 'Strength' }] }),
+    ).toMatchObject({
+      rows: [{ id: 'str', label: 'Strength' }],
+    });
+    for (const kind of ['multiSelect', 'checklist', 'range', 'dice', 'icon', 'date'] as const) {
+      expect(cardFieldSchema.parse({ id: kind, kind }).kind).toBe(kind);
+    }
+    expect(() => cardFieldSchema.parse({ id: 'r', kind: 'rating', max: 11 })).toThrow();
+  });
+
+  it('stores choices with an optional colour and accepts plain names', () => {
+    const field = cardFieldSchema.parse({
+      id: 'rarity',
+      kind: 'select',
+      options: ['Common', { value: 'Rare', colour: { hex: '#3366ff', ref: null } }],
+    });
+    expect(field).toMatchObject({
+      options: [
+        { value: 'Common', colour: null },
+        { value: 'Rare', colour: { hex: '#3366ff', ref: null } },
+      ],
+    });
+  });
+
+  it('takes a visibility rule on any field', () => {
+    expect(cardFieldSchema.parse({ id: 'a', kind: 'text' })).toMatchObject({ visibleWhen: null });
+    expect(
+      cardFieldSchema.parse({ id: 'a', kind: 'text', visibleWhen: { field: 'b', op: 'equals', value: 'x' } }),
+    ).toMatchObject({ visibleWhen: { field: 'b', op: 'equals', value: 'x' } });
+    expect(() =>
+      cardFieldSchema.parse({ id: 'a', kind: 'text', visibleWhen: { field: 'b', op: 'sometimes' } }),
+    ).toThrow();
+  });
+
+  it('accepts checklist, range and attribute values on cards', () => {
+    expect(cardValueSchema.parse([{ text: 'Find key', done: true }])).toEqual([
+      { text: 'Find key', done: true },
+    ]);
+    expect(cardValueSchema.parse({ min: 1, max: 4 })).toEqual({ min: 1, max: 4 });
+    expect(cardValueSchema.parse({ str: 3, dex: null })).toEqual({ str: 3, dex: null });
   });
 
   it('lets a board card point at a saved card', () => {

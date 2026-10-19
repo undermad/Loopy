@@ -4,6 +4,7 @@ import type { FieldOf } from '@shared/cards';
 import { useAssetsSnapshot } from '@renderer/lib/assets';
 import { useTranslation } from '@renderer/lib/i18n';
 import { DropdownMenu, cx } from '@renderer/ui';
+import { GAME_ICON_NAMES, GameIcon } from '../../../GameIcon/GameIcon';
 import { INTERACTIVE, type FieldViewProps } from './inputs';
 import styles from '../CardView.module.scss';
 
@@ -79,5 +80,72 @@ export function ColourField({ value, editable, label, onChange }: FieldViewProps
         <span className={styles['static']}>{text || '–'}</span>
       )}
     </div>
+  );
+}
+
+export function IconField({
+  value,
+  editable,
+  label,
+  colour,
+  textStyle,
+  onChange,
+}: FieldViewProps<FieldOf<'icon'>>) {
+  const { t } = useTranslation('editors');
+  const name = typeof value === 'string' ? value : null;
+  const size = textStyle.fontSize ? `calc(${String(textStyle.fontSize)} * 2)` : '2em';
+  const glyph = name ? (
+    <GameIcon name={name} size={size} color={colour ?? undefined} />
+  ) : (
+    <span className={styles['empty']}>{t('cards.noIcon')}</span>
+  );
+  if (!editable) {
+    return (
+      <span
+        className={styles['icon']}
+        role="img"
+        aria-label={name ? `${label}: ${t(`icons.${name as 'sword'}`)}` : label}
+      >
+        {glyph}
+      </span>
+    );
+  }
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          type="button"
+          className={cx(INTERACTIVE, styles['icon'], styles['iconButton'])}
+          aria-label={`${label}: ${t('cards.chooseIcon')}`}
+        >
+          {glyph}
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content align="start" className={styles['iconMenu']}>
+        {GAME_ICON_NAMES.map((icon) => (
+          <DropdownMenu.Item
+            key={icon}
+            onSelect={() => {
+              onChange(icon);
+            }}
+          >
+            <GameIcon name={icon} size={16} />
+            {t(`icons.${icon}`)}
+          </DropdownMenu.Item>
+        ))}
+        {name ? (
+          <>
+            <DropdownMenu.Separator />
+            <DropdownMenu.Item
+              onSelect={() => {
+                onChange(null);
+              }}
+            >
+              {t('cards.clearIcon')}
+            </DropdownMenu.Item>
+          </>
+        ) : null}
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
   );
 }
