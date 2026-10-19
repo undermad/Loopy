@@ -8,8 +8,9 @@ import {
   trackBoardWork,
   type BoardBase,
 } from '@renderer/lib/board';
-import { layerMasks, readMask, requestTile, settleTile, watchBoard } from './cache';
+import { layerMasks, requestTile, settleTile, watchBoard } from './cache';
 import { StrokeSession, type PaintMode } from './engine';
+import { createTileFinisher } from './finish';
 import {
   intersect,
   layerFrame,
@@ -39,10 +40,11 @@ export interface PaintStroke {
   end: () => Promise<void>;
 }
 
-async function encode(canvas: OffscreenCanvas): Promise<Uint8Array<ArrayBuffer>> {
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
-  return new Uint8Array(await blob.arrayBuffer());
-}
+const finish = createTileFinisher(() =>
+  typeof Worker === 'function'
+    ? new Worker(new URL('./tile.worker.ts', import.meta.url), { type: 'module' })
+    : null,
+);
 
 const nextFrame = (callback: () => void) => {
   requestAnimationFrame(() => {
@@ -83,18 +85,18 @@ export function beginPaint(options: PaintOptions): PaintStroke {
     const stored = getBoardTiles(boardId);
     const upsertTiles: BoardTile[] = [];
     const removeTiles: BoardTileKey[] = [];
-    for (const tile of tiles) {
-      const mask = readMask(tile.canvas);
+    const finished = await Promise.all(tiles.map((tile) => finish(tile.canvas)));
+    tiles.forEach((tile, index) => {
+      const { mask, bytes } = finished[index] ?? { mask: null, bytes: null };
       const key = { nodeId: node.id, tx: tile.tx, ty: tile.ty };
-      if (!mask.includes(1)) {
+      if (!bytes) {
         settleTile(node.id, tile.coord, null, null);
         if (stored[tileKey(key)]) removeTiles.push(key);
-        continue;
+        return;
       }
-      const bytes = await encode(tile.canvas);
       settleTile(node.id, tile.coord, bytes, mask);
       upsertTiles.push({ ...key, bytes });
-    }
+    });
     session.release();
     const latest = getBoardNodes(boardId).find((candidate) => candidate.id === node.id) ?? node;
     const previous = nodeBox(latest, frame);

@@ -29,7 +29,7 @@ Escape returns to Select. The Brush and Eraser stay active until you change tool
 
 ## Navigation
 
-The wheel zooms around the pointer and a middle-button drag pans, whichever tool is active; the Hand tool also pans with the left button. Creation and arrow tools cover the canvas with `CreationOverlay`, and the Brush and Eraser with `DrawingOverlay`; both apply the same wheel zoom and middle-button pan through `useCanvasNavigation` in `navigation.ts`. Preferences, Editors tab, can make the wheel pan instead.
+The wheel zooms around the pointer and a middle-button drag pans, whichever tool is active; the Hand tool also pans with the left button. Creation and arrow tools cover the canvas with `CreationOverlay`, and the Brush and Eraser with `DrawingOverlay`; both apply the same wheel zoom and middle-button pan through `useCanvasNavigation` in `navigation.ts`. That pan moves the view once per animation frame and shows the grabbing cursor. The view is saved to area state through `useViewportSave` in `viewportSave.ts`, 150 ms after it stops moving and only when it changed. Preferences, Editors tab, can make the wheel pan instead.
 
 ## Quick create
 

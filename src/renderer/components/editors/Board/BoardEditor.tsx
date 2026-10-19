@@ -149,6 +149,7 @@ import { DrawingOverlay } from './DrawingOverlay';
 import { QUICK_MENU_SIZE, QuickCreateMenu, type QuickChoice } from './QuickCreateMenu';
 import { Grid } from './Grid';
 import { SelectionGuard } from './SelectionGuard';
+import { useViewportSave } from './viewportSave';
 import { CardItem } from './items/CardItem';
 import { ContainerItem } from './items/ContainerItem';
 import { DrawingItem } from './items/DrawingItem';
@@ -335,6 +336,9 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
   const screenPointer = useRef<Point | null>(null);
   const pressSelection = useRef<string[]>([]);
   const dragSession = useRef<DragSession | null>(null);
+  const saveViewport = useViewportSave(readViewport(state), (viewport) => {
+    setState({ viewport });
+  });
   const deep = useModifierHeld('Control');
   const shiftHeld = useModifierHeld('Shift');
   const snapping = snap || deep;
@@ -933,8 +937,6 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
     [flow, importAndPlace, viewportCentre],
   );
 
-  const pointer = useRef<Point | null>(null);
-
   const trackHotDrawing = useCallback(
     (point: Point) => {
       const hot = allNodes.some(isDrawing) ? (drawingAt(point, allNodes)?.id ?? null) : null;
@@ -943,7 +945,10 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
     [allNodes],
   );
 
-  const pastePoint = useCallback((): Point | null => pointer.current, []);
+  const pastePoint = useCallback((): Point | null => {
+    const at = screenPointer.current;
+    return at ? flow.screenToFlowPosition(at) : null;
+  }, [flow]);
 
   const pasteClip = useCallback(
     (clip: BoardClip, at: Point | null) => {
@@ -1384,12 +1389,12 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
             surface.current?.focus({ preventScroll: true });
         }}
         onPointerMove={(event) => {
-          pointer.current = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
           screenPointer.current = { x: event.clientX, y: event.clientY };
-          if (tool === 'select' && event.buttons === 0) trackHotDrawing(pointer.current);
+          if (tool === 'select' && event.buttons === 0) {
+            trackHotDrawing(flow.screenToFlowPosition(screenPointer.current));
+          }
         }}
         onPointerLeave={() => {
-          pointer.current = null;
           screenPointer.current = null;
         }}
         onCopy={(event) => {
@@ -1482,9 +1487,7 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
             connectionMode={ConnectionMode.Loose}
             connectionRadius={28}
             defaultViewport={readViewport(state)}
-            onMoveEnd={(_event, viewport) => {
-              setState({ viewport });
-            }}
+            onMoveEnd={saveViewport}
             snapToGrid={snapping}
             snapGrid={[step, step]}
             zoomOnScroll={wheel === 'zoom'}

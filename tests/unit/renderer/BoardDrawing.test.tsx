@@ -25,6 +25,7 @@ import { elementPixels, encodeTile, inked, installCanvasFake } from './helpers/c
 let api: FakeApi;
 let canvas: ReturnType<typeof installCanvasFake>;
 let latest: Record<string, unknown> = {};
+let patches: Record<string, unknown>[] = [];
 
 function Providers({ children }: { children: ReactNode }) {
   return (
@@ -48,6 +49,7 @@ function Board({ initial = {} }: { initial?: Record<string, unknown> }) {
           areaId="a"
           state={state}
           setState={(patch) => {
+            patches.push(patch);
             setState((current) => ({ ...current, ...patch }));
           }}
         />
@@ -126,6 +128,7 @@ async function paintedTile() {
 
 beforeEach(async () => {
   canvas = installCanvasFake();
+  patches = [];
   api = await bootTestApp();
   const project = makeProject('Space Game');
   api.current = project;
@@ -167,6 +170,16 @@ describe('drawing on the board', () => {
 
     fireEvent.keyDown(overlay, { key: 'Escape' });
     expect(latest['tool']).toBe('select');
+  });
+
+  it('keeps the browser from starting a native drag mid-stroke', async () => {
+    await createBoard({ name: 'Ideas' });
+    render(<Board initial={{ tool: 'brush' }} />);
+    const overlay = await screen.findByTestId('drawing-overlay');
+    expect(fireEvent.pointerDown(overlay, { button: 0, buttons: 1, pointerId: 7 })).toBe(false);
+    expect(fireEvent.dragStart(overlay)).toBe(false);
+    fireEvent.pointerUp(overlay, { pointerId: 7 });
+    expect(fireEvent.pointerDown(overlay, { button: 2, buttons: 2, pointerId: 8 })).toBe(true);
   });
 
   it('erases with the eraser tool or the pen eraser and does nothing without a layer', async () => {
@@ -217,6 +230,96 @@ describe('drawing on the board', () => {
     expect(getBrushState().brush.settings.size).toBeCloseTo(4);
 
     expect(paintCommits()).toBe(1);
+  });
+
+  it('pans once per frame with the cursor following and saves the view once', async () => {
+    await createBoard({ name: 'Ideas' });
+    const { container } = render(<Board initial={{ tool: 'brush' }} />);
+    const overlay = await screen.findByTestId('drawing-overlay');
+    const ring = overlay.querySelector<HTMLElement>('[aria-hidden="true"]');
+    const viewport = () =>
+      container.querySelector<HTMLElement>('.react-flow__viewport')?.style.transform ?? '';
+    const before = viewport();
+    const saves = () => patches.filter((patch) => 'viewport' in patch);
+
+    fireEvent.pointerDown(overlay, { button: 1, buttons: 4, clientX: 100, clientY: 100, pointerId: 2 });
+    expect(overlay).toHaveAttribute('data-panning');
+    for (const [x, y] of [
+      [110, 105],
+      [130, 120],
+      [150, 140],
+    ] as const) {
+      fireEvent.pointerMove(overlay, { buttons: 4, clientX: x, clientY: y, pointerId: 2 });
+    }
+    expect(viewport()).toBe(before);
+    act(() => {
+      canvas.frames();
+    });
+    expect(ring?.style.transform).toBe('translate(150px, 140px)');
+    expect(viewport()).toContain('translate(50px,40px)');
+
+    fireEvent.pointerMove(overlay, { buttons: 4, clientX: 160, clientY: 150, pointerId: 2 });
+    fireEvent.pointerUp(overlay, { clientX: 170, clientY: 160, pointerId: 2 });
+    expect(overlay).not.toHaveAttribute('data-panning');
+    expect(viewport()).toContain('translate(70px,60px)');
+    await waitFor(() => {
+      expect(saves()).toHaveLength(1);
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    });
+    expect(saves()).toEqual([{ viewport: { x: 70, y: 60, zoom: 1 } }]);
+  });
+
+  it('measures the overlay once per hover and moves the ring once per frame', async () => {
+    await createBoard({ name: 'Ideas' });
+    render(<Board initial={{ tool: 'brush' }} />);
+    const overlay = await screen.findByTestId('drawing-overlay');
+    const ring = overlay.querySelector<HTMLElement>('[aria-hidden="true"]');
+    const measure = vi.spyOn(overlay, 'getBoundingClientRect').mockReturnValue(new DOMRect(10, 20, 800, 600));
+    const root = document.querySelector<HTMLElement>('.react-flow');
+    if (!root) throw new Error('missing canvas');
+    const rootMeasure = vi.spyOn(root, 'getBoundingClientRect');
+    fireEvent.pointerEnter(overlay, { clientX: 50, clientY: 60 });
+    for (let step = 0; step < 6; step += 1) {
+      fireEvent.pointerMove(overlay, { clientX: 50 + step * 10, clientY: 60, pointerId: 1 });
+    }
+    expect(ring?.style.transform).toBe('');
+    expect(rootMeasure).not.toHaveBeenCalled();
+    act(() => {
+      canvas.frames();
+    });
+    expect(ring?.style.transform).toBe('translate(90px, 40px)');
+    await stroke(overlay, [40, 40], [160, 60]);
+    expect(measure).toHaveBeenCalledTimes(2);
+    await waitFor(() => {
+      expect(paintCommits()).toBe(1);
+    });
+  });
+
+  it('shows new paint on a zoomed out tile in the same frame', async () => {
+    const board = await createBoard({ name: 'Ideas' });
+    await loadBoard(board.id);
+    const layer = await storedDrawing(board.id);
+    render(
+      <Board initial={{ tool: 'brush', drawingLayer: layer.id, viewport: { x: 0, y: 0, zoom: 0.25 } }} />,
+    );
+    await paintedTile();
+    const tile = screen.getByTestId('drawing-layer').querySelector('canvas');
+    if (!tile) throw new Error('missing tile');
+    const before = inked(elementPixels(tile));
+    const overlay = screen.getByTestId('drawing-overlay');
+    fireEvent.pointerDown(overlay, { button: 0, buttons: 1, clientX: 40, clientY: 10, pointerId: 1 });
+    fireEvent.pointerMove(overlay, { buttons: 1, clientX: 60, clientY: 10, pointerId: 1 });
+    act(() => {
+      canvas.frames();
+    });
+    expect(inked(elementPixels(tile))).toBeGreaterThan(before);
+    fireEvent.pointerUp(overlay, { clientX: 60, clientY: 10, pointerId: 1 });
+    await waitFor(() => {
+      expect(paintCommits()).toBe(2);
+    });
+    expect(drawings()).toHaveLength(1);
   });
 
   it('edits the brush from the options bar', async () => {

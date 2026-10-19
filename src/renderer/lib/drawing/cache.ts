@@ -1,5 +1,5 @@
 import { getBoardTiles, subscribeBoardTiles, type TileMap } from '@renderer/lib/board';
-import { TILE, coordKey, maskFromAlpha, maskHit, parseCoord, type Box } from './geometry';
+import { TILE, coordKey, maskFromAlpha, maskHit, parseCoord, reducedRect, type Box } from './geometry';
 
 interface Entry {
   bytes: Uint8Array | null;
@@ -15,6 +15,7 @@ interface Layer {
   entries: Map<string, Entry>;
   listeners: Set<LayerListener>;
   reduced: Map<string, Promise<OffscreenCanvas | null>>;
+  built: Map<string, OffscreenCanvas>;
   version: number;
   coords: string[] | null;
 }
@@ -22,11 +23,14 @@ interface Layer {
 export interface LayerChange {
   coords: string[] | null;
   rect?: Box;
+  list?: boolean;
 }
 
 type LayerListener = (change: LayerChange) => void;
 
 const MAX_DECODED = 160;
+const MAX_LEVEL = 8;
+const FULL: Box = { x0: 0, y0: 0, x1: TILE, y1: TILE };
 const layers = new Map<string, Layer>();
 let clock = 0;
 let unsubscribe: (() => void) | null = null;
@@ -50,6 +54,7 @@ function layerFor(nodeId: string, boardId: string): Layer {
       entries: new Map(),
       listeners: new Set(),
       reduced: new Map(),
+      built: new Map(),
       version: 0,
       coords: null,
     };
@@ -65,20 +70,51 @@ function emit(nodeId: string, change: LayerChange): void {
     layer.version += 1;
     layer.coords = null;
   }
-  forgetReduced(layer, change.coords);
+  if (change.list) layer.coords = null;
+  else if (change.rect && change.coords) patchReduced(layer, change.coords, change.rect);
+  else forgetReduced(layer, change.coords);
   for (const listener of [...layer.listeners]) listener(change);
 }
 
 function forgetReduced(layer: Layer, coords: string[] | null): void {
   if (coords === null) {
     layer.reduced.clear();
+    layer.built.clear();
     return;
   }
   for (const coord of coords) {
-    const { tx, ty } = parseCoord(coord);
-    for (let level = 1; level <= 8; level += 1) {
-      layer.reduced.delete(
-        `${String(level)}:${coordKey(Math.floor(tx / 2 ** level), Math.floor(ty / 2 ** level))}`,
+    for (let level = 1; level <= MAX_LEVEL; level += 1) {
+      const key = `${String(level)}:${reducedRect(coord, level, FULL).coord}`;
+      layer.reduced.delete(key);
+      layer.built.delete(key);
+    }
+  }
+}
+
+function patchReduced(layer: Layer, coords: string[], rect: Box): void {
+  if (layer.built.size === 0) return;
+  for (const coord of coords) {
+    const source = layer.entries.get(coord)?.canvas;
+    if (!source) continue;
+    for (let level = 1; level <= MAX_LEVEL; level += 1) {
+      const { coord: parent, source: from, target } = reducedRect(coord, level, rect);
+      const canvas = layer.built.get(`${String(level)}:${parent}`);
+      if (!canvas) continue;
+      const drawing = context2d(canvas);
+      const width = target.x1 - target.x0;
+      const height = target.y1 - target.y0;
+      if (width <= 0 || height <= 0) continue;
+      drawing.clearRect(target.x0, target.y0, width, height);
+      drawing.drawImage(
+        source,
+        from.x0,
+        from.y0,
+        from.x1 - from.x0,
+        from.y1 - from.y0,
+        target.x0,
+        target.y0,
+        width,
+        height,
       );
     }
   }
@@ -233,7 +269,7 @@ export function requestLod(nodeId: string, level: number, coord: string): Promis
       coordKey(Math.floor(position.tx / 2 ** (level - 1)), Math.floor(position.ty / 2 ** (level - 1))),
     );
   }
-  const work = Promise.all(
+  const work: Promise<OffscreenCanvas | null> = Promise.all(
     [...below].map(async (child) => ({ child, canvas: await requestLod(nodeId, level - 1, child) })),
   ).then((children) => {
     const canvas = createTileCanvas();
@@ -250,10 +286,16 @@ export function requestLod(nodeId: string, level: number, coord: string): Promis
         TILE / 2,
       );
     }
+    if (layer.reduced.get(key) === work) layer.built.set(key, canvas);
     return canvas;
   });
   layer.reduced.set(key, work);
   return work;
+}
+
+export function peekLod(nodeId: string, level: number, coord: string): OffscreenCanvas | null {
+  if (level === 0) return peekTile(nodeId, coord);
+  return layers.get(nodeId)?.built.get(`${String(level)}:${coord}`) ?? null;
 }
 
 export function claimTile(nodeId: string, boardId: string, coord: string): Entry {
@@ -262,7 +304,7 @@ export function claimTile(nodeId: string, boardId: string, coord: string): Entry
   if (!entry) {
     entry = { bytes: null, canvas: createTileCanvas(), mask: null, decoding: null, used: ++clock, pins: 0 };
     layer.entries.set(coord, entry);
-    emit(nodeId, { coords: null });
+    emit(nodeId, { coords: [coord], list: true });
   }
   entry.pins += 1;
   if (!entry.canvas && entry.bytes) void requestTile(nodeId, coord);
@@ -289,7 +331,7 @@ export function settleTile(
   if (!layer || !entry) return;
   if (bytes === null) {
     layer.entries.delete(coord);
-    emit(nodeId, { coords: null });
+    emit(nodeId, { coords: [coord], list: true });
     return;
   }
   entry.bytes = bytes;

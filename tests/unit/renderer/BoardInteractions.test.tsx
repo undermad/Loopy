@@ -415,8 +415,10 @@ describe('navigation with tools', () => {
     const zoomed = viewport();
     fireEvent.wheel(overlay, { deltaY: 3, deltaMode: 1, clientX: 100, clientY: 100 });
     fireEvent.pointerDown(overlay, { button: 1, clientX: 100, clientY: 100, pointerId: 7 });
+    expect(overlay).toHaveAttribute('data-panning');
     fireEvent.pointerMove(overlay, { clientX: 160, clientY: 140, pointerId: 7 });
     fireEvent.pointerUp(overlay, { clientX: 160, clientY: 140, pointerId: 7 });
+    expect(overlay).not.toHaveAttribute('data-panning');
     await waitFor(() => {
       expect(viewport()).not.toBe(zoomed);
     });

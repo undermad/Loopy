@@ -81,11 +81,15 @@ A layer is a sparse grid of 512 pixel tiles. Only painted tiles exist. The layer
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
 | Tiles on screen      | `DrawingItem` mounts a canvas only for tiles in view plus one tile around them; panning is a transform    |
 | Zoomed out           | Below 50 percent zoom it shows reduced tiles, each built from four tiles one level down and cached        |
+| Painting zoomed out  | A stroke redraws only its changed rectangle, scaled into each cached reduced tile, never a whole rebuild  |
+| New and emptied tile | Updates the tile list only; no tile is redrawn and no reduced tile is thrown away                         |
 | Decoding             | Stored tiles decode on first view; at most 160 decoded tiles stay in memory, least recently used go first |
 | Live strokes         | Dabs land in a wet buffer per tile and only the changed rectangle is composited, once per frame           |
 | Picking and grabbing | A 32 by 32 coverage mask per tile answers hit tests without reading pixels back                           |
+| Ending a stroke      | Masks and PNG encoding run in `tile.worker.ts`, off the main thread                                       |
+| Pointer moves        | The overlay measures itself once per hover and moves the brush ring once per frame                        |
 
-The engine stamps a cached tip bitmap for each dab. Each frame it draws the tile as it was before the stroke, then the wet buffer at the stroke's opacity, with `destination-out` for the Eraser. Grain masks the wet buffer first. When the stroke ends, the touched tiles are encoded as PNG with `convertToBlob`, a tile left empty is deleted, and the layer's bounds are measured from the masks.
+The engine stamps a cached tip bitmap for each dab. Each frame it draws the tile as it was before the stroke, then the wet buffer at the stroke's opacity, with `destination-out` for the Eraser. Grain masks the wet buffer first. When the stroke ends, each touched tile goes to a worker as an `ImageBitmap` snapshot, all at once. The worker reads its pixels, builds the coverage mask and encodes the PNG, so the next stroke starts on a free main thread. A tile left empty is deleted, and the layer's bounds are measured from the masks. Where a worker cannot start or fails, the same work runs on the main thread.
 
 ## Storage, undo and IPC
 
@@ -107,6 +111,8 @@ Brush state is `brushes` in `settings.json`, added in settings version 4: the br
 | `cache.ts`           | Decoded tiles, reduced levels, masks and change notices, synced with the board store |
 | `engine.ts`          | `StrokeSession`: wet buffers and compositing for one stroke                          |
 | `paint.ts`           | `beginPaint`: one stroke from the first sample to the saved, undoable change         |
+| `finish.ts`          | Turning a finished tile into its mask and PNG, in the worker or on the main thread   |
+| `tile.worker.ts`     | The worker that answers `finish.ts` requests                                         |
 | `brushes.ts`         | Brush state on top of settings, with presets, reset and the delayed save             |
 | `layers.ts`          | Picking, creating, hit testing and colour picking on drawing layers                  |
 

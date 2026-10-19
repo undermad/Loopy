@@ -1,5 +1,5 @@
 import { useRef, type PointerEvent, type RefObject, type WheelEvent } from 'react';
-import { useReactFlow } from '@xyflow/react';
+import { useReactFlow, type Viewport } from '@xyflow/react';
 
 export interface CanvasNavigationOptions {
   wheel: 'zoom' | 'pan';
@@ -14,12 +14,31 @@ export interface CanvasNavigation {
   endPan: (event: PointerEvent<HTMLElement>) => boolean;
 }
 
+interface Pan {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  x: number;
+  y: number;
+  viewport: Viewport;
+  frame: number | null;
+}
+
 export function useCanvasNavigation(
   surface: RefObject<HTMLElement | null>,
   { wheel, minZoom, maxZoom }: CanvasNavigationOptions,
 ): CanvasNavigation {
   const flow = useReactFlow();
-  const pan = useRef<{ pointerId: number; x: number; y: number } | null>(null);
+  const pan = useRef<Pan | null>(null);
+
+  function apply(panning: Pan) {
+    panning.frame = null;
+    void flow.setViewport({
+      ...panning.viewport,
+      x: panning.viewport.x + panning.x - panning.startX,
+      y: panning.viewport.y + panning.y - panning.startY,
+    });
+  }
 
   return {
     onWheel(event) {
@@ -43,24 +62,37 @@ export function useCanvasNavigation(
       if (event.button !== 1) return false;
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
-      pan.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+      pan.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        x: event.clientX,
+        y: event.clientY,
+        viewport: flow.getViewport(),
+        frame: null,
+      };
+      surface.current?.setAttribute('data-panning', '');
       return true;
     },
     movePan(event) {
       const panning = pan.current;
       if (panning?.pointerId !== event.pointerId) return false;
-      const viewport = flow.getViewport();
-      void flow.setViewport({
-        ...viewport,
-        x: viewport.x + event.clientX - panning.x,
-        y: viewport.y + event.clientY - panning.y,
+      panning.x = event.clientX;
+      panning.y = event.clientY;
+      panning.frame ??= requestAnimationFrame(() => {
+        apply(panning);
       });
-      pan.current = { ...panning, x: event.clientX, y: event.clientY };
       return true;
     },
     endPan(event) {
-      if (pan.current?.pointerId !== event.pointerId) return false;
+      const panning = pan.current;
+      if (panning?.pointerId !== event.pointerId) return false;
       pan.current = null;
+      if (panning.frame !== null) cancelAnimationFrame(panning.frame);
+      panning.x = event.clientX;
+      panning.y = event.clientY;
+      apply(panning);
+      surface.current?.removeAttribute('data-panning');
       return true;
     },
   };

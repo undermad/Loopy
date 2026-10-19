@@ -413,9 +413,21 @@ describe('react flow callbacks', () => {
       data: { sourceHandle: 'left', targetHandle: 'top' },
     });
     act(() => {
+      props().onMoveEnd?.(null, { x: 1, y: 1, zoom: 1 });
       props().onMoveEnd?.(null, { x: 5, y: 6, zoom: 2 });
     });
-    expect(latest['viewport']).toEqual({ x: 5, y: 6, zoom: 2 });
+    expect(latest['viewport']).toBeUndefined();
+    await waitFor(() => {
+      expect(latest['viewport']).toEqual({ x: 5, y: 6, zoom: 2 });
+    });
+    const saved = latest;
+    act(() => {
+      props().onMoveEnd?.(null, { x: 5, y: 6, zoom: 2 });
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    });
+    expect(latest).toBe(saved);
   });
 
   it('opens quick create when a connection ends on empty canvas', async () => {

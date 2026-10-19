@@ -5,13 +5,19 @@
   z-index: 5;
   overflow: hidden;
   touch-action: none;
+  user-select: none;
 
   &[data-small] {
     cursor: crosshair;
   }
 
+  &[data-panning] {
+    cursor: grabbing;
+  }
+
   &:not(:hover) .cursor,
-  &[data-small] .cursor {
+  &[data-small] .cursor,
+  &[data-panning] .cursor {
     display: none;
   }
 }
