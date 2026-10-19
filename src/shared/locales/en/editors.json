@@ -177,7 +177,16 @@
     "content": "Content",
     "link": "Link",
     "linkTarget": "Links to",
-    "drawing": "Drawing"
+    "drawing": "Drawing",
+    "font": "Font",
+    "fonts": {
+      "default": "App font",
+      "serif": "Serif",
+      "mono": "Monospace",
+      "rounded": "Rounded",
+      "condensed": "Condensed",
+      "handwritten": "Handwritten"
+    }
   },
   "placeholder": {
     "title": "{{editor}} arrives soon",
@@ -613,7 +622,12 @@
       "value": "Value",
       "layout": "Layout",
       "textStyle": "Text style",
-      "advanced": "Advanced"
+      "advanced": "Advanced",
+      "size": "Size",
+      "background": "Background",
+      "accent": "Accent",
+      "border": "Border",
+      "text": "Text"
     },
     "help": "Help text",
     "helpHint": "Shown when someone points at the field.",
@@ -666,7 +680,46 @@
       "pip": "Pips"
     },
     "staticText": "Text",
-    "spacerSize": "Height"
+    "spacerSize": "Height",
+    "size": "Size",
+    "cardSizes": {
+      "custom": "Custom",
+      "poker": "Poker",
+      "bridge": "Bridge",
+      "tarot": "Tarot",
+      "mini": "Mini",
+      "square": "Square",
+      "landscape": "Landscape"
+    },
+    "autoHeight": "Grow to fit fields",
+    "gradient": "Gradient",
+    "gradientColour": "Gradient colour",
+    "angle": "Angle",
+    "image": "Image",
+    "noBackgroundImage": "None",
+    "imageFit": "Image fit",
+    "fits": {
+      "cover": "Fill the card",
+      "contain": "Fit inside"
+    },
+    "overlay": "Overlay (%)",
+    "accentPlacement": "Accent placement",
+    "placements": {
+      "top": "Top band",
+      "left": "Left stripe",
+      "border": "Border",
+      "header": "Header",
+      "none": "None"
+    },
+    "accentFrom": "Accent from",
+    "accentFromNone": "Accent colour",
+    "accentFromHint": "A choice whose colour replaces the accent",
+    "zone": "Zone",
+    "zones": {
+      "header": "Header",
+      "body": "Body",
+      "footer": "Footer"
+    }
   },
   "assetLink": {
     "open": "Open {{name}}",

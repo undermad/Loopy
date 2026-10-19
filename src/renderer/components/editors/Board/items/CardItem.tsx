@@ -3,10 +3,9 @@ import { LayoutTemplate } from 'lucide-react';
 import { itemData, withData } from '@renderer/lib/board';
 import { updateSavedCard, useBoardCard, valueText } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
-import { useResolvedColour } from '@renderer/lib/palettes';
 import { cx } from '@renderer/ui';
 import { useBoardActions } from '../BoardContext';
-import { CardView } from '../../Cards/CardView';
+import { CardFace } from '../../Cards/CardFace';
 import { ItemFrame } from './ItemFrame';
 import type { ItemFlowNode } from './TextItem';
 import styles from './items.module.scss';
@@ -17,7 +16,6 @@ export function CardItem({ data, selected, dragging, width, height }: NodeProps<
   const { node } = data;
   const content = itemData({ type: 'card', data: node.data });
   const { card, layout, values } = useBoardCard(content);
-  const accent = useResolvedColour(layout?.accent ?? null);
   const title = Object.values(values).find((value) => typeof value === 'string' && value.trim());
   const templateName = layout && 'name' in layout && typeof layout.name === 'string' ? layout.name : null;
 
@@ -36,9 +34,8 @@ export function CardItem({ data, selected, dragging, width, height }: NodeProps<
     >
       {() => (
         <>
-          {accent ? <span className={styles['accent']} style={{ background: accent }} /> : null}
           {layout ? (
-            <CardView
+            <CardFace
               className={cx('nowheel', styles['cardBody'], !selected && styles['cardInert'])}
               layout={layout}
               values={values}

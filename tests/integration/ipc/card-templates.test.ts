@@ -31,6 +31,28 @@ function setup(open = true) {
 }
 
 describe('card templates IPC handlers', () => {
+  it('keeps card styling through a save and a reload', async () => {
+    const call = setup();
+    const styling = {
+      background: {
+        image: 'img1',
+        fit: 'contain',
+        overlay: 0.3,
+        gradient: { colour: { hex: '#000000', ref: null }, angle: 90 },
+      },
+      accentPlacement: 'left',
+      accentField: 'rarity',
+      font: 'serif',
+      autoHeight: true,
+    };
+    const created = await call<CardTemplate>(IpcChannel.cardTemplatesCreate, { name: 'Item', ...styling });
+    expect(created).toMatchObject(styling);
+    const updated = await call<CardTemplate>(IpcChannel.cardTemplatesUpdate, created.id, { font: 'mono' });
+    expect(updated).toMatchObject({ ...styling, font: 'mono' });
+    const [listed] = await call<CardTemplate[]>(IpcChannel.cardTemplatesList);
+    expect(listed).toMatchObject({ ...styling, font: 'mono' });
+  });
+
   it('creates, lists, updates and deletes templates with their fields', async () => {
     const call = setup();
     await expect(call(IpcChannel.cardTemplatesList)).resolves.toEqual([]);

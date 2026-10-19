@@ -52,8 +52,7 @@ function readCard(db: DatabaseSync, id: string): SavedCard {
 }
 
 function templateLayout(db: DatabaseSync, templateId: string): CardLayout {
-  const { width, height, style, accent, gap, fields } = readTemplate(db, templateId);
-  return { width, height, style, accent, gap, fields };
+  return cardLayoutSchema.parse(readTemplate(db, templateId));
 }
 
 function ownLayout(layout: CardLayout | null): string {

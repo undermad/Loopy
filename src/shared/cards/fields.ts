@@ -39,6 +39,7 @@ export const CARD_TEXT_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 export const CARD_MAX_OPTIONS = 30;
 export const CARD_MAX_ROWS = 20;
 export const RATING_SYMBOLS = ['star', 'heart', 'circle', 'pip'] as const;
+export const CARD_ZONES = ['header', 'body', 'footer'] as const;
 export const VISIBILITY_OPS = ['filled', 'empty', 'equals', 'notEquals', 'above', 'below'] as const;
 
 export const cardFieldKindSchema = z.enum(CARD_FIELD_KINDS);
@@ -70,6 +71,7 @@ const base = {
   help: z.string().max(200).default(''),
   hidden: z.boolean().default(false),
   visibleWhen: visibilityRuleSchema.nullable().default(null),
+  zone: z.enum(CARD_ZONES).default('body'),
 };
 
 const fallback = <T extends z.ZodType>(schema: T) => schema.nullable().default(null).catch(null);

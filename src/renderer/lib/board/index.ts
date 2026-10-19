@@ -112,3 +112,4 @@ export { bootBoardShortcuts, boardScopeProps } from './shortcuts';
 export { normaliseAngle, rotateBy, rotateVector, rotationOf, snapAngle } from './rotation';
 export { RESIZE_HANDLES, resizeCursor, resizeRect } from './resize';
 export type { ResizeHandle } from './resize';
+export { fontStack } from './fonts';

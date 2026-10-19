@@ -1,5 +1,5 @@
 import { FONT_WEIGHTS, TEXT_ALIGNS } from '@shared/board';
-import { CARD_SPANS, CARD_TEXT_SIZES, type CardField } from '@shared/cards';
+import { CARD_SPANS, CARD_TEXT_SIZES, CARD_ZONES, type CardField } from '@shared/cards';
 import { FIELD_KINDS, changeFieldKind, fieldKindsByGroup } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Field, Input, PropertySection, Select, Switch } from '@renderer/ui';
@@ -126,6 +126,17 @@ export function FieldSettings({
         </PropertySection>
       ) : null}
       <PropertySection title={t('cards.sections.layout')}>
+        <Field label={t('cards.zone')}>
+          <Select
+            size="sm"
+            value={field.zone}
+            aria-label={t('cards.zone')}
+            options={CARD_ZONES.map((zone) => ({ value: zone, label: t(`cards.zones.${zone}`) }))}
+            onValueChange={(zone) => {
+              onChange({ ...field, zone: zone as CardField['zone'] });
+            }}
+          />
+        </Field>
         <Field label={t('cards.span')}>
           <Select
             size="sm"

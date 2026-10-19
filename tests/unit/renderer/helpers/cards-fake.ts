@@ -24,8 +24,7 @@ export type CardsFakeApi = Pick<
 >;
 
 function layoutOf(template: CardTemplate): CardLayout {
-  const { width, height, style, accent, gap, fields } = template;
-  return structuredClone({ width, height, style, accent, gap, fields });
+  return cardLayoutSchema.parse(structuredClone(template));
 }
 
 export function createCardsFake() {

@@ -27,6 +27,7 @@ export const FONT_WEIGHTS = ['normal', 'medium', 'bold'] as const;
 export const TEXT_ALIGNS = ['left', 'center', 'right'] as const;
 export const VERTICAL_ALIGNS = ['top', 'middle', 'bottom'] as const;
 export const IMAGE_FITS = ['cover', 'contain', 'fill'] as const;
+export const FONT_FAMILIES = ['default', 'serif', 'mono', 'rounded', 'condensed', 'handwritten'] as const;
 
 export const strokeStyleSchema = z.enum(STROKE_STYLES);
 
@@ -237,6 +238,7 @@ export type BoardPatch = z.infer<typeof boardPatchSchema>;
 export type BoardChanges = Partial<z.infer<typeof boardChangesSchema>>;
 export type ItemStyle = z.infer<typeof itemStyleSchema>;
 export type CardValue = z.infer<typeof cardValueSchema>;
+export type FontFamily = (typeof FONT_FAMILIES)[number];
 export type ChecklistItem = z.infer<typeof checklistItemSchema>;
 export type NumberRange = z.infer<typeof numberRangeSchema>;
 export type EdgeData = z.infer<typeof edgeDataSchema>;

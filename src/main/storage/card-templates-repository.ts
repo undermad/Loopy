@@ -43,8 +43,7 @@ export function readTemplate(db: DatabaseSync, id: string): CardTemplate {
 }
 
 export function layoutJson(template: CardLayout): string {
-  const { width, height, style, accent, gap, fields } = template;
-  return JSON.stringify({ width, height, style, accent, gap, fields });
+  return JSON.stringify(cardLayoutSchema.parse(template));
 }
 
 export function assertUniqueFieldIds(fields: { id: string }[]): void {

@@ -2,7 +2,7 @@ import { act, fireEvent, render, renderHook, screen } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BoardNode } from '@shared/board';
-import { cardFieldSchema, type CardField } from '@shared/cards';
+import { cardFieldSchema, cardLayoutSchema, type CardField } from '@shared/cards';
 import { CardView } from '@renderer/components/editors/Cards/CardView';
 import { CardSettings, FieldSettings } from '@renderer/components/editors/Cards/settings';
 import type { TemplateDraft } from '@renderer/components/editors/Cards/CardDesigner';
@@ -315,6 +315,7 @@ describe('template card settings', () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     const draft: TemplateDraft = {
+      ...cardLayoutSchema.parse({}),
       name: 'Hero',
       width: 300,
       height: 300,

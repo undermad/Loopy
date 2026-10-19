@@ -1,8 +1,34 @@
 .card {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   min-height: 0;
+}
+
+.zone {
+  display: grid;
   align-content: start;
   grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.header {
+  padding: var(--card-bleed, 0);
+  margin: calc(var(--card-bleed, 0px) * -1) calc(var(--card-bleed, 0px) * -1) 0;
+  background: var(--card-header, transparent);
+  color: var(--card-header-text, inherit);
+  flex: none;
+}
+
+.body {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.footer {
+  flex: none;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, currentcolor 15%, transparent);
 }
 
 .field {

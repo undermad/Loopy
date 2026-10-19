@@ -145,6 +145,11 @@ describe('preload API coverage', () => {
     accent: null,
     gap: 8,
     fields: [],
+    background: { image: null, fit: 'cover', overlay: 0, gradient: null },
+    accentPlacement: 'top',
+    accentField: null,
+    font: 'default',
+    autoHeight: false,
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,
   };

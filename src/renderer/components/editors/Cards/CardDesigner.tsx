@@ -80,8 +80,7 @@ function readTarget(state: Record<string, unknown>): Target | null {
 }
 
 function layoutOf(source: CardLayout): CardLayout {
-  const { width, height, style, accent, gap, fields } = structuredClone(source);
-  return { width, height, style, accent, gap, fields };
+  return cardLayoutSchema.parse(structuredClone(source));
 }
 
 function templateDraft(template: CardTemplate): Draft {

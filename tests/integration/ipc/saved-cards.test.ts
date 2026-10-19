@@ -133,11 +133,16 @@ describe('saved cards IPC handlers', () => {
     const call = setup();
     const hero = await template(call);
     const card = await call<SavedCard>(IpcChannel.cardsCreate, { name: 'Knight', templateId: hero.id });
+    await call(IpcChannel.cardTemplatesUpdate, hero.id, { font: 'serif', accentPlacement: 'left' });
 
     await call(IpcChannel.cardTemplatesDelete, hero.id);
 
     const [after] = await call<SavedCard[]>(IpcChannel.cardsList);
-    expect(after).toMatchObject({ id: card.id, templateId: null, layout: { width: 280 } });
+    expect(after).toMatchObject({
+      id: card.id,
+      templateId: null,
+      layout: { width: 280, font: 'serif', accentPlacement: 'left' },
+    });
   });
 
   it('deletes cards and moves them up when their folder goes', async () => {

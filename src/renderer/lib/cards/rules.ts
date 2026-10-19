@@ -1,5 +1,6 @@
 import type { CardValue } from '@shared/board';
-import type { CardField } from '@shared/cards';
+import type { CardField, CardLayout } from '@shared/cards';
+import type { ColourValue } from '@shared/colours';
 import { evaluateFormula, formulaNames, type FormulaResult } from './expressions';
 import { fieldValue, valueText } from './values';
 
@@ -92,4 +93,14 @@ export function isFieldVisible(
     case 'below':
       return typeof value === 'number' && Number.isFinite(limit) && value < limit;
   }
+}
+
+export function cardAccent(
+  layout: Pick<CardLayout, 'accent' | 'accentField' | 'fields'>,
+  values: Readonly<Record<string, CardValue>>,
+): ColourValue | null {
+  const source = layout.fields.find((field) => field.id === layout.accentField);
+  if (source?.kind !== 'select') return layout.accent;
+  const chosen = fieldValue(source, values);
+  return source.options.find((option) => option.value === chosen)?.colour ?? layout.accent;
 }

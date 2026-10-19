@@ -77,6 +77,24 @@ The settings list the ids a formula can use and say what is wrong: an unknown na
 
 Advanced, Show when ties a field to another one: it shows only while that field has a value, is empty, is or is not a given value, or is above or below a number. A rule that points at a removed field is ignored. The designer and Properties show such fields dimmed, so they stay editable.
 
+## Card styling
+
+Card settings, shown when no field is selected, come in the same order as field settings: size, background, accent, border, text.
+
+| Section    | Holds                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Size       | A preset (poker, bridge, tarot, mini, square, landscape) or custom width and height, Grow to fit fields, spacing, padding            |
+| Background | Fill, a gradient towards a colour at an angle, an image from assets that fills or fits, and an overlay that fades it toward the fill |
+| Accent     | Colour, placement (top band, left stripe, border, header or none) and Accent from a choice field                                     |
+| Border     | Colour, width, corner radius, shadow                                                                                                 |
+| Text       | Colour, size and font (app font, serif, monospace, rounded, condensed or handwritten)                                                |
+
+Accent from takes the colour of the option picked in a choice field, so a Legendary item turns gold. Without a pick, or for an option with no colour, the accent colour applies. The header placement paints the header zone in the accent and switches its text to a readable colour.
+
+Each field sits in a zone: header, body or footer. The header and footer keep their height, and the body scrolls when the card runs out of room. Grow to fit fields lets the preview grow past its height; a card on a board keeps the size it was given.
+
+`CardFace` draws the backdrop, accent and zones for both the designer preview and board cards, so they look the same.
+
 ## Board cards
 
 A card placed with the Card tool shows its template and keeps its values on the item. Dropping a saved card places a card that follows it: edits on the board, in Properties or in the designer show wherever it is placed. Properties offers Save as card asset for a template card, and Make independent copy for a following card. A copy needs a template, because a board item has no layout of its own.
@@ -87,7 +105,7 @@ A following card also keeps the values it last showed on the board. If the saved
 
 ## Model
 
-Migration 10 adds `card_templates` with `id`, `name`, a `data` JSON column holding `width`, `height`, `style`, `accent`, `gap` and `fields`, and timestamps. Migration 16 adds `cards` with `folder_id`, `name`, a nullable `template_id`, a `layout` JSON column used only without a template, and `field_values`. It also rebuilds `asset_folders` to allow the `cards` scope. The schemas are in `src/shared/cards.ts`. Field ids must be unique within a layout.
+Migration 10 adds `card_templates` with `id`, `name`, a `data` JSON column holding the whole layout (size, style, accent, background, font and fields), and timestamps. Migration 16 adds `cards` with `folder_id`, `name`, a nullable `template_id`, a `layout` JSON column used only without a template, and `field_values`. It also rebuilds `asset_folders` to allow the `cards` scope. The schemas are in `src/shared/cards`. Field ids must be unique within a layout.
 
 Deleting a template copies its layout into every saved card that used it, so they become cards without a template. Board cards made with the Card tool keep their values and show them in a plain list until another template is chosen.
 

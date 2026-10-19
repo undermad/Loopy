@@ -3,7 +3,7 @@ import type { CardLayout } from '@shared/cards';
 import { resolveItemStyle } from '@renderer/lib/board';
 import { readableTextColour } from '@renderer/lib/colour';
 import { useResolvedColour } from '@renderer/lib/palettes';
-import { CardView } from './CardView';
+import { CardFace } from './CardFace';
 import styles from './CardDesigner.module.scss';
 
 export function CardPreview({
@@ -25,14 +25,14 @@ export function CardPreview({
   const fill = useResolvedColour(style.fill);
   const stroke = useResolvedColour(style.stroke);
   const textOverride = useResolvedColour(style.textColour);
-  const accent = useResolvedColour(layout.accent);
   const text = textOverride ?? (fill ? readableTextColour(fill) : '#1a1a1a');
   return (
     <div
       className={styles['previewCard']}
       style={{
         width: layout.width,
-        height: layout.height,
+        height: layout.autoHeight ? 'auto' : layout.height,
+        minHeight: layout.autoHeight ? layout.height : undefined,
         background: fill ?? 'transparent',
         border:
           stroke && style.strokeWidth > 0
@@ -46,8 +46,7 @@ export function CardPreview({
         opacity: style.opacity,
       }}
     >
-      {accent ? <span className={styles['accent']} style={{ background: accent }} /> : null}
-      <CardView
+      <CardFace
         layout={layout}
         values={values}
         editable

@@ -1,0 +1,55 @@
+.face {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.image,
+.overlay,
+.gradient {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.accent {
+  position: absolute;
+  pointer-events: none;
+}
+
+.top {
+  height: 6px;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+.left {
+  width: 6px;
+  bottom: 0;
+  left: 0;
+  top: 0;
+}
+
+.border {
+  inset: 0;
+  border: 3px solid;
+  border-radius: inherit;
+}
+
+.body {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  margin-top: 4px;
+}

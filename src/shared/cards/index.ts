@@ -1,11 +1,23 @@
 import { z } from 'zod';
-import { cardValueSchema, itemStyleSchema } from '../board';
+import { FONT_FAMILIES, cardValueSchema, itemStyleSchema } from '../board';
 import { colourValueSchema } from '../colours';
 import { cardFieldSchema } from './fields';
 
 export * from './fields';
 
 export const CARD_MAX_FIELDS = 60;
+export const ACCENT_PLACEMENTS = ['top', 'left', 'border', 'header', 'none'] as const;
+export const BACKGROUND_FITS = ['cover', 'contain'] as const;
+
+export const cardBackgroundSchema = z.object({
+  image: z.string().min(1).nullable().default(null),
+  fit: z.enum(BACKGROUND_FITS).default('cover'),
+  overlay: z.number().min(0).max(1).default(0),
+  gradient: z
+    .object({ colour: colourValueSchema, angle: z.number().min(0).max(360).default(180) })
+    .nullable()
+    .default(null),
+});
 
 const cardWidthSchema = z.number().min(120).max(2000);
 const cardHeightSchema = z.number().min(80).max(4000);
@@ -19,6 +31,11 @@ export const cardLayoutSchema = z.object({
   accent: colourValueSchema.nullable().default(null),
   gap: cardGapSchema.default(8),
   fields: cardFieldsSchema.default([]),
+  background: cardBackgroundSchema.default({ image: null, fit: 'cover', overlay: 0, gradient: null }),
+  accentPlacement: z.enum(ACCENT_PLACEMENTS).default('top'),
+  accentField: z.string().min(1).max(64).nullable().default(null),
+  font: z.enum(FONT_FAMILIES).default('default'),
+  autoHeight: z.boolean().default(false),
 });
 
 export const cardTemplateSchema = cardLayoutSchema.extend({
@@ -43,6 +60,11 @@ export const cardTemplatePatchSchema = z
     accent: colourValueSchema.nullable(),
     gap: cardGapSchema,
     fields: cardFieldsSchema,
+    background: cardBackgroundSchema,
+    accentPlacement: z.enum(ACCENT_PLACEMENTS),
+    accentField: z.string().min(1).max(64).nullable(),
+    font: z.enum(FONT_FAMILIES),
+    autoHeight: z.boolean(),
   })
   .partial();
 
@@ -83,6 +105,7 @@ export type SavedCard = z.infer<typeof savedCardSchema>;
 export type SavedCardInput = z.input<typeof savedCardInputSchema>;
 export type SavedCardPatch = z.input<typeof savedCardPatchSchema>;
 export type CardLayout = z.infer<typeof cardLayoutSchema>;
+export type AccentPlacement = (typeof ACCENT_PLACEMENTS)[number];
 export type CardTemplate = z.infer<typeof cardTemplateSchema>;
 export type CardTemplateInput = z.input<typeof cardTemplateInputSchema>;
 export type CardTemplatePatch = z.input<typeof cardTemplatePatchSchema>;

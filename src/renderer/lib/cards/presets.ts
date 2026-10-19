@@ -1,5 +1,20 @@
 import type { CardTemplateInput } from '@shared/cards';
 
+export interface CardSize {
+  id: 'poker' | 'bridge' | 'tarot' | 'mini' | 'square' | 'landscape';
+  width: number;
+  height: number;
+}
+
+export const CARD_SIZES: CardSize[] = [
+  { id: 'poker', width: 250, height: 350 },
+  { id: 'bridge', width: 225, height: 350 },
+  { id: 'tarot', width: 275, height: 475 },
+  { id: 'mini', width: 175, height: 250 },
+  { id: 'square', width: 300, height: 300 },
+  { id: 'landscape', width: 350, height: 250 },
+];
+
 export interface StarterTemplate {
   id: string;
   template: CardTemplateInput;
