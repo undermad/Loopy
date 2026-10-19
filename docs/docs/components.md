@@ -23,6 +23,7 @@ Every screen is built from the primitives in `src/renderer/ui`, imported from `@
 | `Dialog`, `ConfirmDialog`                          | Radix Dialog           | `Dialog.Content` takes `title`, `description` and `closeLabel`                                                           |
 | `DropdownMenu`, `ContextMenu`, `Menubar`           | Radix menus            | Same parts and styles for all three, plus `Shortcut`                                                                     |
 | `Popover`                                          | Radix Popover          | `Root`, `Trigger`, `Anchor`, `Close`, `Content`                                                                          |
+| `PropertySection`                                  | `button`, `section`    | Collapsible group of settings under a heading; `more` keeps advanced settings behind a More toggle. Open or controlled   |
 | `ScrollArea`                                       | Radix Scroll Area      | `orientation` vertical, horizontal or both. Vertical content is held to the viewport width, so it never scrolls sideways |
 | `Toolbar`                                          | Radix Toolbar          | `Root`, `Group`, `Button`, `Separator`                                                                                   |
 | `ToastProvider`, `useToast`                        | Radix Toast            | `show({ title, description, variant })`                                                                                  |

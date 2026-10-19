@@ -2,10 +2,10 @@ import { FONT_WEIGHTS, TEXT_ALIGNS } from '@shared/board';
 import { CARD_SPANS, CARD_TEXT_SIZES, type CardField } from '@shared/cards';
 import { FIELD_KINDS, changeFieldKind, fieldKindsByGroup } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
-import { Field, Input, Select, Switch } from '@renderer/ui';
+import { Field, Input, PropertySection, Select, Switch } from '@renderer/ui';
 import { ColourRow } from './ColourRow';
-import { NONE } from './inputs';
-import { renderKindSettings } from './kindSettings';
+import { DraftInput, NONE } from './inputs';
+import { hasKindSettings, renderKindSettings } from './kindSettings';
 import styles from '../CardDesigner.module.scss';
 
 function withStyle<K extends keyof CardField['style']>(
@@ -24,8 +24,7 @@ function TextStyleSettings({ field, onChange }: { field: CardField; onChange: (n
     onChange(withStyle(field, key, next));
   };
   return (
-    <>
-      <h3 className={styles['heading']}>{t('properties.typography')}</h3>
+    <PropertySection title={t('cards.sections.textStyle')}>
       <div className={styles['pair']}>
         <Field label={t('cards.textSize')}>
           <Select
@@ -70,7 +69,7 @@ function TextStyleSettings({ field, onChange }: { field: CardField; onChange: (n
           onChange(withStyle(field, 'colour', colour));
         }}
       />
-    </>
+    </PropertySection>
   );
 }
 
@@ -85,52 +84,79 @@ export function FieldSettings({
   return (
     <div className={styles['settingsBody']}>
       <h3 className={styles['heading']}>{t('cards.fieldSettings')}</h3>
-      <Field label={t('cards.kind')}>
-        <Select
+      <PropertySection title={t('cards.sections.basics')}>
+        <Field label={t('cards.kind')}>
+          <Select
+            size="sm"
+            value={field.kind}
+            aria-label={t('cards.kind')}
+            options={fieldKindsByGroup().flatMap((group) =>
+              group.kinds.map((kind) => ({ value: kind, label: t(`cards.kinds.${kind}`) })),
+            )}
+            onValueChange={(kind) => {
+              onChange(changeFieldKind(field, kind as CardField['kind']));
+            }}
+          />
+        </Field>
+        <Field label={t('cards.label')}>
+          <Input
+            size="sm"
+            value={field.label}
+            maxLength={80}
+            onChange={(event) => {
+              onChange({ ...field, label: event.target.value });
+            }}
+          />
+        </Field>
+        <Switch
           size="sm"
-          value={field.kind}
-          aria-label={t('cards.kind')}
-          options={fieldKindsByGroup().flatMap((group) =>
-            group.kinds.map((kind) => ({ value: kind, label: t(`cards.kinds.${kind}`) })),
-          )}
-          onValueChange={(kind) => {
-            onChange(changeFieldKind(field, kind as CardField['kind']));
+          label={t('cards.showLabel')}
+          checked={field.showLabel}
+          onCheckedChange={(showLabel) => {
+            onChange({ ...field, showLabel });
           }}
         />
-      </Field>
-      <Field label={t('cards.label')}>
-        <Input
-          size="sm"
-          value={field.label}
-          maxLength={80}
-          onChange={(event) => {
-            onChange({ ...field, label: event.target.value });
-          }}
-        />
-      </Field>
-      <Switch
-        size="sm"
-        label={t('cards.showLabel')}
-        checked={field.showLabel}
-        onCheckedChange={(showLabel) => {
-          onChange({ ...field, showLabel });
-        }}
-      />
-      {renderKindSettings({ field, onChange })}
-      <Field label={t('cards.span')}>
-        <Select
-          size="sm"
-          value={String(field.span)}
-          options={CARD_SPANS.map((span) => ({
-            value: String(span),
-            label: t(`cards.spans.${String(span) as '12'}`),
-          }))}
-          onValueChange={(value) => {
-            onChange({ ...field, span: Number(value) });
-          }}
-        />
-      </Field>
+      </PropertySection>
+      {hasKindSettings(field) ? (
+        <PropertySection title={t('cards.sections.value')}>
+          {renderKindSettings({ field, onChange })}
+        </PropertySection>
+      ) : null}
+      <PropertySection title={t('cards.sections.layout')}>
+        <Field label={t('cards.span')}>
+          <Select
+            size="sm"
+            value={String(field.span)}
+            options={CARD_SPANS.map((span) => ({
+              value: String(span),
+              label: t(`cards.spans.${String(span) as '12'}`),
+            }))}
+            onValueChange={(value) => {
+              onChange({ ...field, span: Number(value) });
+            }}
+          />
+        </Field>
+      </PropertySection>
       {FIELD_KINDS[field.kind].textStyle ? <TextStyleSettings field={field} onChange={onChange} /> : null}
+      <PropertySection title={t('cards.sections.advanced')} defaultOpen={false}>
+        <DraftInput
+          label={t('cards.help')}
+          hint={t('cards.helpHint')}
+          value={field.help}
+          maxLength={200}
+          onCommit={(help) => {
+            onChange({ ...field, help });
+          }}
+        />
+        <Switch
+          size="sm"
+          label={t('cards.hidden')}
+          checked={field.hidden}
+          onCheckedChange={(hidden) => {
+            onChange({ ...field, hidden });
+          }}
+        />
+      </PropertySection>
     </div>
   );
 }

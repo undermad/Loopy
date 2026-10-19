@@ -28,6 +28,7 @@ export {
   moveField,
   newField,
   statFraction,
+  uniqueFieldId,
   valueText,
 } from './fields';
 export { STARTER_TEMPLATES, blankTemplate } from './presets';

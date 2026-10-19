@@ -8,6 +8,7 @@ import {
   changeFieldKind,
   coerceValue,
   fieldKindsByGroup,
+  uniqueFieldId,
   createCardTemplate,
   deleteCardTemplate,
   duplicateCardTemplate,
@@ -51,8 +52,6 @@ describe('card fields', () => {
     expect(newField('select', 'Rarity')).toMatchObject({ options: ['Option 1', 'Option 2'] });
     expect(newField('divider', '').showLabel).toBe(false);
     expect(newField('number', 'Cost').span).toBe(6);
-    const ids = new Set(Array.from({ length: 20 }, () => newField('text', 'x').id));
-    expect(ids.size).toBe(20);
   });
 
   it('coerces values per kind and falls back to defaults', () => {
@@ -80,6 +79,16 @@ describe('card fields', () => {
     ];
     expect(moveField(fields, 0, 2).map((item) => item.id)).toEqual(['b', 'c', 'a']);
     expect(moveField(fields, 0, 9)).toBe(fields);
+  });
+
+  it('derives readable field ids from labels and keeps them unique', () => {
+    expect(newField('stat', 'Max Health').id).toBe('max_health');
+    expect(newField('stat', 'Max Health', [{ id: 'max_health' }]).id).toBe('max_health_2');
+    expect(newField('text', '').id).toBe('text');
+    expect(newField('text', '???').id).toBe('text');
+    expect(newField('text', 'Café Menu').id).toBe('cafe_menu');
+    expect(newField('text', 'x'.repeat(80)).id.length).toBeLessThanOrEqual(64);
+    expect(uniqueFieldId('Name', [{ id: 'name' }, { id: 'name_2' }])).toBe('name_3');
   });
 
   it('files every field kind under exactly one group', () => {

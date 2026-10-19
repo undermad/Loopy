@@ -27,6 +27,28 @@
   outline: 2px solid var(--color-accent) !important;
 }
 
+.fieldHidden {
+  opacity: 0.5;
+}
+
+.help {
+  display: inline-flex;
+  cursor: help;
+  margin-left: 4px;
+  vertical-align: middle;
+
+  svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+.affixed {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .label {
   font-size: 0.72em;
   font-weight: 600;

@@ -41,6 +41,8 @@ const base = {
   showLabel: z.boolean().default(true),
   span: spanSchema.default(12),
   style: cardFieldStyleSchema.default({}),
+  help: z.string().max(200).default(''),
+  hidden: z.boolean().default(false),
 };
 
 const fallback = <T extends z.ZodType>(schema: T) => schema.nullable().default(null).catch(null);
@@ -50,6 +52,7 @@ const numberDefault = fallback(z.number());
 const listDefault = fallback(z.array(z.string().max(80)).max(50));
 const placeholder = z.string().max(120).default('');
 const bound = z.number().nullable().default(null);
+const affix = z.string().max(12).default('');
 
 const options = z.array(z.string().trim().min(1).max(40)).max(CARD_MAX_OPTIONS).default([]);
 
@@ -65,6 +68,8 @@ export const numberFieldSchema = z.object({
   kind: z.literal('number'),
   min: bound,
   max: bound,
+  prefix: affix,
+  suffix: affix,
   defaultValue: numberDefault,
 });
 
@@ -91,6 +96,8 @@ export const statFieldSchema = z.object({
   kind: z.literal('stat'),
   min: bound,
   max: bound,
+  prefix: affix,
+  suffix: affix,
   defaultValue: numberDefault,
 });
 

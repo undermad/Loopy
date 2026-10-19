@@ -12,6 +12,7 @@ export * from './Kbd';
 export * from './Menubar';
 export * from './NumberInput';
 export * from './Popover';
+export * from './PropertySection';
 export * from './RichText';
 export * from './ScrollArea';
 export * from './ScrollStrip';

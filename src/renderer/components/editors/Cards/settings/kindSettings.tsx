@@ -53,7 +53,32 @@ function NumberSettings<F extends FieldOf<'number' | 'stat'>>({ field, onChange 
           onChange({ ...field, defaultValue });
         }}
       />
+      <AffixInputs field={field} onChange={onChange} />
     </>
+  );
+}
+
+function AffixInputs<F extends FieldOf<'number' | 'stat'>>({ field, onChange }: KindSettingsProps<F>) {
+  const { t } = useTranslation('editors');
+  return (
+    <div className={styles['pair']}>
+      <DraftInput
+        label={t('cards.prefix')}
+        value={field.prefix}
+        maxLength={12}
+        onCommit={(prefix) => {
+          onChange({ ...field, prefix });
+        }}
+      />
+      <DraftInput
+        label={t('cards.suffix')}
+        value={field.suffix}
+        maxLength={12}
+        onCommit={(suffix) => {
+          onChange({ ...field, suffix });
+        }}
+      />
+    </div>
   );
 }
 
@@ -186,6 +211,10 @@ const KIND_SETTINGS: KindSettingsMap = {
   link: LinkSettings,
   divider: null,
 };
+
+export function hasKindSettings(field: CardField): boolean {
+  return KIND_SETTINGS[field.kind] !== null;
+}
 
 export function renderKindSettings(props: KindSettingsProps): ReactNode {
   const settings = KIND_SETTINGS[props.field.kind] as ComponentType<KindSettingsProps> | null;

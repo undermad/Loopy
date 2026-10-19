@@ -625,6 +625,7 @@ function CardSection({ node }: { node: BoardNode }) {
             layout={layout}
             values={values}
             editable
+            showHidden
             onChange={(fieldId, value) => {
               const next = { ...values, [fieldId]: value };
               if (card) void updateSavedCard(card.id, { values: next });

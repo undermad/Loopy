@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { createElement, useMemo, useState } from 'react';
 import {
   DndContext,
   KeyboardSensor,
@@ -15,10 +15,9 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Copy, GripVertical, IdCard, LayoutTemplate, Plus, Trash2 } from 'lucide-react';
+import { Copy, GripVertical, IdCard, LayoutTemplate, Trash2 } from 'lucide-react';
 import type { CardValue } from '@shared/board';
 import {
-  CARD_FIELD_KINDS,
   cardLayoutSchema,
   cardTemplateInputSchema,
   type CardField,
@@ -37,6 +36,7 @@ import {
   duplicateSavedCard,
   moveField,
   newField,
+  uniqueFieldId,
   resolveCardLayout,
   updateCardTemplate,
   updateSavedCard,
@@ -45,19 +45,11 @@ import {
 } from '@renderer/lib/cards';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
-import {
-  Button,
-  ConfirmDialog,
-  DropdownMenu,
-  Field,
-  IconButton,
-  Input,
-  Select,
-  cx,
-  useToast,
-} from '@renderer/ui';
+import { Button, ConfirmDialog, Field, IconButton, Input, Select, cx, useToast } from '@renderer/ui';
 import { BoardCardDesigner } from './BoardCardDesigner';
 import { CardPreview } from './CardPreview';
+import { FieldPicker } from './FieldPicker';
+import { FIELD_ICONS } from './fieldIcons';
 import { CardSettings, FieldSettings } from './settings';
 import styles from './CardDesigner.module.scss';
 
@@ -143,6 +135,7 @@ function FieldRow({
       >
         <GripVertical aria-hidden="true" />
       </button>
+      {createElement(FIELD_ICONS[field.kind], { 'aria-hidden': true, className: styles['fieldIcon'] })}
       <button
         type="button"
         className={styles['fieldSelect']}
@@ -435,25 +428,7 @@ function Designer({
           <aside className={styles['fields']} aria-label={t('cards.fields')}>
             <div className={styles['fieldsHeader']}>
               <h3 className={styles['heading']}>{t('cards.fields')}</h3>
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                  <Button size="sm" icon={<Plus aria-hidden="true" />}>
-                    {t('cards.addField')}
-                  </Button>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content align="end">
-                  {CARD_FIELD_KINDS.map((kind) => (
-                    <DropdownMenu.Item
-                      key={kind}
-                      onSelect={() => {
-                        addField(kind);
-                      }}
-                    >
-                      {t(`cards.kinds.${kind}`)}
-                    </DropdownMenu.Item>
-                  ))}
-                </DropdownMenu.Content>
-              </DropdownMenu.Root>
+              <FieldPicker label={t('cards.addField')} onPick={addField} />
             </div>
             {current.layout.fields.length === 0 ? (
               <p className={styles['muted']}>{t('cards.emptyHint')}</p>
@@ -473,7 +448,10 @@ function Designer({
                           setSelectedFieldId(field.id);
                         }}
                         onDuplicate={() => {
-                          const copy = { ...structuredClone(field), id: newField(field.kind, '', fields).id };
+                          const copy = {
+                            ...structuredClone(field),
+                            id: uniqueFieldId(field.label, fields, field.kind),
+                          };
                           patchLayout({
                             fields: [...fields.slice(0, index + 1), copy, ...fields.slice(index + 1)],
                           });
@@ -507,6 +485,7 @@ function Designer({
               selectedFieldId={selectedFieldId}
               onValue={setValue}
               onSelectField={setSelectedFieldId}
+              showHidden
             />
           </section>
           <aside

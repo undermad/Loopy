@@ -25,22 +25,34 @@ The designer shows the field list on the left, a live preview in the middle and 
 
 ## Fields
 
-Fields sit on a 12-column grid. Each has a width in the row (full, three quarters, two thirds, half, third or quarter), a label it can hide, and a text size, weight, colour and alignment.
+Fields sit on a 12-column grid. Add field lists the kinds in groups: text, numbers, choices, media, references and layout. A new field gets an id taken from its label, such as `max_health`, and keeps it when the label changes, so values and future exports stay stable.
 
-| Kind       | Value                                        | Extra settings             |
-| ---------- | -------------------------------------------- | -------------------------- |
-| Heading    | Text, larger and bold by default             | Placeholder, default value |
-| Text       | One line of text                             | Placeholder, default value |
-| Long text  | Several lines                                | Placeholder, default value |
-| Number     | A number                                     | Minimum, maximum, default  |
-| Choice     | One of a list                                | Choices, default           |
-| Checkbox   | Yes or no                                    | Default                    |
-| Tags       | A list of short labels                       | Default, comma separated   |
-| Image      | An image from assets                         |                            |
-| Stat bar   | A number drawn as a bar                      | Minimum, maximum, default  |
-| Colour     | A hex colour                                 | Default                    |
-| Asset link | One or more boards, palettes, notes or cards | Links to, Allow several    |
-| Divider    | None                                         |                            |
+Field settings always come in the same order, and each group folds away:
+
+| Section    | Holds                                                                         |
+| ---------- | ----------------------------------------------------------------------------- |
+| Basics     | Field type, label, show label                                                 |
+| Value      | What the kind needs: placeholder, choices, bounds, prefix and suffix, default |
+| Layout     | Width in the row: full, three quarters, two thirds, half, third or quarter    |
+| Text style | Size, weight, alignment and colour, for kinds that show text                  |
+| Advanced   | Help text, shown on an info mark beside the label, and Hide on card           |
+
+A hidden field keeps its value and shows, dimmed, in the designer and in Properties, but not on the card face.
+
+| Kind       | Value                                        | Extra settings                               |
+| ---------- | -------------------------------------------- | -------------------------------------------- |
+| Heading    | Text, larger and bold by default             | Placeholder, default value                   |
+| Text       | One line of text                             | Placeholder, default value                   |
+| Long text  | Several lines                                | Placeholder, default value                   |
+| Number     | A number                                     | Minimum, maximum, default, prefix and suffix |
+| Choice     | One of a list                                | Choices, default                             |
+| Checkbox   | Yes or no                                    | Default                                      |
+| Tags       | A list of short labels                       | Default, comma separated                     |
+| Image      | An image from assets                         |                                              |
+| Stat bar   | A number drawn as a bar                      | Minimum, maximum, default, prefix and suffix |
+| Colour     | A hex colour                                 | Default                                      |
+| Asset link | One or more boards, palettes, notes or cards | Links to, Allow several                      |
+| Divider    | None                                         |                                              |
 
 An asset link shows each target as the card a ticket's linked asset uses. Click it to open the target. Drop an internal asset on the field to set it; with Allow several the drop adds to the list. Links to limits the kinds, and a link to a deleted asset shows as Missing asset.
 

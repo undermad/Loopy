@@ -12,12 +12,14 @@ export function CardPreview({
   selectedFieldId,
   onValue,
   onSelectField,
+  showHidden = false,
 }: {
   layout: CardLayout;
   values: Record<string, CardValue>;
   selectedFieldId: string | null;
   onValue: (fieldId: string, value: CardValue) => void;
   onSelectField?: ((fieldId: string) => void) | undefined;
+  showHidden?: boolean;
 }) {
   const style = resolveItemStyle('card', layout.style);
   const fill = useResolvedColour(style.fill);
@@ -51,6 +53,7 @@ export function CardPreview({
         editable
         onChange={onValue}
         selectedFieldId={selectedFieldId}
+        showHidden={showHidden}
         {...(onSelectField ? { onSelectField } : {})}
         className={styles['previewBody']}
       />

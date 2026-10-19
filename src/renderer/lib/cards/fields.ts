@@ -4,8 +4,25 @@ import { FIELD_KINDS } from './kinds';
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
-function shortId(): string {
-  return crypto.randomUUID().replace(/-/g, '').slice(0, 10);
+const MAX_ID = 64;
+
+function slug(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, MAX_ID - 4);
+}
+
+export function uniqueFieldId(label: string, existing: Pick<CardField, 'id'>[], fallback = 'field'): string {
+  const base = slug(label) || slug(fallback) || 'field';
+  const taken = new Set(existing.map((field) => field.id));
+  if (!taken.has(base)) return base;
+  let index = 2;
+  while (taken.has(`${base}_${String(index)}`)) index += 1;
+  return `${base}_${String(index)}`;
 }
 
 export function newField(
@@ -13,8 +30,7 @@ export function newField(
   label: string,
   existing: Pick<CardField, 'id'>[] = [],
 ): CardField {
-  let id = shortId();
-  while (existing.some((field) => field.id === id)) id = shortId();
+  const id = uniqueFieldId(label, existing, kind);
   const definition = FIELD_KINDS[kind];
   return cardFieldSchema.parse({ id, kind, label, span: definition.span, ...definition.defaults });
 }

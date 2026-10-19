@@ -260,3 +260,22 @@
     color: var(--color-accent);
   }
 }
+
+.fieldIcon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-fg-muted);
+  flex: none;
+}
+
+.picker {
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+}
+
+.pickerIcon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-fg-muted);
+  margin-right: var(--space-2);
+}

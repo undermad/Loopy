@@ -3,7 +3,12 @@ import { statFraction } from '@renderer/lib/cards';
 import { NumberValue, type FieldViewProps } from './inputs';
 import styles from '../CardView.module.scss';
 
+export function formatNumber(value: number, field: { prefix: string; suffix: string }): string {
+  return `${field.prefix}${String(value)}${field.suffix}`;
+}
+
 export function NumberKindField({
+  field,
   value,
   editable,
   label,
@@ -11,12 +16,14 @@ export function NumberKindField({
   onChange,
 }: FieldViewProps<FieldOf<'number'>>) {
   return editable ? (
-    <div style={textStyle}>
+    <div className={styles['affixed']} style={textStyle}>
+      {field.prefix ? <span>{field.prefix}</span> : null}
       <NumberValue value={value} label={label} onCommit={onChange} />
+      {field.suffix ? <span>{field.suffix}</span> : null}
     </div>
   ) : (
     <div className={styles['static']} style={textStyle}>
-      {typeof value === 'number' ? value : '–'}
+      {typeof value === 'number' ? formatNumber(value, field) : '–'}
     </div>
   );
 }
@@ -46,7 +53,9 @@ export function StatField({
       {editable ? (
         <NumberValue value={value} label={label} onCommit={onChange} />
       ) : (
-        <span className={styles['statValue']}>{typeof value === 'number' ? value : 0}</span>
+        <span className={styles['statValue']}>
+          {formatNumber(typeof value === 'number' ? value : 0, field)}
+        </span>
       )}
     </div>
   );

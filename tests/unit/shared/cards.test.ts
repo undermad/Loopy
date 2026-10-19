@@ -104,6 +104,16 @@ describe('card schemas', () => {
     expect(() => cardFieldSchema.parse({ id: 'x', kind: 'hologram' })).toThrow();
   });
 
+  it('gives every field help text and a hidden flag, and numbers a prefix and suffix', () => {
+    expect(cardFieldSchema.parse({ id: 'a', kind: 'divider' })).toMatchObject({ help: '', hidden: false });
+    expect(cardFieldSchema.parse({ id: 'n', kind: 'number', prefix: '$', suffix: ' g' })).toMatchObject({
+      prefix: '$',
+      suffix: ' g',
+    });
+    expect(cardFieldSchema.parse({ id: 's', kind: 'stat' })).toMatchObject({ prefix: '', suffix: '' });
+    expect(() => cardFieldSchema.parse({ id: 'h', kind: 'text', help: 'x'.repeat(201) })).toThrow();
+  });
+
   it('lets a board card point at a saved card', () => {
     expect(cardDataSchema.parse({}).cardId).toBeNull();
     expect(cardDataSchema.parse({ cardId: 'c1' }).cardId).toBe('c1');

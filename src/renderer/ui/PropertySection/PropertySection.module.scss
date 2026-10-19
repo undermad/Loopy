@@ -1,0 +1,62 @@
+@use '../../styles/mixins' as *;
+
+.section {
+  @include stack(var(--space-2));
+}
+
+.heading {
+  margin: 0;
+}
+
+.toggle {
+  @include row(var(--space-1));
+
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+
+  &:hover {
+    color: var(--color-fg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.body {
+  @include stack(var(--space-2));
+}
+
+.more {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  align-self: flex-start;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}

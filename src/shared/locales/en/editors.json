@@ -588,7 +588,30 @@
       "palette": "Palettes",
       "note": "Notes",
       "card": "Cards"
-    }
+    },
+    "groups": {
+      "text": "Text",
+      "number": "Numbers",
+      "choice": "Choices",
+      "media": "Media",
+      "reference": "References",
+      "layout": "Layout"
+    },
+    "sections": {
+      "basics": "Basics",
+      "value": "Value",
+      "layout": "Layout",
+      "textStyle": "Text style",
+      "advanced": "Advanced"
+    },
+    "help": "Help text",
+    "helpHint": "Shown when someone points at the field.",
+    "hidden": "Hide on card",
+    "hiddenHint": "The value stays in the designer and Properties.",
+    "prefix": "Prefix",
+    "suffix": "Suffix",
+    "more": "More",
+    "less": "Less"
   },
   "assetLink": {
     "open": "Open {{name}}",
