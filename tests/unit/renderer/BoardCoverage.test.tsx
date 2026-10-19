@@ -657,6 +657,21 @@ describe('board keyboard and clipboard', () => {
     fireEvent.keyDown(surface, { key: 'V', code: 'KeyV', altKey: true });
   });
 
+  it('copies an item style with Ctrl+Alt+C and pastes it with Ctrl+Alt+V', async () => {
+    const surface = await open([
+      sticky('a', 0, 0, { data: { text: 'a', style: { italic: true, fontSize: 30 } } }),
+      sticky('b', 300, 0),
+      sticky('c', 600, 0),
+    ]);
+    selectIds(['a']);
+    fireEvent.keyDown(surface, { key: 'c', code: 'KeyC', ctrlKey: true, altKey: true });
+    selectIds(['b', 'c']);
+    fireEvent.keyDown(surface, { key: 'v', code: 'KeyV', ctrlKey: true, altKey: true });
+    const pasted = changes().at(-1)?.upsertNodes ?? [];
+    expect(pasted.map((item) => item.id).sort()).toEqual(['b', 'c']);
+    expect(pasted.every((item) => (item.data['style'] as { italic?: boolean }).italic === true)).toBe(true);
+  });
+
   it('keeps locked items when deleting and ignores keys while typing', async () => {
     const surface = await open([sticky('a', 0, 0, { data: { text: 'a', locked: true } })]);
     selectIds(['a']);

@@ -186,7 +186,47 @@
       "rounded": "Rounded",
       "condensed": "Condensed",
       "handwritten": "Handwritten"
-    }
+    },
+    "sections": {
+      "identity": "Item",
+      "content": "Content",
+      "layout": "Layout",
+      "appearance": "Appearance",
+      "behaviour": "Behaviour"
+    },
+    "more": "More",
+    "less": "Less",
+    "mixedValue": "{{label}}: mixed",
+    "gradient": "Gradient",
+    "gradientColour": "Gradient colour",
+    "angle": "Angle",
+    "shadowSize": "Shadow size",
+    "shadowSizes": {
+      "sm": "Small",
+      "md": "Medium",
+      "lg": "Large"
+    },
+    "lineHeight": "Line height",
+    "italic": "Italic",
+    "underline": "Underline",
+    "strike": "Strikethrough",
+    "textCase": "Text case",
+    "textCases": {
+      "none": "As typed",
+      "upper": "Upper case",
+      "lower": "Lower case",
+      "title": "Title case"
+    },
+    "stylePreset": "Style preset",
+    "applyPreset": "Apply a preset",
+    "savePreset": "Save style as preset",
+    "presetName": "Preset name",
+    "savePresetSubmit": "Save preset",
+    "presetSaved": "Preset \"{{name}}\" saved.",
+    "deletePreset": "Delete a preset",
+    "deletePresetItem": "Delete {{name}}",
+    "copyStyle": "Copy style",
+    "pasteStyle": "Paste style"
   },
   "placeholder": {
     "title": "{{editor}} arrives soon",

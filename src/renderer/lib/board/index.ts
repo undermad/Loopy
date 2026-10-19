@@ -113,3 +113,14 @@ export { normaliseAngle, rotateBy, rotateVector, rotationOf, snapAngle } from '.
 export { RESIZE_HANDLES, resizeCursor, resizeRect } from './resize';
 export type { ResizeHandle } from './resize';
 export { fontStack } from './fonts';
+export { ITEM_KINDS } from './kinds';
+export {
+  copiedItemStyle,
+  copyItemStyle,
+  itemTextStyle,
+  ownStyle,
+  pasteItemStyle,
+  patchStyle,
+  sharedStyleValue,
+} from './styles';
+export type { StylePatch } from './styles';

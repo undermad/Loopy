@@ -56,22 +56,23 @@ Docked items select as a group first: a click on any of them selects the whole g
 
 ## Editing
 
-| Action             | How                                                                                                     |
-| ------------------ | ------------------------------------------------------------------------------------------------------- |
-| Edit text or title | Double-click the item, or press Enter while it is selected; Escape or clicking away saves               |
-| Label an arrow     | Double-click the arrow                                                                                  |
-| Nest               | Drop an item onto a container; drag it out to release it                                                |
-| Duplicate          | Ctrl+D, or the item's context menu. A container is copied with its children and the arrows between them |
-| Copy, cut, paste   | Ctrl+C, Ctrl+X, Ctrl+V, or the Edit menu. Pastes at the pointer and works across boards                 |
-| Undo and redo      | Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y, the header buttons, or the Edit menu                                    |
-| Select all         | Ctrl+A selects every item beside the current selection                                                  |
-| Order              | `]` brings to front, `[` sends to back; the Layers panel and Arrange buttons step one layer at a time   |
-| Lock               | Ctrl+L or the context menu; a locked item cannot move, resize, connect or be deleted                    |
-| Delete             | Delete or Backspace; a container takes its children with it                                             |
-| Pan and zoom       | Middle drag to pan, the wheel to zoom, with any tool                                                    |
-| Rotate             | Drag just outside a corner of a selected item; the corner itself still resizes                          |
-| Resize evenly      | Hold Shift while dragging a corner to keep the proportions                                              |
-| Snap               | Hold Ctrl while moving, resizing or rotating; with grid snap on it is always on                         |
+| Action             | How                                                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Edit text or title | Double-click the item, or press Enter while it is selected; Escape or clicking away saves                                 |
+| Label an arrow     | Double-click the arrow                                                                                                    |
+| Nest               | Drop an item onto a container; drag it out to release it                                                                  |
+| Duplicate          | Ctrl+D, or the item's context menu. A container is copied with its children and the arrows between them                   |
+| Copy, cut, paste   | Ctrl+C, Ctrl+X, Ctrl+V, or the Edit menu. Pastes at the pointer and works across boards                                   |
+| Undo and redo      | Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y, the header buttons, or the Edit menu                                                      |
+| Select all         | Ctrl+A selects every item beside the current selection                                                                    |
+| Order              | `]` brings to front, `[` sends to back; the Layers panel and Arrange buttons step one layer at a time                     |
+| Lock               | Ctrl+L or the context menu; a locked item cannot move, resize, connect or be deleted                                      |
+| Copy style         | Ctrl+Alt+C copies the selected item's style; Ctrl+Alt+V pastes it on every selected item. Properties has the same buttons |
+| Delete             | Delete or Backspace; a container takes its children with it                                                               |
+| Pan and zoom       | Middle drag to pan, the wheel to zoom, with any tool                                                                      |
+| Rotate             | Drag just outside a corner of a selected item; the corner itself still resizes                                            |
+| Resize evenly      | Hold Shift while dragging a corner to keep the proportions                                                                |
+| Snap               | Hold Ctrl while moving, resizing or rotating; with grid snap on it is always on                                           |
 
 Right-click an item or arrow for its context menu. A right-button drag still pans; the menu opens only when the pointer did not move. A card's menu has Edit card and Edit card template, see the cards page.
 
@@ -137,13 +138,16 @@ The item type is `link`, with `target` in its data. Properties can point it at a
 
 An item's `data` holds a shared base and its own content. The base is `style`, `name`, `locked`, `hidden`, `dock` and `rotation` in degrees; `resolveItemStyle` in `src/renderer/lib/board` layers the type's defaults, then any template style, then the item's own style.
 
-| Style field                                        | Values                                                             |
-| -------------------------------------------------- | ------------------------------------------------------------------ |
-| `shape`                                            | rectangle, rounded, ellipse, diamond or pill                       |
-| `fill`, `stroke`, `textColour`                     | A colour value with an optional palette reference; null for none   |
-| `strokeWidth`, `strokeStyle`                       | Width in pixels; solid, dashed or dotted                           |
-| `radius`, `padding`, `opacity`, `shadow`           | Corner radius, inner padding, 0 to 1, on or off                    |
-| `fontSize`, `fontWeight`, `align`, `verticalAlign` | Text size and weight; left, centre or right; top, middle or bottom |
+| Style field                                        | Values                                                                  |
+| -------------------------------------------------- | ----------------------------------------------------------------------- |
+| `shape`                                            | rectangle, rounded, ellipse, diamond or pill                            |
+| `fill`, `stroke`, `textColour`                     | A colour value with an optional palette reference; null for none        |
+| `strokeWidth`, `strokeStyle`                       | Width in pixels; solid, dashed or dotted                                |
+| `radius`, `padding`, `opacity`, `shadow`           | Corner radius, inner padding, 0 to 1, on or off                         |
+| `fontSize`, `fontWeight`, `align`, `verticalAlign` | Text size and weight; left, centre or right; top, middle or bottom      |
+| `fontFamily`, `lineHeight`                         | App font, serif, monospace, rounded, condensed or handwritten; 0.8 to 3 |
+| `italic`, `underline`, `strike`, `textCase`        | On or off; as typed, upper, lower or title case                         |
+| `shadowSize`, `gradient`                           | Small, medium or large; a colour and angle the fill fades towards       |
 
 | Type        | Content                                                           |
 | ----------- | ----------------------------------------------------------------- |
@@ -170,7 +174,22 @@ Board colours and item colours are a hex copy plus an optional palette reference
 
 ## Properties
 
-The Properties editor follows the board selection kept in `src/renderer/lib/board`: the canvas records the active board, the selected item ids and the selected arrow ids. With nothing selected it edits the board itself. Every item shows the same sections in the same order: name, locked, visible and docking; position and size in board units; Arrange with its layer number; then its own content and its style. With one arrow it shows the arrow's style. Several selected items show Align and Arrange.
+The Properties editor follows the board selection kept in `src/renderer/lib/board`: the canvas records the active board, the selected item ids and the selected arrow ids. With nothing selected it edits the board itself. With one arrow it shows the arrow's style.
+
+Every item shows the same collapsible sections in the same order, and an item kind leaves out what it cannot use: a drawing has no appearance or text style, an image no text style. `ITEM_KINDS` in `src/renderer/lib/board` says which sections each kind shows and whether it can rotate or resize.
+
+| Section    | Holds                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Item       | Name                                                                                                                    |
+| Content    | What the kind holds: text, image, title, card values, file, link target or drawing facts                                |
+| Layout     | Position and size in board units, rotation, Arrange with the layer number                                               |
+| Appearance | Style presets, copy and paste style, shape, fill, border, radius, padding, opacity, shadow. More: gradient, shadow size |
+| Text style | Colour, size, weight, alignment. More: font, line height, italic, underline, strikethrough, text case                   |
+| Behaviour  | Locked, visible, docking                                                                                                |
+
+Several selected items show Layout with Align and Arrange, then Appearance and Text style for the items that have them. A change applies to all of them, and a value that differs between them is marked mixed.
+
+A style preset is a named copy of an item's own style, kept in the project. Save style as preset stores it, Style preset applies it to the selection and replaces the items' own styles, and the bin lists presets to delete.
 
 Number fields scrub: drag left or right to change the value, hold Shift for tenths of a step, or click to type.
 

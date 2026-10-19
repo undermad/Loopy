@@ -73,6 +73,8 @@ export const SHORTCUT_CATEGORIES: readonly ShortcutCategory[] = [
     entries: [
       entry('duplicate', '$mod+D'),
       entry('lock', '$mod+L'),
+      entry('copyStyle', '$mod+Alt+C'),
+      entry('pasteStyle', '$mod+Alt+V'),
       entry('front', ']'),
       entry('back', '['),
       entry('stepIn', 'Enter'),

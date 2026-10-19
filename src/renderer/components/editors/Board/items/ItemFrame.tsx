@@ -2,7 +2,7 @@ import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from
 import { Handle, Position } from '@xyflow/react';
 import { Lock } from 'lucide-react';
 import type { BoardNode, ItemStyle } from '@shared/board';
-import { resolveItemStyle, rotationOf, type ResolvedStyle } from '@renderer/lib/board';
+import { itemTextStyle, resolveItemStyle, rotationOf, type ResolvedStyle } from '@renderer/lib/board';
 import { readableTextColour } from '@renderer/lib/colour';
 import { useResolvedColour } from '@renderer/lib/palettes';
 import { cx } from '@renderer/ui';
@@ -40,6 +40,12 @@ const HANDLES = [
   { id: 'left', position: Position.Left },
 ] as const;
 
+const SHADOW_CLASSES: Record<ResolvedStyle['shadowSize'], string | undefined> = {
+  sm: styles['shadowSm'],
+  md: undefined,
+  lg: styles['shadowLg'],
+};
+
 function dashArray(style: ResolvedStyle): string | undefined {
   const width = Math.max(1, style.strokeWidth);
   if (style.strokeStyle === 'dashed') return `${String(width * 3)} ${String(width * 2)}`;
@@ -56,20 +62,23 @@ function clipFor(style: ResolvedStyle, width: number, height: number): CSSProper
 }
 
 interface ShapeProps {
+  id: string;
   style: ResolvedStyle;
   width: number;
   height: number;
   fill: string | null;
+  gradient: string | null;
   stroke: string | null;
 }
 
-function Shape({ style, width, height, fill, stroke }: ShapeProps) {
+function Shape({ id, style, width, height, fill, gradient, stroke }: ShapeProps) {
+  const gradientId = `gradient-${id}`;
   const strokeWidth = stroke ? style.strokeWidth : 0;
   const inset = strokeWidth / 2;
   const w = Math.max(0, width - strokeWidth);
   const h = Math.max(0, height - strokeWidth);
   const paint = {
-    fill: fill ?? 'none',
+    fill: gradient && fill ? `url(#${gradientId})` : (fill ?? 'none'),
     stroke: stroke ?? 'none',
     strokeWidth,
     strokeDasharray: dashArray(style),
@@ -100,12 +109,27 @@ function Shape({ style, width, height, fill, stroke }: ShapeProps) {
   }
   return (
     <svg
-      className={cx(styles['shape'], style.shadow && styles['shadow'])}
+      className={cx(
+        styles['shape'],
+        style.shadow && styles['shadow'],
+        style.shadow && SHADOW_CLASSES[style.shadowSize],
+      )}
       width={width}
       height={height}
       viewBox={`0 0 ${String(width)} ${String(height)}`}
       aria-hidden="true"
     >
+      {gradient && fill && style.gradient ? (
+        <defs>
+          <linearGradient
+            id={gradientId}
+            gradientTransform={`rotate(${String(style.gradient.angle - 90)} 0.5 0.5)`}
+          >
+            <stop offset="0%" stopColor={fill} />
+            <stop offset="100%" stopColor={gradient} />
+          </linearGradient>
+        </defs>
+      ) : null}
       {shape}
     </svg>
   );
@@ -129,6 +153,7 @@ export function ItemFrame({
   const own = (node.data['style'] ?? {}) as ItemStyle;
   const style = resolveItemStyle(node.type, ...layers, own);
   const fill = useResolvedColour(style.fill);
+  const gradient = useResolvedColour(style.gradient?.colour ?? null);
   const stroke = useResolvedColour(style.stroke);
   const textOverride = useResolvedColour(style.textColour);
   const text = textOverride ?? (fill ? readableTextColour(fill) : actions.textColour);
@@ -161,7 +186,15 @@ export function ItemFrame({
         style={rotation ? { transform: `rotate(${String(rotation)}deg)` } : undefined}
         data-rotation={rotation || undefined}
       >
-        <Shape style={style} width={width} height={height} fill={fill} stroke={stroke} />
+        <Shape
+          id={node.id}
+          style={style}
+          width={width}
+          height={height}
+          fill={fill}
+          gradient={gradient}
+          stroke={stroke}
+        />
         <div
           className={styles['content']}
           style={{
@@ -170,6 +203,7 @@ export function ItemFrame({
             color: text,
             fontSize: style.fontSize,
             fontWeight: { normal: 400, medium: 500, bold: 700 }[style.fontWeight],
+            ...itemTextStyle(style),
             textAlign: style.align,
             justifyContent: justify,
           }}

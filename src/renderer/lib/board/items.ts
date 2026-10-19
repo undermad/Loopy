@@ -85,6 +85,14 @@ export interface ResolvedStyle {
   fontWeight: NonNullable<ItemStyle['fontWeight']>;
   align: NonNullable<ItemStyle['align']>;
   verticalAlign: NonNullable<ItemStyle['verticalAlign']>;
+  fontFamily: NonNullable<ItemStyle['fontFamily']>;
+  lineHeight: number;
+  italic: boolean;
+  underline: boolean;
+  strike: boolean;
+  textCase: NonNullable<ItemStyle['textCase']>;
+  shadowSize: NonNullable<ItemStyle['shadowSize']>;
+  gradient: NonNullable<ItemStyle['gradient']> | null;
 }
 
 const BASE_STYLE: ResolvedStyle = {
@@ -102,6 +110,14 @@ const BASE_STYLE: ResolvedStyle = {
   fontWeight: 'normal',
   align: 'left',
   verticalAlign: 'top',
+  fontFamily: 'default',
+  lineHeight: 1.3,
+  italic: false,
+  underline: false,
+  strike: false,
+  textCase: 'none',
+  shadowSize: 'md',
+  gradient: null,
 };
 
 const TYPE_STYLE: Record<BoardNodeType, Partial<ResolvedStyle>> = {

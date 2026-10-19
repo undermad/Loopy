@@ -205,7 +205,9 @@
       "scrollToolbar": "Scroll a crowded toolbar",
       "panToolbar": "Drag a crowded toolbar",
       "save": "Save project",
-      "saveAs": "Save project as"
+      "saveAs": "Save project as",
+      "copyStyle": "Copy item style",
+      "pasteStyle": "Paste item style"
     }
   },
   "window": {

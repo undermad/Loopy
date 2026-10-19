@@ -76,9 +76,11 @@ import {
   measureImage,
   gridStep,
   loadBoard,
+  copyItemStyle,
   copyItems,
   BOARD_CLIPBOARD_TYPE,
   parseClip,
+  pasteItemStyle,
   pasteItems,
   recallClip,
   rememberClip,
@@ -1285,6 +1287,16 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
     if (mod && event.key.toLowerCase() === 'a') {
       event.preventDefault();
       selectAll();
+      return;
+    }
+    if (mod && event.altKey && (event.code === 'KeyC' || event.code === 'KeyV') && selectedNodes.length > 0) {
+      event.preventDefault();
+      const [first] = selectedNodes;
+      if (event.code === 'KeyC' && first) copyItemStyle(first);
+      if (event.code === 'KeyV') {
+        const pasted = pasteItemStyle(selectedNodes);
+        if (pasted.length > 0) commit({ upsertNodes: pasted });
+      }
       return;
     }
     const alignment = ALIGN_KEYS[event.code];
