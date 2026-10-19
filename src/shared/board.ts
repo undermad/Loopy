@@ -28,6 +28,8 @@ export const TEXT_ALIGNS = ['left', 'center', 'right'] as const;
 export const VERTICAL_ALIGNS = ['top', 'middle', 'bottom'] as const;
 export const IMAGE_FITS = ['cover', 'contain', 'fill'] as const;
 export const FONT_FAMILIES = ['default', 'serif', 'mono', 'rounded', 'condensed', 'handwritten'] as const;
+export const TEXT_CASES = ['none', 'upper', 'lower', 'title'] as const;
+export const SHADOW_SIZES = ['sm', 'md', 'lg'] as const;
 
 export const strokeStyleSchema = z.enum(STROKE_STYLES);
 
@@ -46,6 +48,17 @@ export const itemStyleSchema = z.object({
   fontWeight: z.enum(FONT_WEIGHTS).optional(),
   align: z.enum(TEXT_ALIGNS).optional(),
   verticalAlign: z.enum(VERTICAL_ALIGNS).optional(),
+  fontFamily: z.enum(FONT_FAMILIES).optional(),
+  lineHeight: z.number().min(0.8).max(3).optional(),
+  italic: z.boolean().optional(),
+  underline: z.boolean().optional(),
+  strike: z.boolean().optional(),
+  textCase: z.enum(TEXT_CASES).optional(),
+  shadowSize: z.enum(SHADOW_SIZES).optional(),
+  gradient: z
+    .object({ colour: colourValueSchema, angle: z.number().min(0).max(360) })
+    .nullable()
+    .optional(),
 });
 
 export const BOARD_LINK_KINDS = ['board', 'palette', 'note', 'card'] as const;

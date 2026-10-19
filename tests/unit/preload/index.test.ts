@@ -136,6 +136,13 @@ describe('preload API coverage', () => {
     updatedAt: project.updatedAt,
   };
   const cluster = { id: 'k', name: 'Magic', createdAt: project.createdAt, updatedAt: project.updatedAt };
+  const preset = {
+    id: 's',
+    name: 'Warning',
+    style: { italic: true },
+    createdAt: project.createdAt,
+    updatedAt: project.updatedAt,
+  };
   const template = {
     id: 't',
     name: 'Hero',
@@ -240,6 +247,10 @@ describe('preload API coverage', () => {
     ['createCardTemplate', [{ name: 'Hero' }], template],
     ['updateCardTemplate', ['t', { name: 'Villain' }], template],
     ['deleteCardTemplate', ['t'], []],
+    ['listItemStyles', [], [preset]],
+    ['createItemStyle', [{ name: 'Warning' }], preset],
+    ['updateItemStyle', ['s', { name: 'Alert' }], preset],
+    ['deleteItemStyle', ['s'], []],
     ['getAssets', [], assets],
     ['createAssetFolder', [{ name: 'F' }], assets],
     ['updateAssetFolder', ['f', { name: 'F2' }], assets],

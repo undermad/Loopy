@@ -6,6 +6,7 @@ import { bootAssets, loadAssets } from '@renderer/lib/assets';
 import { bootBoardShortcuts, bootBoards, refreshBoards } from '@renderer/lib/board';
 import { applyLanguage, initI18n } from '@renderer/lib/i18n';
 import { bootCardTemplates, loadCardTemplates } from '@renderer/lib/cards';
+import { bootItemStyles, loadItemStyles } from '@renderer/lib/itemStyles';
 import { bootNotes, flushNotes, loadNotes } from '@renderer/lib/notes';
 import { bootPalettes, loadPalettes } from '@renderer/lib/palettes';
 import { bootProject, currentProject } from '@renderer/lib/project';
@@ -29,6 +30,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
   bootBoardShortcuts();
   await bootPalettes(api, currentProject() !== null);
   await bootCardTemplates(api, currentProject() !== null);
+  await bootItemStyles(api, currentProject() !== null);
   await bootAssets(api, currentProject() !== null);
   await bootNotes(api, currentProject() !== null);
   await bootWorkspaces(api, () => {
@@ -49,6 +51,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
     boards: refreshBoards,
     palettes: loadPalettes,
     cards: loadCardTemplates,
+    styles: loadItemStyles,
     assets: loadAssets,
     notes: loadNotes,
   };

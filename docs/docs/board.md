@@ -186,18 +186,20 @@ Project migration 3 adds `boards`, `board_nodes` and `board_edges`; migrations 5
 | `board_nodes` | `id`, `board_id`, `parent_id`, `type`, `x`, `y`, `width`, `height`, `z`, `data` JSON, timestamps |
 | `board_edges` | `id`, `board_id`, `source_id`, `target_id`, `data` JSON                                          |
 | `board_tiles` | `node_id`, `tx`, `ty`, `bytes` PNG, `updated_at`                                                 |
+| `item_styles` | `id`, `name`, `style` JSON, timestamps                                                           |
 
-Migration 13 adds `board_tiles`, the paint of drawing layers, see the drawing page.
+Migration 13 adds `board_tiles`, the paint of drawing layers, see the drawing page. Migration 17 adds `item_styles`, the project's named style presets.
 
 A child's position is relative to its container. `applyChanges` in `src/main/storage/boards-repository.ts` stores parents before children and refuses a parent on another board or one that would contain itself.
 
 ## Channels and library
 
-| Channel                                                          | Does                                                    |
-| ---------------------------------------------------------------- | ------------------------------------------------------- |
-| `boards:list`, `boards:create`, `boards:update`, `boards:delete` | Board lifecycle                                         |
-| `boards:read`                                                    | A board with its items and arrows                       |
-| `boards:applyChanges`                                            | One transaction of item, arrow and drawing tile changes |
-| `boardTiles:list`                                                | The drawing tiles of a board                            |
+| Channel                                                                          | Does                                                                  |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `boards:list`, `boards:create`, `boards:update`, `boards:delete`                 | Board lifecycle                                                       |
+| `boards:read`                                                                    | A board with its items and arrows                                     |
+| `boards:applyChanges`                                                            | One transaction of item, arrow and drawing tile changes               |
+| `boardTiles:list`                                                                | The drawing tiles of a board                                          |
+| `itemStyles:list`, `itemStyles:create`, `itemStyles:update`, `itemStyles:delete` | Style presets, sorted by name; changes sync under the `styles` domain |
 
-`src/renderer/lib/board` keeps the board list, one snapshot and one tile map per open board, the active board and the selection, and `items.ts` holds the pure item maths: presets, style resolution, nesting and reparenting, duplication, z-order, hit testing and connection sides. `layers.ts`, `clipboard.ts` and `history.ts` add layer order, copy and paste, and undo. `commitChanges` records each change with its inverse; edits to the same items within half a second, and changes from one gesture, merge into one step. Undo and redo keys work in the board, Properties and Layers, which carry `boardScopeProps`. The canvas keeps React Flow's nodes in local state so a drag follows the pointer, and `commitChanges` applies the result to the store first and sends it when the gesture ends. The editor components live in `src/renderer/components/editors/Board` and the panels in `src/renderer/components/editors/Properties`.
+`src/renderer/lib/board` keeps the board list, one snapshot and one tile map per open board, the active board and the selection, and `items.ts` holds the pure item maths: presets, style resolution, nesting and reparenting, duplication, z-order, hit testing and connection sides. `layers.ts`, `clipboard.ts` and `history.ts` add layer order, copy and paste, and undo. `commitChanges` records each change with its inverse; edits to the same items within half a second, and changes from one gesture, merge into one step. Undo and redo keys work in the board, Properties and Layers, which carry `boardScopeProps`. The canvas keeps React Flow's nodes in local state so a drag follows the pointer, and `commitChanges` applies the result to the store first and sends it when the gesture ends. `src/renderer/lib/itemStyles` keeps the style presets of the open project and reloads them when another window changes them. The editor components live in `src/renderer/components/editors/Board` and the panels in `src/renderer/components/editors/Properties`.

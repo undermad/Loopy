@@ -24,6 +24,7 @@ import { resetTicketsStore } from '@renderer/lib/tickets';
 import { resetWorkspacesStore } from '@renderer/lib/workspaces';
 import { resetAssetsStore } from '@renderer/lib/assets';
 import { resetCardTemplatesStore } from '@renderer/lib/cards';
+import { resetItemStylesStore } from '@renderer/lib/itemStyles';
 import { resetBrushStore, resetTileCache } from '@renderer/lib/drawing';
 import { resetNotesStore } from '@renderer/lib/notes';
 import { resetPalettesStore } from '@renderer/lib/palettes';
@@ -32,6 +33,7 @@ import { resetThemeStore } from '@renderer/lib/theme';
 import { createAssetsFake } from './assets-fake';
 import { createBoardsFake } from './boards-fake';
 import { createCardsFake } from './cards-fake';
+import { createItemStylesFake } from './item-styles-fake';
 import { createNotesFake } from './notes-fake';
 import { createPalettesFake } from './palettes-fake';
 import { createTicketsFake } from './tickets-fake';
@@ -100,6 +102,7 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
   const boardsFake = createBoardsFake();
   const palettesFake = createPalettesFake();
   const cardsFake = createCardsFake();
+  const stylesFake = createItemStylesFake();
   const assetsFake = createAssetsFake();
   const notesFake = createNotesFake();
   const api: FakeApi = {
@@ -122,6 +125,7 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     ...boardsFake.api,
     ...palettesFake.api,
     ...cardsFake.api,
+    ...stylesFake.api,
     ...assetsFake.api,
     ...notesFake.api,
     getAppVersion: vi.fn(() => Promise.resolve({ app: '0.1.0', electron: '44.8.0' })),
@@ -281,6 +285,7 @@ export async function bootTestApp(
   resetBrushStore();
   resetPalettesStore();
   resetCardTemplatesStore();
+  resetItemStylesStore();
   resetAssetsStore();
   resetNotesStore();
   const api = createFakeApi(overrides, scheme);

@@ -321,6 +321,13 @@ export const projectMigrations: SqlMigrations = [
   );
   CREATE INDEX cards_by_folder ON cards(folder_id);
   CREATE INDEX cards_by_template ON cards(template_id);`,
+  `CREATE TABLE item_styles (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL CHECK (length(name) > 0),
+    style TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );`,
 ];
 
 export const CURRENT_PROJECT_SCHEMA_VERSION = projectMigrations.length;

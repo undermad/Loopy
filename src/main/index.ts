@@ -22,6 +22,7 @@ import { registerBoardsHandlers } from './ipc/boards';
 import { registerColourHandlers } from './ipc/colour';
 import { registerLayoutsHandlers } from './ipc/layouts';
 import { registerCardTemplatesHandlers } from './ipc/card-templates';
+import { registerItemStylesHandlers } from './ipc/item-styles';
 import { registerNotesHandlers } from './ipc/notes';
 import { registerPalettesHandlers } from './ipc/palettes';
 import { registerProjectHandlers } from './ipc/project';
@@ -168,6 +169,7 @@ async function start(): Promise<void> {
   registerBoardsHandlers(syncingIpc(ipcMain, 'boards', notify), { project: () => projects.current() });
   registerPalettesHandlers(syncingIpc(ipcMain, 'palettes', notify), { project: () => projects.current() });
   registerCardTemplatesHandlers(syncingIpc(ipcMain, 'cards', notify), { project: () => projects.current() });
+  registerItemStylesHandlers(syncingIpc(ipcMain, 'styles', notify), { project: () => projects.current() });
   registerAssetsHandlers(syncingIpc(ipcMain, 'assets', notify), {
     project: () => projects.current(),
     dialogs: dialog,
