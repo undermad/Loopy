@@ -6,6 +6,7 @@ import {
   cardTemplateListSchema,
   cardTemplatePatchSchema,
   cardTemplateSchema,
+  type CardLayout,
   type CardTemplate,
 } from '@shared/cards';
 
@@ -34,19 +35,19 @@ function toTemplate(row: TemplateRow): CardTemplate {
   });
 }
 
-function readTemplate(db: DatabaseSync, id: string): CardTemplate {
+export function readTemplate(db: DatabaseSync, id: string): CardTemplate {
   const row = db.prepare(`SELECT ${COLUMNS} FROM card_templates WHERE id = ?`).get(id) as
     TemplateRow | undefined;
   if (!row) throw new Error(`Unknown card template ${id}`);
   return toTemplate(row);
 }
 
-function layoutJson(template: Omit<CardTemplate, 'id' | 'name' | 'createdAt' | 'updatedAt'>): string {
+export function layoutJson(template: CardLayout): string {
   const { width, height, style, accent, gap, fields } = template;
   return JSON.stringify({ width, height, style, accent, gap, fields });
 }
 
-function assertUniqueFieldIds(fields: { id: string }[]): void {
+export function assertUniqueFieldIds(fields: { id: string }[]): void {
   const ids = new Set<string>();
   for (const field of fields) {
     if (ids.has(field.id)) throw new Error(`Duplicate field id ${field.id}`);

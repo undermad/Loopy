@@ -1,9 +1,12 @@
 import {
   Brush,
+  Columns2,
   FolderOpen,
+  IdCard,
   KanbanSquare,
   Layers,
   LayoutTemplate,
+  Library,
   Link2,
   Network,
   NotebookPen,
@@ -17,6 +20,8 @@ import { registerEditor } from '@renderer/lib/editors';
 import { AssetsEditor } from './Assets/AssetsEditor';
 import { BoardEditor } from './Board/BoardEditor';
 import { BrushesEditor } from './Brushes/BrushesEditor';
+import { CardDesigner } from './Cards/CardDesigner';
+import { CardLibrary } from './Cards/CardLibrary';
 import { ColoursEditor } from './Colours/ColoursEditor';
 import { EmptyEditor } from './EmptyEditor';
 import { LayersEditor } from './Layers/LayersEditor';
@@ -24,6 +29,7 @@ import { GraphView } from './Notes/GraphView';
 import { NoteDetails } from './Notes/NoteDetails';
 import { NoteEditor } from './Notes/NoteEditor';
 import { NotesExplorer } from './Notes/NotesExplorer';
+import { SplitNoteEditor } from './Notes/SplitNoteEditor';
 import { PropertiesEditor } from './Properties/PropertiesEditor';
 import { TicketEditor } from './Tickets/TicketEditor';
 import { TicketsEditor } from './Tickets/TicketsEditor';
@@ -107,6 +113,14 @@ export function registerEditors(): void {
     defaultState: () => ({ mode: 'live' }),
   });
   registerEditor({
+    id: 'noteSplit',
+    titleKey: 'types.noteSplit',
+    icon: Columns2,
+    component: SplitNoteEditor,
+    category: 'ideas',
+    defaultState: () => ({ view: 'split', ratio: 0.5 }),
+  });
+  registerEditor({
     id: 'graph',
     titleKey: 'types.graph',
     icon: Network,
@@ -128,5 +142,20 @@ export function registerEditors(): void {
     icon: Ticket,
     component: TicketEditor,
     category: 'planning',
+  });
+  registerEditor({
+    id: 'cardLibrary',
+    titleKey: 'types.cardLibrary',
+    icon: Library,
+    component: CardLibrary,
+    category: 'cards',
+  });
+  registerEditor({
+    id: 'cardDesigner',
+    titleKey: 'types.cardDesigner',
+    icon: IdCard,
+    component: CardDesigner,
+    category: 'cards',
+    defaultState: () => ({ target: null }),
   });
 }

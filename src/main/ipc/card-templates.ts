@@ -6,6 +6,15 @@ import {
   listCardTemplates,
   updateCardTemplate,
 } from '../storage/card-templates-repository';
+import {
+  createCard,
+  deleteCard,
+  detachTemplateCards,
+  listCards,
+  updateCard,
+} from '../storage/cards-repository';
+import { trackRename } from '../storage/notes-repository';
+import { transaction } from '../storage/tickets-repository';
 import type { TicketsHandlerDeps } from './tickets';
 import { NoProjectError } from './tickets';
 
@@ -22,5 +31,21 @@ export function registerCardTemplatesHandlers(ipc: Pick<IpcMain, 'handle'>, deps
   ipc.handle(IpcChannel.cardTemplatesUpdate, (_event, rawId: unknown, patch: unknown) =>
     updateCardTemplate(db(), id(rawId), patch),
   );
-  ipc.handle(IpcChannel.cardTemplatesDelete, (_event, rawId: unknown) => deleteCardTemplate(db(), id(rawId)));
+  ipc.handle(IpcChannel.cardTemplatesDelete, (_event, rawId: unknown) => {
+    const database = db();
+    const templateId = id(rawId);
+    return transaction(database, () => {
+      detachTemplateCards(database, templateId);
+      return deleteCardTemplate(database, templateId);
+    });
+  });
+
+  ipc.handle(IpcChannel.cardsList, () => listCards(db()));
+  ipc.handle(IpcChannel.cardsCreate, (_event, input: unknown) => createCard(db(), input));
+  ipc.handle(IpcChannel.cardsUpdate, (_event, rawId: unknown, patch: unknown) => {
+    const database = db();
+    const cardId = id(rawId);
+    return trackRename(database, 'card', cardId, () => updateCard(database, cardId, patch));
+  });
+  ipc.handle(IpcChannel.cardsDelete, (_event, rawId: unknown) => deleteCard(db(), id(rawId)));
 }

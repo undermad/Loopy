@@ -70,9 +70,9 @@ The Ticket editor follows the selected ticket. Selecting a card opens it: the Ti
 
 ### Linked assets
 
-Linked assets ties boards, colour palettes and files to a ticket. Link asset opens a searchable list grouped by Boards, Colour palettes, Notes and Files; a switch links or unlinks each one. Each link shows as a card with the asset's icon or preview, its name and its type, drawn by `AssetLinkCard`, the same card a board link item uses. Clicking a card opens the asset as described on the assets page: in an open editor of that kind if there is one, otherwise in its home workspace. A link whose asset was deleted shows as Missing asset and stays until it is unlinked. Dragging files, boards or palettes from the Assets editor onto the ticket window links them all; the Linked assets section lights up while you hover.
+Linked assets ties boards, colour palettes and files to a ticket. Link asset opens a searchable list grouped by Boards, Colour palettes, Notes, Cards and Files; a switch links or unlinks each one. Each link shows as a card with the asset's icon or preview, its name and its type, drawn by `AssetLinkCard`, the same card a board link item uses. Clicking a card opens the asset as described on the assets page: in an open editor of that kind if there is one, otherwise in its home workspace. A link whose asset was deleted shows as Missing asset and stays until it is unlinked. Dragging files, boards or palettes from the Assets editor onto the ticket window links them all; the Linked assets section lights up while you hover.
 
-A link is `{ kind, id }` with kind `board`, `palette`, `asset` or `note`. A note link opens the note in the Idea Map workspace, see the notes page. `tickets:update` takes the whole list as `links` and drops duplicates.
+A link is `{ kind, id }` with kind `board`, `palette`, `asset`, `note` or `card`. A card link opens the card in the Cards workspace. A note link opens the note in the Idea Map workspace, see the notes page. `tickets:update` takes the whole list as `links` and drops duplicates.
 
 ### Rich text
 

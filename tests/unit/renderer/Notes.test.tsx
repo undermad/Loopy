@@ -75,9 +75,22 @@ describe('notes as internal assets', () => {
     expect(
       linkTarget(
         { kind: 'note', id: 'n1' },
-        { planning: 'Planning', design: 'Design', palette: 'Palette', assets: 'Assets', ideas: 'Idea Map' },
+        {
+          planning: 'Planning',
+          design: 'Design',
+          palette: 'Palette',
+          assets: 'Assets',
+          ideas: 'Idea Map',
+          cards: 'Cards',
+        },
       ),
-    ).toEqual({ editor: 'note', state: { noteId: 'n1' }, template: 'ideas', workspaceName: 'Idea Map' });
+    ).toEqual({
+      editor: 'note',
+      alternates: ['noteSplit'],
+      state: { noteId: 'n1' },
+      template: 'ideas',
+      workspaceName: 'Idea Map',
+    });
   });
 
   it('shows a note link card with its title and first line', async () => {

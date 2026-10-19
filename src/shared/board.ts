@@ -47,11 +47,18 @@ export const itemStyleSchema = z.object({
   verticalAlign: z.enum(VERTICAL_ALIGNS).optional(),
 });
 
+export const BOARD_LINK_KINDS = ['board', 'palette', 'note', 'card'] as const;
+export const boardLinkKindSchema = z.enum(BOARD_LINK_KINDS);
+export const boardLinkSchema = z.object({ kind: boardLinkKindSchema, id: z.string().min(1) });
+export type BoardLink = z.infer<typeof boardLinkSchema>;
+
 export const cardValueSchema = z.union([
   z.string().max(5000),
   z.number(),
   z.boolean(),
   z.array(z.string().max(80)).max(50),
+  boardLinkSchema,
+  z.array(boardLinkSchema).max(50),
   z.null(),
 ]);
 
@@ -81,16 +88,13 @@ export const containerDataSchema = itemDataSchema.extend({
 
 export const cardDataSchema = itemDataSchema.extend({
   templateId: z.string().min(1).nullable().default(null),
+  cardId: z.string().min(1).nullable().default(null),
   values: z.record(z.string(), cardValueSchema).default({}),
 });
 
 export const fileDataSchema = itemDataSchema.extend({
   assetId: z.string().min(1).nullable().default(null),
 });
-
-export const BOARD_LINK_KINDS = ['board', 'palette', 'note'] as const;
-export const boardLinkSchema = z.object({ kind: z.enum(BOARD_LINK_KINDS), id: z.string().min(1) });
-export type BoardLink = z.infer<typeof boardLinkSchema>;
 
 export const linkDataSchema = itemDataSchema.extend({
   target: boardLinkSchema.nullable().default(null),

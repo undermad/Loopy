@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
@@ -9,6 +9,7 @@ import {
   ArrowRight,
   BookOpen,
   Code,
+  Columns2,
   FileText,
   MoreHorizontal,
   PencilLine,
@@ -56,18 +57,30 @@ import { noteTheme } from './codemirror/theme';
 import { ExtractDialog, MergeDialog } from './ComposerDialogs';
 import { HoverPreview } from './HoverPreview';
 import { NoteMarkdown, headingAnchor } from './NoteMarkdown';
+import { PaneDivider, clampRatio } from './PaneDivider';
 import { createFromTemplate, templateBody, templateOptions } from './noteTemplates';
 import { useLoopyItems } from './useLoopyItems';
 import { useNoteNavigation } from './useNoteNavigation';
 import styles from './NoteEditor.module.scss';
 
 type Mode = 'live' | 'source' | 'reading';
+type Layout = 'syntax' | 'split' | 'rendered';
 
 const remote = Annotation.define<boolean>();
 
 function readMode(state: Record<string, unknown>): Mode {
   const value = state['mode'];
   return value === 'source' || value === 'reading' ? value : 'live';
+}
+
+function readLayout(state: Record<string, unknown>): Layout {
+  const value = state['view'];
+  return value === 'syntax' || value === 'rendered' ? value : 'split';
+}
+
+function readRatio(state: Record<string, unknown>): number {
+  const value = state['ratio'];
+  return typeof value === 'number' && Number.isFinite(value) ? clampRatio(value) : 0.5;
 }
 
 function readString(state: Record<string, unknown>, key: string): string | null {
@@ -91,13 +104,24 @@ function linkFor(kind: 'board' | 'palette' | 'note' | 'asset', name: string, emb
   return formatLink({ kind, target: name, subpath: null, alias: null }, embed);
 }
 
-export function NoteEditor({ state, setState }: EditorProps) {
+export function NoteEditor({
+  state,
+  setState,
+  variant = 'note',
+}: EditorProps & { variant?: 'note' | 'split' }) {
   const { t } = useTranslation('notes');
   const toast = useToast();
   const noteId = readString(state, 'noteId');
   const anchor = readString(state, 'anchor');
-  const mode = readMode(state);
+  const split = variant === 'split';
+  const layout = readLayout(state);
+  const mode: Mode = split ? 'source' : readMode(state);
+  const showsRendered = split ? layout !== 'syntax' : mode === 'reading';
+  const showsSource = split ? layout !== 'rendered' : mode !== 'reading';
+  const [dragRatio, setDragRatio] = useState<number | null>(null);
+  const ratio = dragRatio ?? readRatio(state);
   const note = useNote(noteId);
+  const renderedBody = useDeferredValue(note?.body ?? '');
   const notes = useNotes();
   const index = useNoteIndex();
   const loopy = useLoopyItems();
@@ -118,6 +142,7 @@ export function NoteEditor({ state, setState }: EditorProps) {
   const [hover, setHover] = useState<{ link: LinkParts; rect: DOMRect } | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const host = useRef<HTMLDivElement>(null);
+  const rendered = useRef<HTMLElement>(null);
   const view = useRef<EditorView | null>(null);
   const current = useRef<string | null>(noteId);
   const modeCompartment = useRef(new Compartment());
@@ -190,6 +215,7 @@ export function NoteEditor({ state, setState }: EditorProps) {
       palette: loopy.items.palette.map((item) => ({ name: item.name, detail: '' })),
       asset: loopy.items.asset.map((item) => ({ name: item.name, detail: item.detail })),
       ticket: loopy.items.ticket.map((item) => ({ name: item.name, detail: item.detail })),
+      card: loopy.items.card.map((item) => ({ name: item.name, detail: '' })),
     },
     tags: [...index.tags.values()].map((tag) => tag.name),
     kindLabel: (kind) => t(`kinds.${kind}`),
@@ -318,11 +344,11 @@ export function NoteEditor({ state, setState }: EditorProps) {
 
   useEffect(() => {
     if (!anchor || !note) return;
-    if (mode === 'reading') {
+    if (showsRendered) {
       const element = root.current?.querySelector(`#${CSS.escape(headingAnchor(anchor))}`);
       element?.scrollIntoView({ block: 'start' });
-      return;
     }
+    if (!showsSource) return;
     const editor = view.current;
     if (!editor) return;
     const lines = editor.state.doc.toString().split('\n');
@@ -340,7 +366,23 @@ export function NoteEditor({ state, setState }: EditorProps) {
     if (line < 0) return;
     const pos = editor.state.doc.line(line + 1).from;
     editor.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
-  }, [anchor, mode, note]);
+  }, [anchor, note, showsRendered, showsSource]);
+
+  useEffect(() => {
+    const scroller = view.current?.scrollDOM;
+    if (!split || layout !== 'split' || !note || !scroller) return undefined;
+    const sync = () => {
+      const target = rendered.current;
+      if (!target) return;
+      const range = scroller.scrollHeight - scroller.clientHeight;
+      const progress = range > 0 ? scroller.scrollTop / range : 0;
+      target.scrollTop = progress * (target.scrollHeight - target.clientHeight);
+    };
+    scroller.addEventListener('scroll', sync);
+    return () => {
+      scroller.removeEventListener('scroll', sync);
+    };
+  }, [split, layout, note]);
 
   useAssetDropZone(root, (detail) => {
     if (detail.phase !== 'drop' || !note) return;
@@ -503,20 +545,37 @@ export function NoteEditor({ state, setState }: EditorProps) {
               }
             }}
           />
-          <ToggleGroup
-            aria-label={t('editor.mode')}
-            size="sm"
-            iconsOnly
-            value={mode}
-            onValueChange={(value) => {
-              if (value) setState({ mode: value });
-            }}
-            items={[
-              { value: 'live', label: t('editor.live'), icon: <PencilLine aria-hidden="true" /> },
-              { value: 'source', label: t('editor.source'), icon: <Code aria-hidden="true" /> },
-              { value: 'reading', label: t('editor.reading'), icon: <BookOpen aria-hidden="true" /> },
-            ]}
-          />
+          {split ? (
+            <ToggleGroup
+              aria-label={t('editor.mode')}
+              size="sm"
+              iconsOnly
+              value={layout}
+              onValueChange={(value) => {
+                if (value) setState({ view: value });
+              }}
+              items={[
+                { value: 'syntax', label: t('editor.syntax'), icon: <Code aria-hidden="true" /> },
+                { value: 'split', label: t('editor.split'), icon: <Columns2 aria-hidden="true" /> },
+                { value: 'rendered', label: t('editor.rendered'), icon: <BookOpen aria-hidden="true" /> },
+              ]}
+            />
+          ) : (
+            <ToggleGroup
+              aria-label={t('editor.mode')}
+              size="sm"
+              iconsOnly
+              value={mode}
+              onValueChange={(value) => {
+                if (value) setState({ mode: value });
+              }}
+              items={[
+                { value: 'live', label: t('editor.live'), icon: <PencilLine aria-hidden="true" /> },
+                { value: 'source', label: t('editor.source'), icon: <Code aria-hidden="true" /> },
+                { value: 'reading', label: t('editor.reading'), icon: <BookOpen aria-hidden="true" /> },
+              ]}
+            />
+          )}
           <IconButton
             label={note.starred ? t('editor.unstar') : t('editor.star')}
             size="sm"
@@ -615,21 +674,63 @@ export function NoteEditor({ state, setState }: EditorProps) {
           ))}
         </div>
       ) : null}
-      <div className={styles['body']}>
-        <div ref={host} className={cx(styles['source'], (!note || mode === 'reading') && styles['hidden'])} />
-        {note ? null : empty}
-        {note && mode === 'reading' ? (
-          <div className={styles['reading']}>
-            <NoteMarkdown
-              body={note.body}
-              noteId={note.id}
-              onLink={(link) => void nav.openLink(link, note.id)}
-              onTag={nav.openTag}
-              onToggleTask={toggleTask}
+      {split ? (
+        <div className={styles['panes']}>
+          <section
+            aria-label={t('editor.syntax')}
+            className={cx(styles['pane'], layout === 'split' && styles['sized'])}
+            hidden={!note || !showsSource}
+            style={layout === 'split' ? { flexBasis: `${ratio * 100}%` } : undefined}
+          >
+            <div ref={host} className={styles['source']} />
+          </section>
+          {note ? null : empty}
+          {note && layout === 'split' ? (
+            <PaneDivider
+              ratio={ratio}
+              label={t('editor.resizePanes')}
+              onPreview={setDragRatio}
+              onCommit={(next) => {
+                setState({ ratio: next });
+              }}
             />
-          </div>
-        ) : null}
-      </div>
+          ) : null}
+          {note && showsRendered ? (
+            <section
+              ref={rendered}
+              aria-label={t('editor.rendered')}
+              className={cx(styles['pane'], styles['reading'])}
+            >
+              <NoteMarkdown
+                body={renderedBody}
+                noteId={note.id}
+                onLink={(link) => void nav.openLink(link, note.id)}
+                onTag={nav.openTag}
+                onToggleTask={toggleTask}
+              />
+            </section>
+          ) : null}
+        </div>
+      ) : (
+        <div className={styles['body']}>
+          <div
+            ref={host}
+            className={cx(styles['source'], (!note || mode === 'reading') && styles['hidden'])}
+          />
+          {note ? null : empty}
+          {note && mode === 'reading' ? (
+            <div className={styles['reading']}>
+              <NoteMarkdown
+                body={note.body}
+                noteId={note.id}
+                onLink={(link) => void nav.openLink(link, note.id)}
+                onTag={nav.openTag}
+                onToggleTask={toggleTask}
+              />
+            </div>
+          ) : null}
+        </div>
+      )}
       {note ? (
         <footer className={styles['footer']}>
           <span>{t('editor.words', { count: wordCount(note.body) })}</span>

@@ -5,7 +5,7 @@ export function useLayerCoords(nodeId: string, boardId: string): string[] {
   const subscribe = useCallback(
     (notify: () => void) =>
       subscribeLayer(nodeId, boardId, (change) => {
-        if (change.coords === null) notify();
+        if (change.coords === null || change.list) notify();
       }),
     [boardId, nodeId],
   );

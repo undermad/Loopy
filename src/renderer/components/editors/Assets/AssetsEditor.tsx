@@ -24,6 +24,7 @@ import {
   Files,
   FolderPlus,
   FolderTree as FolderTreeIcon,
+  IdCard,
   LayoutGrid,
   List,
   ListTree,
@@ -39,6 +40,7 @@ import {
 import { ASSET_KINDS, assetKindOf, type Asset, type AssetScope, type AssetTarget } from '@shared/assets';
 import type { BoardLink } from '@shared/board';
 import { createBoard, updateBoard, useBoards } from '@renderer/lib/board';
+import { createSavedCard, useSavedCards } from '@renderer/lib/cards';
 import { harmonyColours } from '@renderer/lib/colour';
 import { createNote, nextNoteTitle, useNotes } from '@renderer/lib/notes';
 import { createPalette, updatePalette, usePalettes } from '@renderer/lib/palettes';
@@ -180,6 +182,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
   const boards = useBoards();
   const palettes = usePalettes();
   const notes = useNotes();
+  const savedCards = useSavedCards();
   const names = useWorkspaceNames();
   const editorRef = useRef<HTMLDivElement>(null);
   const [portrait, setPortrait] = useState(false);
@@ -239,6 +242,13 @@ export function AssetsEditor({ state, setState }: EditorProps) {
       folderId: note.folderId,
       colours: [],
     })),
+    ...(savedCards ?? []).map((card) => ({
+      kind: 'card' as const,
+      id: card.id,
+      name: card.name,
+      folderId: card.folderId,
+      colours: [],
+    })),
   ].sort((a, b) => a.name.localeCompare(b.name));
   const internalKind: InternalKind | null =
     view === 'types'
@@ -251,7 +261,9 @@ export function AssetsEditor({ state, setState }: EditorProps) {
           ? 'palette'
           : scope === 'notes'
             ? 'note'
-            : null;
+            : scope === 'cards'
+              ? 'card'
+              : null;
   const searching = search.trim().length > 0;
   const shownInternal = internalItems.filter(
     (item) =>
@@ -407,6 +419,12 @@ export function AssetsEditor({ state, setState }: EditorProps) {
       const note = await createNote({ title: nextNoteTitle(name), folderId: target });
       setSelection([`note:${note.id}`]);
       setState({ internalId: `note:${note.id}` });
+      return;
+    }
+    if (of === 'card') {
+      const card = await createSavedCard({ name, folderId: target });
+      setSelection([`card:${card.id}`]);
+      setState({ internalId: `card:${card.id}` });
       return;
     }
     if (of === 'board') {
@@ -743,6 +761,14 @@ export function AssetsEditor({ state, setState }: EditorProps) {
               <NotebookText aria-hidden="true" />
               {t('create.note')}
             </DropdownMenu.Item>
+            <DropdownMenu.Item
+              onSelect={() => {
+                setDialog('card');
+              }}
+            >
+              <IdCard aria-hidden="true" />
+              {t('create.card')}
+            </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       </div>
@@ -797,6 +823,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
               board: internalItems.filter((item) => item.kind === 'board').length,
               palette: internalItems.filter((item) => item.kind === 'palette').length,
               note: internalItems.filter((item) => item.kind === 'note').length,
+              card: internalItems.filter((item) => item.kind === 'card').length,
             }}
             counts={kindCounts(assets)}
             selected={kind}

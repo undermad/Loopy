@@ -7,7 +7,7 @@ import {
 } from './layout';
 
 export interface WorkspaceTemplate {
-  id: 'planning' | 'design' | 'palette' | 'assets' | 'ideas' | 'empty';
+  id: 'planning' | 'design' | 'palette' | 'assets' | 'ideas' | 'cards' | 'empty';
   build: () => LayoutNode;
 }
 
@@ -49,6 +49,10 @@ export const workspaceTemplates: readonly WorkspaceTemplate[] = [
         [0.2, 0.55, 0.25],
       ),
   },
+  {
+    id: 'cards',
+    build: () => split('row', [area('cardLibrary'), area('cardDesigner', { target: null })], [0.24, 0.76]),
+  },
   { id: 'empty', build: () => area('empty') },
 ];
 
@@ -76,6 +80,7 @@ export interface PresetNames {
   palette: string;
   assets: string;
   ideas: string;
+  cards: string;
   default: string;
 }
 
@@ -85,6 +90,7 @@ export function builtInLayoutPresets(names: PresetNames): LayoutPreset[] {
   const palette = () => buildWorkspace('palette', names.palette);
   const assets = () => buildWorkspace('assets', names.assets);
   const ideas = () => buildWorkspace('ideas', names.ideas);
+  const cards = () => buildWorkspace('cards', names.cards);
   const preset = (id: string, name: string, workspaces: Workspace[]): LayoutPreset => ({
     schemaVersion: LAYOUT_SCHEMA_VERSION,
     id,
@@ -92,16 +98,25 @@ export function builtInLayoutPresets(names: PresetNames): LayoutPreset[] {
     workspaces,
   });
   return [
-    preset('default', names.default, [planning(), design(), palette(), assets(), ideas()]),
+    preset('default', names.default, [planning(), design(), palette(), assets(), ideas(), cards()]),
     preset('planning', names.planning, [planning()]),
     preset('design', names.design, [design()]),
     preset('palette', names.palette, [palette()]),
     preset('assets', names.assets, [assets()]),
     preset('ideas', names.ideas, [ideas()]),
+    preset('cards', names.cards, [cards()]),
   ];
 }
 
-export const BUILT_IN_LAYOUT_IDS = ['default', 'planning', 'design', 'palette', 'assets', 'ideas'] as const;
+export const BUILT_IN_LAYOUT_IDS = [
+  'default',
+  'planning',
+  'design',
+  'palette',
+  'assets',
+  'ideas',
+  'cards',
+] as const;
 
 export function isBuiltInLayoutId(id: string): boolean {
   return (BUILT_IN_LAYOUT_IDS as readonly string[]).includes(id);

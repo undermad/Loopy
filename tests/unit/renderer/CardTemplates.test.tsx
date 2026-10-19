@@ -1,9 +1,8 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ReactFlowProvider } from '@xyflow/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardActionsContext } from '@renderer/components/editors/Board/BoardContext';
-import { TemplateEditorDialog } from '@renderer/components/editors/Board/cards/TemplateEditorDialog';
 import { CardItem } from '@renderer/components/editors/Board/items/CardItem';
 import { ImageItem } from '@renderer/components/editors/Board/items/ImageItem';
 import { createItem } from '@renderer/lib/board';
@@ -12,12 +11,6 @@ import { ToastProvider, TooltipProvider } from '@renderer/ui';
 import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
 
 let api: FakeApi;
-
-function first(items: HTMLElement[]): HTMLElement {
-  const [item] = items;
-  if (!item) throw new Error('missing element');
-  return item;
-}
 
 beforeEach(async () => {
   api = await bootTestApp();
@@ -82,88 +75,6 @@ const nodeProps = {
   selectable: true,
   draggable: true,
 };
-
-describe('card template editor', () => {
-  it('starts from a starter, edits fields and card settings, and saves a new template', async () => {
-    const user = userEvent.setup();
-    const onSaved = vi.fn();
-    render(
-      <Providers>
-        <TemplateEditorDialog open templateId={null} onOpenChange={vi.fn()} onSaved={onSaved} />
-      </Providers>,
-    );
-    await user.click(await screen.findByRole('button', { name: 'Quest' }));
-    const fields = screen.getByRole('complementary', { name: 'Fields' });
-    expect(within(fields).getByRole('button', { name: 'Edit Title' })).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Add field' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Stat bar' }));
-    const settings = screen.getByRole('complementary', { name: 'Field' });
-    const label = within(settings).getByRole('textbox', { name: 'Label' });
-    await user.clear(label);
-    await user.type(label, 'Difficulty');
-    expect(within(fields).getByRole('button', { name: 'Edit Difficulty' })).toBeInTheDocument();
-    expect(screen.getByRole('meter', { name: 'Difficulty' })).toBeInTheDocument();
-
-    await user.click(within(fields).getByRole('button', { name: 'Duplicate Difficulty' }));
-    await user.click(first(within(fields).getAllByRole('button', { name: 'Remove Difficulty' }).slice(1)));
-    await user.click(within(fields).getByRole('button', { name: 'Remove Completed' }));
-
-    await user.click(screen.getByRole('button', { name: 'Card' }));
-    const card = screen.getByRole('complementary', { name: 'Card' });
-    const width = within(card).getByLabelText('Width');
-    await user.clear(width);
-    await user.type(width, '400{Enter}');
-    await user.click(screen.getByRole('button', { name: 'Save template' }));
-
-    expect(api.createCardTemplate).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'Quest', width: 400 }) as object,
-    );
-    const saved = vi.mocked(api.createCardTemplate).mock.calls[0]?.[0];
-    expect(saved?.fields?.map((field) => field.label)).toEqual([
-      'Title',
-      'Given by',
-      'Level',
-      'Goal',
-      'Rewards',
-      'Difficulty',
-    ]);
-    expect(onSaved).toHaveBeenCalled();
-    expect(await screen.findByText('Template "Quest" saved.')).toBeInTheDocument();
-  });
-
-  it('edits, duplicates and deletes an existing template', async () => {
-    const user = userEvent.setup();
-    const template = await createCardTemplate({
-      name: 'Item',
-      fields: [{ id: 'name', kind: 'heading', label: 'Name' }],
-    });
-    render(
-      <Providers>
-        <TemplateEditorDialog open templateId={template.id} onOpenChange={vi.fn()} />
-      </Providers>,
-    );
-    const name = await screen.findByRole('textbox', { name: 'Template name' });
-    await user.clear(name);
-    await user.type(name, 'Loot');
-    expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Discard changes' }));
-    expect(screen.getByRole('textbox', { name: 'Template name' })).toHaveValue('Item');
-    await user.clear(screen.getByRole('textbox', { name: 'Template name' }));
-    await user.type(screen.getByRole('textbox', { name: 'Template name' }), 'Loot');
-    await user.click(screen.getByRole('button', { name: 'Save template' }));
-    expect(api.updateCardTemplate).toHaveBeenCalledWith(
-      template.id,
-      expect.objectContaining({ name: 'Loot' }) as object,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Duplicate template' }));
-    expect(await screen.findByRole('textbox', { name: 'Template name' })).toHaveValue('Loot copy');
-    await user.click(screen.getByRole('button', { name: 'Delete template' }));
-    await user.click(await screen.findByRole('button', { name: 'Delete' }));
-    expect(api.deleteCardTemplate).toHaveBeenCalled();
-  });
-});
 
 describe('card and image items', () => {
   it('renders a card from its template and writes edited values back', async () => {

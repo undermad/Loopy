@@ -38,12 +38,18 @@ import {
   useLiveNode,
   withData,
 } from '@renderer/lib/board';
-import { useCardTemplate, useCardTemplates } from '@renderer/lib/cards';
+import {
+  createSavedCard,
+  updateSavedCard,
+  useBoardCard,
+  useCardTemplate,
+  useCardTemplates,
+} from '@renderer/lib/cards';
 import { usePalettes } from '@renderer/lib/palettes';
+import { cardTarget, openInEditor, useWorkspaceNames } from '@renderer/lib/workspaces';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Button, Field, Input, Select, Switch, TextArea, ToggleGroup } from '@renderer/ui';
-import { CardView } from '../Board/cards/CardView';
-import { TemplateEditorDialog } from '../Board/cards/TemplateEditorDialog';
+import { CardView } from '../Cards/CardView';
 import { ProjectColourPicker } from '../../ProjectColourPicker/ProjectColourPicker';
 import { ArrangeSection } from './ArrangeSection';
 import { NumberField } from './NumberField';
@@ -529,58 +535,103 @@ function ContainerSection({ node }: { node: BoardNode }) {
 
 function CardSection({ node }: { node: BoardNode }) {
   const { t } = useTranslation('editors');
+  const names = useWorkspaceNames();
   const data = itemData({ type: 'card', data: node.data });
   const templates = useCardTemplates() ?? [];
   const template = useCardTemplate(data.templateId);
-  const [editing, setEditing] = useState<{ id: string | null } | null>(null);
+  const { card, layout, values } = useBoardCard(data);
+  const linked = data.cardId !== null;
   return (
     <>
-      <Field label={t('properties.template')}>
-        <Select
-          size="sm"
-          value={data.templateId ?? NONE}
-          aria-label={t('properties.template')}
-          options={[
-            { value: NONE, label: t('board.chooseTemplate') },
-            ...templates.map((item) => ({ value: item.id, label: item.name })),
-          ]}
-          onValueChange={(value) => {
-            save(withData(node, { templateId: value === NONE ? null : value }));
-          }}
-        />
-      </Field>
-      <Button
-        size="sm"
-        onClick={() => {
-          setEditing({ id: data.templateId });
-        }}
-      >
-        {t('properties.editTemplate')}
-      </Button>
-      {template ? (
+      {linked ? (
+        <>
+          <p className={styles['docked']}>
+            {card ? t('properties.linkedCard', { name: card.name }) : t('properties.linkedCardMissing')}
+          </p>
+          {card ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                openInEditor(cardTarget({ kind: 'card', id: card.id }, names));
+              }}
+            >
+              {t('properties.openCard')}
+            </Button>
+          ) : null}
+          <Button
+            size="sm"
+            disabled={card !== null && card.templateId === null}
+            onClick={() => {
+              save(
+                withData(node, {
+                  cardId: null,
+                  templateId: card ? card.templateId : data.templateId,
+                  values: structuredClone(values),
+                }),
+              );
+            }}
+          >
+            {t('properties.makeCopy')}
+          </Button>
+        </>
+      ) : (
+        <>
+          <Field label={t('properties.template')}>
+            <Select
+              size="sm"
+              value={data.templateId ?? NONE}
+              aria-label={t('properties.template')}
+              options={[
+                { value: NONE, label: t('board.chooseTemplate') },
+                ...templates.map((item) => ({ value: item.id, label: item.name })),
+              ]}
+              onValueChange={(value) => {
+                save(withData(node, { templateId: value === NONE ? null : value }));
+              }}
+            />
+          </Field>
+          <Button
+            size="sm"
+            onClick={() => {
+              openInEditor(
+                cardTarget(data.templateId ? { kind: 'template', id: data.templateId } : null, names),
+              );
+            }}
+          >
+            {t('properties.editTemplate')}
+          </Button>
+          {template ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                void createSavedCard({
+                  name: data.name || template.name,
+                  templateId: template.id,
+                  values: structuredClone(data.values),
+                }).then((saved) => {
+                  save(withData(node, { cardId: saved.id }));
+                });
+              }}
+            >
+              {t('properties.saveCardAsset')}
+            </Button>
+          ) : null}
+        </>
+      )}
+      {layout ? (
         <>
           <h3 className={styles['heading']}>{t('properties.values')}</h3>
           <CardView
-            layout={template}
-            values={data.values}
+            layout={layout}
+            values={values}
             editable
             onChange={(fieldId, value) => {
-              save(withData(node, { values: { ...data.values, [fieldId]: value } }));
+              const next = { ...values, [fieldId]: value };
+              if (card) void updateSavedCard(card.id, { values: next });
+              save(withData(node, { values: next }));
             }}
           />
         </>
-      ) : null}
-      {editing ? (
-        <TemplateEditorDialog
-          open
-          templateId={editing.id}
-          onOpenChange={(open) => {
-            if (!open) setEditing(null);
-          }}
-          onSaved={(saved) => {
-            if (!data.templateId) save(withData(node, { templateId: saved.id }));
-          }}
-        />
       ) : null}
     </>
   );

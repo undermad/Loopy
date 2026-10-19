@@ -17,12 +17,14 @@
   "boards": "Boards",
   "palettes": "Colour palettes",
   "notes": "Notes",
+  "cards": "Cards",
   "files": "Files",
   "open": "Open",
   "internalKinds": {
     "board": "Board",
     "palette": "Colour palette",
-    "note": "Note"
+    "note": "Note",
+    "card": "Card"
   },
   "import": "Import files…",
   "newFolder": "New folder",
@@ -107,7 +109,8 @@
     "delete": {
       "board": "Delete board",
       "palette": "Delete colour palette",
-      "note": "Delete note"
+      "note": "Delete note",
+      "card": "Delete card"
     },
     "deleteMany": "Delete {{count}} items",
     "deleteConfirm": "Delete \"{{name}}\"? This cannot be undone.",
@@ -121,6 +124,8 @@
     "boardName": "New board",
     "paletteName": "New palette",
     "note": "New note",
-    "noteName": "Untitled note"
+    "noteName": "Untitled note",
+    "card": "New card",
+    "cardName": "New card"
   }
 }

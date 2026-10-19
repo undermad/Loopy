@@ -37,6 +37,12 @@ describe('note links', () => {
       target: '12',
       alias: 'Fix jump',
     });
+    expect(parseLinkText('card:Knight|the hero')).toEqual({
+      kind: 'card',
+      target: 'Knight',
+      subpath: null,
+      alias: 'the hero',
+    });
     expect(formatLink({ kind: 'asset', target: 'hero.png', subpath: null, alias: null }, true)).toBe(
       '![[asset:hero.png]]',
     );

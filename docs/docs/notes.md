@@ -7,7 +7,7 @@ description: The Idea Map workspace, Markdown notes with wiki links, the graph, 
 
 The Idea Map workspace holds Markdown notes that link to each other and to everything else in the project. It works like Obsidian: type `[[` to link a note, follow links with a click, see backlinks and explore the graph. Notes are internal assets, so they sit in the Assets editor beside boards and palettes, drop onto boards and tickets, and open from there.
 
-The workspace has four editors: Notes on the left, the note beside it, and the local graph over Note details on the right. Each is also in the area editor switcher under Idea Map.
+The workspace has four editors: Notes on the left, the note beside it, and the local graph over Note details on the right. Each is also in the area editor switcher under Idea Map, with a fifth, Split note.
 
 ## Using it
 
@@ -29,6 +29,19 @@ The workspace has four editors: Notes on the left, the note beside it, and the l
 | Drop into a note | Drag files, boards, palettes or notes from the Assets editor or Notes into the text; paste or drop desktop images  |
 | Place elsewhere  | Drag a note from Notes onto a board or a ticket window                                                             |
 
+## Split note
+
+Split note shows the Markdown you type beside the rendered note, which updates as you type. Pick it from the area editor switcher under Idea Map. Notes opened from Notes, the graph, Ctrl+O or a link go to a Split note area when the workspace has one and no Note area.
+
+| Action        | How                                                                                      |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| Switch view   | Syntax, Split and Rendered above the note. Each area keeps its own choice                |
+| Resize panes  | Drag the divider, or focus it and press the arrow keys, Home or End. Each pane keeps 20% |
+| Follow a link | Click it in the rendered pane; in the syntax pane hold Ctrl and click                    |
+| Scroll        | The rendered pane follows the syntax pane's scroll position                              |
+
+The syntax pane is the same editor as Source view, so completion, drops, templates and the More menu work the same way.
+
 ## Link syntax
 
 Links use Obsidian's syntax, so a vault imports without changes. Loopy items use the same brackets with a kind in front.
@@ -43,6 +56,7 @@ Links use Obsidian's syntax, so a vault imports without changes. Loopy items use
 | `[[board:Level 1]]`     | A link to the board named Level 1                                |
 | `[[palette:Forest]]`    | A link to the palette; `![[palette:Forest]]` shows its swatches  |
 | `[[asset:hero.png]]`    | A link to the file; `![[asset:hero.png]]` shows images and media |
+| `[[card:Knight]]`       | A link to the saved card named Knight                            |
 | `[[ticket:12]]`         | A link to ticket 12 with its key, title and state                |
 | `#enemy`, `#enemy/boss` | Tags; nested tags match their parent in search                   |
 
@@ -107,7 +121,7 @@ Built-in templates cover a character, a game mechanic, a level, an enemy, an ite
 
 ## Elsewhere in Loopy
 
-Notes are the third kind of internal asset. The Assets editor lists them under Internal with their own folder tree, and moves, renames and deletes them like boards and palettes. A note dropped on a board becomes a link item, and on a ticket a linked asset; both show the title and the first line, and open the note in the Idea Map workspace. The ticket link picker has a Notes group. Renaming a board, palette or file rewrites `[[board:…]]`, `[[palette:…]]` and `[[asset:…]]` links in notes. Deleting one leaves the links in place, shown as missing.
+Notes are the third kind of internal asset. The Assets editor lists them under Internal with their own folder tree, and moves, renames and deletes them like boards and palettes. A note dropped on a board becomes a link item, and on a ticket a linked asset; both show the title and the first line, and open the note in the Idea Map workspace. The ticket link picker has a Notes group. Renaming a board, palette, file or saved card rewrites `[[board:…]]`, `[[palette:…]]`, `[[asset:…]]` and `[[card:…]]` links in notes. Deleting one leaves the links in place, shown as missing.
 
 ## How it works
 
@@ -137,6 +151,6 @@ Notes are rows in the project file. Project migration 15 adds `note_versions`, d
 
 `src/renderer/lib/notes` owns the notes store and the pure core. `index.ts` exports the store actions, `buildIndex` (titles, aliases, backlinks, unresolved links, tags), `unlinkedMentions`, `searchNotes`, `parseQuery`, `fuzzyScore`, `buildGraph`, the template helpers and the hooks. Body edits update the store at once and save after 400 ms; `flushNotes` writes anything pending before export, import and closing the window.
 
-The editors are in `src/renderer/components/editors/Notes`. `NoteEditor` runs CodeMirror 6: `codemirror/livePreview.ts` draws link, embed, checkbox and rule widgets and hides Markdown marks away from the cursor, and `codemirror/complete.ts` suggests links and tags. `NoteMarkdown` renders Reading view, embeds and hover previews with `react-markdown`, `remark-gfm`, `remark-math` and `rehype-katex`; raw HTML is not rendered. `MermaidBlock` imports `mermaid` on first use. `NoteHistory` is the History tab and `ComposerDialogs` holds the extract and merge dialogs. `GraphView` lays out the graph with `d3-force` on a canvas and keeps a hidden list of the nodes as buttons for keyboard and screen reader users. See [ADR 0020](./decisions/0020-notes-editor.md).
+The editors are in `src/renderer/components/editors/Notes`. `SplitNoteEditor` is `NoteEditor` with `variant="split"`; it keeps `view` and `ratio` in area state, and `PaneDivider` resizes the panes. `openInEditor` takes `alternates`, so note links reuse a `noteSplit` area. `NoteEditor` runs CodeMirror 6: `codemirror/livePreview.ts` draws link, embed, checkbox and rule widgets and hides Markdown marks away from the cursor, and `codemirror/complete.ts` suggests links and tags. `NoteMarkdown` renders Reading view, embeds and hover previews with `react-markdown`, `remark-gfm`, `remark-math` and `rehype-katex`; raw HTML is not rendered. `MermaidBlock` imports `mermaid` on first use. `NoteHistory` is the History tab and `ComposerDialogs` holds the extract and merge dialogs. `GraphView` lays out the graph with `d3-force` on a canvas and keeps a hidden list of the nodes as buttons for keyboard and screen reader users. See [ADR 0020](./decisions/0020-notes-editor.md).
 
-Tests: `tests/unit/shared/markdown.test.ts` for the parser, `tests/unit/renderer/lib/notes.test.tsx` for the library, `tests/unit/renderer/Notes.test.tsx` and `NotesExtras.test.tsx` for the editors, `tests/integration/ipc/notes.test.ts` for the channels and `tests/integration/storage/notes-migration.test.ts` for the migrations; `tests/e2e/notes.spec.ts` writes linked notes, maths and a diagram in the built app.
+Tests: `tests/unit/shared/markdown.test.ts` for the parser, `tests/unit/renderer/lib/notes.test.tsx` for the library, `tests/unit/renderer/Notes.test.tsx`, `NotesExtras.test.tsx` and `NotesSplit.test.tsx` for the editors, `tests/integration/ipc/notes.test.ts` for the channels and `tests/integration/storage/notes-migration.test.ts` for the migrations; `tests/e2e/notes.spec.ts` writes linked notes, maths and a diagram, and writes a note in Split note, in the built app.

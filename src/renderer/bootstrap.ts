@@ -39,6 +39,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
       palette: i18next.t('shell:layout.presets.palette'),
       assets: i18next.t('shell:layout.presets.assets'),
       ideas: i18next.t('shell:layout.presets.ideas'),
+      cards: i18next.t('shell:layout.presets.cards'),
     };
     return builtInLayoutPresets(names)[0]?.workspaces ?? [];
   });

@@ -6,18 +6,22 @@ import { addWorkspace, setActiveWorkspace, updateWorkspace, workspacesStore } fr
 
 export interface OpenTarget {
   editor: string;
+  alternates?: string[];
   state: Record<string, unknown>;
   template: WorkspaceTemplate['id'];
   workspaceName: string;
 }
 
-export type WorkspaceNames = Record<'planning' | 'design' | 'palette' | 'assets' | 'ideas', string>;
+export type WorkspaceNames = Record<'planning' | 'design' | 'palette' | 'assets' | 'ideas' | 'cards', string>;
+
+export const noteAlternates = ['noteSplit'];
 
 export function openInEditor(target: OpenTarget): string {
   const { workspaces, activeId } = workspacesStore.getState();
+  const accepts = (editor: string) => editor === target.editor || !!target.alternates?.includes(editor);
   const ordered = [...workspaces].sort((a, b) => Number(b.id === activeId) - Number(a.id === activeId));
   for (const workspace of ordered) {
-    const area = collectAreas(workspace.root).find((candidate) => candidate.editor === target.editor);
+    const area = collectAreas(workspace.root).find((candidate) => accepts(candidate.editor));
     if (!area) continue;
     if (workspace.id !== activeId) setActiveWorkspace(workspace.id);
     updateWorkspace(workspace.id, (current) => ({
@@ -31,7 +35,7 @@ export function openInEditor(target: OpenTarget): string {
     addWorkspace(target.template, target.workspaceName);
   setActiveWorkspace(home.id);
   const areas = collectAreas(home.root);
-  const existing = areas.find((area) => area.editor === target.editor);
+  const existing = areas.find((area) => accepts(area.editor));
   if (existing) {
     updateWorkspace(home.id, (current) => ({
       ...current,
@@ -80,11 +84,26 @@ export function linkTarget(link: TicketLink, names: WorkspaceNames): OpenTarget 
     case 'note':
       return {
         editor: 'note',
+        alternates: [...noteAlternates],
         state: { noteId: link.id },
         template: 'ideas',
         workspaceName: names.ideas,
       };
+    case 'card':
+      return cardTarget({ kind: 'card', id: link.id }, names);
   }
+}
+
+export type CardTarget =
+  { kind: 'template' | 'card'; id: string } | { kind: 'item'; id: string; boardId: string };
+
+export function cardTarget(target: CardTarget | null, names: WorkspaceNames): OpenTarget {
+  return {
+    editor: 'cardDesigner',
+    state: { target },
+    template: 'cards',
+    workspaceName: names.cards,
+  };
 }
 
 export function openLinked(link: TicketLink, names: WorkspaceNames): string {
@@ -99,5 +118,6 @@ export function useWorkspaceNames(): WorkspaceNames {
     palette: t('layout.presets.palette'),
     assets: t('layout.presets.assets'),
     ideas: t('layout.presets.ideas'),
+    cards: t('layout.presets.cards'),
   };
 }

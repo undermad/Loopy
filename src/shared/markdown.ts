@@ -1,4 +1,4 @@
-export const LOOPY_LINK_KINDS = ['board', 'palette', 'asset', 'ticket'] as const;
+export const LOOPY_LINK_KINDS = ['board', 'palette', 'asset', 'ticket', 'card'] as const;
 export type LoopyLinkKind = (typeof LOOPY_LINK_KINDS)[number];
 export type NoteLinkKind = 'note' | LoopyLinkKind;
 
@@ -43,7 +43,7 @@ export interface ParsedNote {
 }
 
 const LINK = /(!?)\[\[([^[\]\n]+?)\]\]/g;
-const KIND_PREFIX = /^(board|palette|asset|ticket):\s*(.*)$/i;
+const KIND_PREFIX = new RegExp(String.raw`^(${LOOPY_LINK_KINDS.join('|')}):\s*(.*)$`, 'i');
 const TAG = /(^|[\s(,])#([\p{L}\p{N}_\-/]+)/gu;
 const HEADING = /^(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$/;
 const BLOCK = /[ \t]\^([A-Za-z0-9-]+)[ \t]*$/;

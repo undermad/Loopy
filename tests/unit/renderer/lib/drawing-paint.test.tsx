@@ -254,6 +254,38 @@ describe('stored tiles', () => {
     stop();
   });
 
+  it('updates a built overview in place while painting instead of rebuilding it', async () => {
+    const layer = await storedLayer();
+    watchBoard(boardId);
+    await requestTile(layer.id, '0:0');
+    const overview = await requestLod(layer.id, 1, '0:0');
+    if (!overview) throw new Error('missing overview');
+    const changes: LayerChange[] = [];
+    const stop = subscribeLayer(layer.id, boardId, (change) => {
+      changes.push(change);
+    });
+    const paint = beginPaint({
+      boardId,
+      node: layer,
+      base: captureBoard(boardId),
+      mode: 'brush',
+      settings: brush({ size: 10 }),
+      colour: '#ff0000',
+      seed: 2,
+      schedule: now,
+    });
+    paint.add([sample(150, 150), sample(400, 150), sample(600, 150)]);
+
+    expect(await requestLod(layer.id, 1, '0:0')).toBe(overview);
+    const pixel = overview.getContext('2d')?.getImageData(150, 150, 1, 1).data;
+    expect([...(pixel ?? [])]).toEqual([255, 0, 0, 255]);
+    expect(changes).not.toContainEqual({ coords: null });
+    expect(layerCoords(layer.id)).toContain('1:0');
+    expect(changes.some((change) => change.list === true && change.coords?.includes('1:0'))).toBe(true);
+    await paint.end();
+    stop();
+  });
+
   it('picks the selected or remembered layer that can be painted', async () => {
     const layer = await storedLayer();
     const nodes = getBoardNodes(boardId);

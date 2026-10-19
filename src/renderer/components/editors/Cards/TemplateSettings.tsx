@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import type { CardValue, ItemStyle } from '@shared/board';
+import { BOARD_LINK_KINDS, type CardValue, type ItemStyle } from '@shared/board';
 import { CARD_FIELD_KINDS, CARD_SPANS, CARD_TEXT_SIZES, type CardField } from '@shared/cards';
 import type { ColourValue } from '@shared/colours';
 import { resolveItemStyle } from '@renderer/lib/board';
-import { FIELD_KINDS, coerceValue } from '@renderer/lib/cards';
+import { FIELD_KINDS, coerceValue, valueText } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Button, Field, Input, Select, Switch, TextArea } from '@renderer/ui';
-import { ProjectColourPicker } from '../../../ProjectColourPicker/ProjectColourPicker';
-import { NumberField } from '../../Properties/NumberField';
-import type { TemplateDraft } from './TemplateEditorDialog';
-import styles from './TemplateEditorDialog.module.scss';
+import { ProjectColourPicker } from '../../ProjectColourPicker/ProjectColourPicker';
+import { NumberField } from '../Properties/NumberField';
+import type { TemplateDraft } from './CardDesigner';
+import styles from './CardDesigner.module.scss';
 
 const DEFAULT = 'default';
 
@@ -54,7 +54,7 @@ function DefaultValue({ field, onChange }: { field: CardField; onChange: (value:
   const { t } = useTranslation('editors');
   const kind = FIELD_KINDS[field.kind].value;
   const [draft, setDraft] = useState<string | null>(null);
-  if (kind === 'none' || field.kind === 'image') return null;
+  if (kind === 'none' || kind === 'link' || field.kind === 'image') return null;
   if (kind === 'boolean') {
     return (
       <Switch
@@ -84,14 +84,7 @@ function DefaultValue({ field, onChange }: { field: CardField; onChange: (value:
       </Field>
     );
   }
-  const current =
-    kind === 'list'
-      ? Array.isArray(field.defaultValue)
-        ? field.defaultValue.join(', ')
-        : ''
-      : field.defaultValue === null
-        ? ''
-        : String(field.defaultValue);
+  const current = valueText(field.defaultValue);
   return (
     <Field label={t('cards.defaultValue')}>
       <Input
@@ -206,6 +199,38 @@ export function FieldSettings({
             }}
           />
         </Field>
+      ) : null}
+      {field.kind === 'link' ? (
+        <fieldset className={styles['linkKinds']}>
+          <legend className={styles['heading']}>{t('cards.linkKinds')}</legend>
+          {BOARD_LINK_KINDS.map((kind) => {
+            const allowed = field.linkKinds.length === 0 ? [...BOARD_LINK_KINDS] : field.linkKinds;
+            const on = allowed.includes(kind);
+            return (
+              <Switch
+                key={kind}
+                size="sm"
+                label={t(`cards.linkKindNames.${kind}`)}
+                checked={on}
+                disabled={on && allowed.length === 1}
+                onCheckedChange={(checked) => {
+                  const next = BOARD_LINK_KINDS.filter((item) =>
+                    item === kind ? checked : allowed.includes(item),
+                  );
+                  onChange({ linkKinds: next.length === BOARD_LINK_KINDS.length ? [] : next });
+                }}
+              />
+            );
+          })}
+          <Switch
+            size="sm"
+            label={t('cards.multiple')}
+            checked={field.multiple}
+            onCheckedChange={(checked) => {
+              onChange({ multiple: checked });
+            }}
+          />
+        </fieldset>
       ) : null}
       {ranged ? (
         <div className={styles['pair']}>

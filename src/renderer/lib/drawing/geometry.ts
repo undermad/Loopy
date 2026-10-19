@@ -65,6 +65,35 @@ export function parseCoord(key: string): { tx: number; ty: number } {
   return { tx, ty };
 }
 
+export function reducedRect(
+  child: string,
+  level: number,
+  rect: Box,
+): { coord: string; source: Box; target: Box } {
+  const { tx, ty } = parseCoord(child);
+  const span = 2 ** level;
+  const ax = Math.floor(tx / span);
+  const ay = Math.floor(ty / span);
+  const source = {
+    x0: Math.max(0, Math.floor(rect.x0 / span) * span),
+    y0: Math.max(0, Math.floor(rect.y0 / span) * span),
+    x1: Math.min(TILE, Math.ceil(rect.x1 / span) * span),
+    y1: Math.min(TILE, Math.ceil(rect.y1 / span) * span),
+  };
+  const left = (tx - ax * span) * TILE;
+  const top = (ty - ay * span) * TILE;
+  return {
+    coord: coordKey(ax, ay),
+    source,
+    target: {
+      x0: (left + source.x0) / span,
+      y0: (top + source.y0) / span,
+      x1: (left + source.x1) / span,
+      y1: (top + source.y1) / span,
+    },
+  };
+}
+
 export function tilesInBox(box: Box): { tx: number; ty: number }[] {
   const tiles: { tx: number; ty: number }[] = [];
   const tx0 = Math.floor(box.x0 / TILE);

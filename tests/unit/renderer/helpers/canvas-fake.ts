@@ -268,8 +268,13 @@ export function installCanvasFake(): { frames: () => void } {
       }
     },
   );
-  vi.stubGlobal('createImageBitmap', async (blob: Blob) => {
-    const bytes = await blobBytes(blob);
+  vi.stubGlobal('createImageBitmap', async (source: Blob | FakeCanvas) => {
+    if (source instanceof FakeCanvas) {
+      const copy = new FakeCanvas(source.width, source.height);
+      copy.pixels.set(source.pixels);
+      return Object.assign(copy, { close: () => undefined });
+    }
+    const bytes = await blobBytes(source);
     const view = new DataView(bytes.buffer, bytes.byteOffset);
     const bitmap = new FakeCanvas(view.getUint32(0), view.getUint32(4));
     bitmap.pixels.set(bytes.subarray(HEADER));

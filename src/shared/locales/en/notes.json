@@ -8,7 +8,8 @@
     "board": "Board",
     "palette": "Palette",
     "asset": "File",
-    "ticket": "Ticket"
+    "ticket": "Ticket",
+    "card": "Card"
   },
   "templates": {
     "blank": { "name": "Blank note", "body": "" },
@@ -99,6 +100,10 @@
     "live": "Live preview",
     "source": "Source",
     "reading": "Reading",
+    "syntax": "Syntax",
+    "split": "Split",
+    "rendered": "Rendered",
+    "resizePanes": "Resize panes",
     "mode": "View mode",
     "star": "Bookmark",
     "unstar": "Remove bookmark",

@@ -118,7 +118,7 @@ import {
   type Rect,
   type Segment,
 } from '@renderer/lib/board';
-import { findCardTemplate, useCardTemplates } from '@renderer/lib/cards';
+import { findCardTemplate, findSavedCard, resolveCardLayout, useCardTemplates } from '@renderer/lib/cards';
 import { drawingAt, getBrushState, updateBrush } from '@renderer/lib/drawing';
 import { readableTextColour } from '@renderer/lib/colour';
 import type { EditorProps } from '@renderer/lib/editors';
@@ -127,6 +127,8 @@ import { useSettings } from '@renderer/lib/settings';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useColourFromRef } from '@renderer/lib/palettes';
 import {
+  cardTarget,
+  openInEditor,
   openLinked,
   panelActions,
   usePanelOpen,
@@ -147,7 +149,7 @@ import { DrawingOverlay } from './DrawingOverlay';
 import { QUICK_MENU_SIZE, QuickCreateMenu, type QuickChoice } from './QuickCreateMenu';
 import { Grid } from './Grid';
 import { SelectionGuard } from './SelectionGuard';
-import { TemplateEditorDialog } from './cards/TemplateEditorDialog';
+import { useViewportSave } from './viewportSave';
 import { CardItem } from './items/CardItem';
 import { ContainerItem } from './items/ContainerItem';
 import { DrawingItem } from './items/DrawingItem';
@@ -334,6 +336,9 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
   const screenPointer = useRef<Point | null>(null);
   const pressSelection = useRef<string[]>([]);
   const dragSession = useRef<DragSession | null>(null);
+  const saveViewport = useViewportSave(readViewport(state), (viewport) => {
+    setState({ viewport });
+  });
   const deep = useModifierHeld('Control');
   const shiftHeld = useModifierHeld('Shift');
   const snapping = snap || deep;
@@ -864,16 +869,23 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
                 }
               : { preset: 'file', data: { assetId: asset.id }, size: fileSize(asset) },
           ),
-          ...placeable.map((link): StackEntry => ({
-            preset: 'link',
-            data: { target: link },
-            size: presetSize('link'),
-          })),
+          ...placeable.map((link): StackEntry => {
+            const card = link.kind === 'card' ? findSavedCard(link.id) : null;
+            const layout = card ? resolveCardLayout(card, templates) : null;
+            if (card) {
+              return {
+                preset: 'card',
+                data: { cardId: card.id, templateId: card.templateId, values: structuredClone(card.values) },
+                size: layout ? { width: layout.width, height: layout.height } : presetSize('card'),
+              };
+            }
+            return { preset: 'link', data: { target: link }, size: presetSize('link') };
+          }),
         ],
         point,
       );
     },
-    [allNodes, assetList, boardId, commit, flow, imageFieldAt, placeStack, select],
+    [allNodes, assetList, boardId, commit, flow, imageFieldAt, placeStack, select, templates],
   );
 
   const importAndPlace = useCallback(
@@ -925,8 +937,6 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
     [flow, importAndPlace, viewportCentre],
   );
 
-  const pointer = useRef<Point | null>(null);
-
   const trackHotDrawing = useCallback(
     (point: Point) => {
       const hot = allNodes.some(isDrawing) ? (drawingAt(point, allNodes)?.id ?? null) : null;
@@ -935,7 +945,10 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
     [allNodes],
   );
 
-  const pastePoint = useCallback((): Point | null => pointer.current, []);
+  const pastePoint = useCallback((): Point | null => {
+    const at = screenPointer.current;
+    return at ? flow.screenToFlowPosition(at) : null;
+  }, [flow]);
 
   const pasteClip = useCallback(
     (clip: BoardClip, at: Point | null) => {
@@ -1227,7 +1240,15 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
         commit({ upsertNodes: undock([node.id], allNodes) });
       },
       editTemplate: (node) => {
-        onEditTemplate(typeof node.data['templateId'] === 'string' ? node.data['templateId'] : null);
+        const saved = typeof node.data['cardId'] === 'string' ? findSavedCard(node.data['cardId']) : null;
+        const templateId = saved ? saved.templateId : node.data['templateId'];
+        onEditTemplate(typeof templateId === 'string' ? templateId : null);
+      },
+      editCard: (node) => {
+        const saved = typeof node.data['cardId'] === 'string' ? findSavedCard(node.data['cardId']) : null;
+        openInEditor(
+          cardTarget(saved ? { kind: 'card', id: saved.id } : { kind: 'item', id: node.id, boardId }, names),
+        );
       },
       removeNode: (node) => {
         commit({ removeNodeIds: [node.id, ...descendants(node.id, allNodes)] });
@@ -1254,7 +1275,7 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
         select([]);
       },
     }),
-    [allNodes, commit, duplicate, onEditTemplate, select],
+    [allNodes, boardId, commit, duplicate, names, onEditTemplate, select],
   );
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -1368,12 +1389,12 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
             surface.current?.focus({ preventScroll: true });
         }}
         onPointerMove={(event) => {
-          pointer.current = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
           screenPointer.current = { x: event.clientX, y: event.clientY };
-          if (tool === 'select' && event.buttons === 0) trackHotDrawing(pointer.current);
+          if (tool === 'select' && event.buttons === 0) {
+            trackHotDrawing(flow.screenToFlowPosition(screenPointer.current));
+          }
         }}
         onPointerLeave={() => {
-          pointer.current = null;
           screenPointer.current = null;
         }}
         onCopy={(event) => {
@@ -1466,9 +1487,7 @@ function Canvas({ boardId, state, setState, onEditTemplate, onOpenBrushes }: Can
             connectionMode={ConnectionMode.Loose}
             connectionRadius={28}
             defaultViewport={readViewport(state)}
-            onMoveEnd={(_event, viewport) => {
-              setState({ viewport });
-            }}
+            onMoveEnd={saveViewport}
             snapToGrid={snapping}
             snapGrid={[step, step]}
             zoomOnScroll={wheel === 'zoom'}
@@ -1703,15 +1722,16 @@ function BoardArea({ areaId, state, setState }: EditorProps) {
   const layersOpen = usePanelOpen('layers');
   const brushesOpen = usePanelOpen('brushes');
   const editorRef = useRef<HTMLDivElement>(null);
-  const [templateEditor, setTemplateEditor] = useState<{ templateId: string | null; key: number } | null>(
-    null,
-  );
+  const names = useWorkspaceNames();
   const requested = typeof state['boardId'] === 'string' ? state['boardId'] : null;
   const board = boards?.find((item) => item.id === requested) ?? boards?.[0] ?? null;
 
-  const openTemplateEditor = useCallback((templateId: string | null) => {
-    setTemplateEditor({ templateId, key: Date.now() });
-  }, []);
+  const openTemplateEditor = useCallback(
+    (templateId: string | null) => {
+      openInEditor(cardTarget(templateId ? { kind: 'template', id: templateId } : null, names));
+    },
+    [names],
+  );
 
   function togglePanel(panel: BoardPanel) {
     const width = editorRef.current?.getBoundingClientRect().width ?? 0;
@@ -1768,19 +1788,6 @@ function BoardArea({ areaId, state, setState }: EditorProps) {
       ) : (
         <EmptyState icon={<PenTool />} title={t('board.empty')} description={t('board.emptyHint')} />
       )}
-      {templateEditor ? (
-        <TemplateEditorDialog
-          key={templateEditor.key}
-          open
-          templateId={templateEditor.templateId}
-          onOpenChange={(open) => {
-            if (!open) setTemplateEditor(null);
-          }}
-          onSaved={(template) => {
-            setState({ cardTemplate: template.id });
-          }}
-        />
-      ) : null}
     </div>
   );
 }

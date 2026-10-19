@@ -1,6 +1,6 @@
 export {
   layerCoords,
-  peekTile,
+  peekLod,
   requestLod,
   requestTile,
   resetTileCache,
@@ -24,11 +24,14 @@ export {
   maskHit,
   nodeBox,
   parseCoord,
+  reducedRect,
   tileBox,
   tilesInBox,
   toRaster,
   visibleRange,
 } from './geometry';
+export { answerTile, createTileFinisher, finishTile } from './finish';
+export type { FinishedTile, TileReply, TileRequest, TileWorker } from './finish';
 export { GRAIN_SIZE, grainAlpha, grainField } from './grain';
 export {
   brushModified,

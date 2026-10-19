@@ -1,16 +1,17 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BoardNode } from '@shared/board';
 import { cardFieldSchema, type CardField } from '@shared/cards';
-import { CardView } from '@renderer/components/editors/Board/cards/CardView';
-import { CardSettings, FieldSettings } from '@renderer/components/editors/Board/cards/TemplateSettings';
-import type { TemplateDraft } from '@renderer/components/editors/Board/cards/TemplateEditorDialog';
+import { CardView } from '@renderer/components/editors/Cards/CardView';
+import { CardSettings, FieldSettings } from '@renderer/components/editors/Cards/TemplateSettings';
+import type { TemplateDraft } from '@renderer/components/editors/Cards/CardDesigner';
 import { NodeProperties } from '@renderer/components/editors/Properties/NodeProperties';
 import { importFiles } from '@renderer/lib/assets';
 import { commitChanges, createBoard, createItem, loadBoard, useBoardSnapshot } from '@renderer/lib/board';
-import { createCardTemplate } from '@renderer/lib/cards';
+import { createCardTemplate, updateSavedCard } from '@renderer/lib/cards';
 import { newLayer } from '@renderer/lib/drawing';
+import { useActiveWorkspace } from '@renderer/lib/workspaces';
 import { ToastProvider, TooltipProvider } from '@renderer/ui';
 import { bootTestApp, makeProject, type FakeApi } from './helpers/api';
 
@@ -543,27 +544,72 @@ describe('node properties', () => {
     expect(lastNode()?.data['style']).toMatchObject({ opacity: 0.4 });
   });
 
-  it('creates a template for a card that has none and edits its values', async () => {
+  it('opens the card designer to make or edit a template', async () => {
     const user = userEvent.setup();
-    const template = await createCardTemplate({
-      name: 'Hero',
-      fields: [{ id: 'name', kind: 'text', label: 'Name' }],
-    });
     await show((boardId) => ({
       ...createItem({ boardId, preset: 'card', rect: { x: 0, y: 0 }, z: 1 }),
       id: 'card',
       data: { templateId: null, values: {} },
     }));
     await user.click(screen.getByRole('button', { name: 'Edit template' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Card template' });
-    await user.click(within(dialog).getByRole('button', { name: 'Quest' }));
-    await user.click(within(dialog).getByRole('button', { name: 'Save template' }));
-    await vi.waitFor(() => {
-      expect(lastNode()?.data['templateId']).toMatch(/^template-/);
+    const { result } = renderHook(() => useActiveWorkspace());
+    expect(result.current?.name).toBe('Cards');
+    expect(JSON.stringify(result.current?.root)).toContain('"editor":"cardDesigner"');
+  });
+
+  it('saves a card as a card asset, follows it live and copies it back out', async () => {
+    const user = userEvent.setup();
+    const template = await createCardTemplate({
+      name: 'Hero',
+      fields: [{ id: 'name', kind: 'text', label: 'Hero name' }],
     });
-    expect(lastNode()?.data['templateId']).not.toBe(template.id);
-    await user.click(first(within(dialog).getAllByRole('button', { name: 'Close' })));
-    expect(screen.queryByRole('dialog', { name: 'Card template' })).not.toBeInTheDocument();
+    await show((boardId) => ({
+      ...createItem({ boardId, preset: 'card', rect: { x: 0, y: 0 }, z: 1 }),
+      id: 'card',
+      data: { templateId: template.id, values: { name: 'Ignis' } },
+    }));
+    await user.click(screen.getByRole('button', { name: 'Save as card asset' }));
+    await vi.waitFor(() => {
+      expect(lastNode()?.data['cardId']).toBe('card-2');
+    });
+    expect(api.createCard).toHaveBeenCalledWith({
+      name: 'Hero',
+      templateId: template.id,
+      values: { name: 'Ignis' },
+    });
+    expect(await screen.findByText('Shows the saved card Hero')).toBeInTheDocument();
+
+    const hero = screen.getByRole('textbox', { name: 'Hero name' });
+    fireEvent.change(hero, { target: { value: 'Ember' } });
+    fireEvent.blur(hero);
+    await vi.waitFor(() => {
+      expect(api.updateCard).toHaveBeenLastCalledWith('card-2', { values: { name: 'Ember' } });
+    });
+    await act(() => updateSavedCard('card-2', { values: { name: 'Blaze' } }));
+    expect(screen.getByRole('textbox', { name: 'Hero name' })).toHaveValue('Blaze');
+
+    await user.click(screen.getByRole('button', { name: 'Make independent copy' }));
+    expect(lastNode()?.data).toMatchObject({
+      cardId: null,
+      templateId: template.id,
+      values: { name: 'Blaze' },
+    });
+  });
+
+  it('keeps the values of a saved card that was deleted', async () => {
+    const template = await createCardTemplate({
+      name: 'Hero',
+      fields: [{ id: 'name', kind: 'text', label: 'Hero name' }],
+    });
+    await show((boardId) => ({
+      ...createItem({ boardId, preset: 'card', rect: { x: 0, y: 0 }, z: 1 }),
+      id: 'card',
+      data: { templateId: template.id, cardId: 'gone', values: { name: 'Ignis' } },
+    }));
+    expect(screen.getByRole('textbox', { name: 'Hero name' })).toHaveValue('Ignis');
+    expect(
+      screen.getByText('The saved card was deleted; this card keeps its last values.'),
+    ).toBeInTheDocument();
   });
 });
 

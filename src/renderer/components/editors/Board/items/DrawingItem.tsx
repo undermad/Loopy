@@ -8,7 +8,8 @@ import {
   inRange,
   levelKeys,
   parseCoord,
-  peekTile,
+  peekLod,
+  reducedRect,
   requestLod,
   subscribeLayer,
   useLayerCoords,
@@ -54,15 +55,20 @@ const TileView = memo(function TileView({ nodeId, boardId, level, coord, left, t
     };
     redraw();
     const stop = subscribeLayer(nodeId, boardId, (change) => {
-      if (!affects(change, level, coord)) return;
-      const source = level === 0 && change.rect ? peekTile(nodeId, coord) : null;
-      if (!source || !change.rect) {
+      if (change.list || !affects(change, level, coord)) return;
+      const source = change.rect ? peekLod(nodeId, level, coord) : null;
+      if (!source || !change.rect || !change.coords) {
         redraw();
         return;
       }
-      const { x0, y0, x1, y1 } = change.rect;
-      drawing.clearRect(x0, y0, x1 - x0, y1 - y0);
-      drawing.drawImage(source, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+      for (const child of change.coords) {
+        const { coord: parent, target } = reducedRect(child, level, change.rect);
+        if (parent !== coord) continue;
+        const width = target.x1 - target.x0;
+        const height = target.y1 - target.y0;
+        drawing.clearRect(target.x0, target.y0, width, height);
+        drawing.drawImage(source, target.x0, target.y0, width, height, target.x0, target.y0, width, height);
+      }
     });
     return () => {
       current = false;

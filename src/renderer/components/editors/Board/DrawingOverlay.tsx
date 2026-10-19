@@ -1,5 +1,5 @@
-import { useRef, type PointerEvent } from 'react';
-import { useReactFlow, useStore as useFlowStore } from '@xyflow/react';
+import { useEffect, useRef, type PointerEvent } from 'react';
+import { useStoreApi, useStore as useFlowStore } from '@xyflow/react';
 import type { BoardNode } from '@shared/board';
 import type { BrushTool } from '@shared/brushes';
 import { captureBoard, commitChanges, nextZ } from '@renderer/lib/board';
@@ -61,9 +61,11 @@ export function DrawingOverlay({
   layerName,
   onLayer,
 }: DrawingOverlayProps) {
-  const flow = useReactFlow();
+  const flowStore = useStoreApi();
   const surface = useRef<HTMLDivElement>(null);
   const cursor = useRef<HTMLDivElement>(null);
+  const bounds = useRef<DOMRect | null>(null);
+  const ring = useRef<{ x: number; y: number; frame: number | null }>({ x: 0, y: 0, frame: null });
   const stroke = useRef<{ pointerId: number; paint: PaintStroke } | null>(null);
   const navigation = useCanvasNavigation(surface, { wheel, minZoom, maxZoom });
   const brushes = useBrushState();
@@ -71,7 +73,22 @@ export function DrawingOverlay({
   const zoom = useFlowStore((store) => store.transform[2]);
   const diameter = brushes[tool].settings.size * zoom;
   const small = diameter < SMALL_CURSOR;
-  const toFlow = (point: { x: number; y: number }) => flow.screenToFlowPosition(point);
+  const measure = () => (bounds.current = surface.current?.getBoundingClientRect() ?? null);
+  const toFlow = (point: { x: number; y: number }) => {
+    const box = bounds.current ?? measure();
+    const [x, y, scale] = flowStore.getState().transform;
+    return {
+      x: (point.x - (box?.left ?? 0) - x) / scale,
+      y: (point.y - (box?.top ?? 0) - y) / scale,
+    };
+  };
+
+  useEffect(() => {
+    const pending = ring.current;
+    return () => {
+      if (pending.frame !== null) cancelAnimationFrame(pending.frame);
+    };
+  }, []);
 
   function samples(event: PointerEvent<HTMLDivElement>): Sample[] {
     const native = event.nativeEvent;
@@ -80,16 +97,24 @@ export function DrawingOverlay({
   }
 
   function place(event: PointerEvent<HTMLDivElement>) {
-    const bounds = surface.current?.getBoundingClientRect();
-    const element = cursor.current;
-    if (!element) return;
-    element.style.transform = `translate(${String(event.clientX - (bounds?.left ?? 0))}px, ${String(event.clientY - (bounds?.top ?? 0))}px)`;
+    const box = bounds.current ?? measure();
+    const pending = ring.current;
+    pending.x = event.clientX - (box?.left ?? 0);
+    pending.y = event.clientY - (box?.top ?? 0);
+    pending.frame ??= requestAnimationFrame(() => {
+      pending.frame = null;
+      if (cursor.current) {
+        cursor.current.style.transform = `translate(${String(pending.x)}px, ${String(pending.y)}px)`;
+      }
+    });
   }
 
   function down(event: PointerEvent<HTMLDivElement>) {
+    measure();
     if (navigation.startPan(event)) return;
     const penEraser = event.button === 5 || (event.buttons & PEN_ERASER) !== 0;
     if (event.button !== 0 && !penEraser) return;
+    event.preventDefault();
     if (event.altKey) {
       const picked = colourAt(toFlow({ x: event.clientX, y: event.clientY }), nodes);
       if (picked) setBrushColour({ hex: picked, ref: null });
@@ -120,8 +145,8 @@ export function DrawingOverlay({
   }
 
   function move(event: PointerEvent<HTMLDivElement>) {
-    if (navigation.movePan(event)) return;
     place(event);
+    if (navigation.movePan(event)) return;
     const active = stroke.current;
     if (active?.pointerId === event.pointerId) active.paint.add(samples(event));
   }
@@ -143,10 +168,14 @@ export function DrawingOverlay({
       className={styles['overlay']}
       data-small={small || undefined}
       data-testid="drawing-overlay"
+      onPointerEnter={measure}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
       onPointerCancel={up}
+      onDragStart={(event) => {
+        event.preventDefault();
+      }}
       onWheel={navigation.onWheel}
     >
       <div
