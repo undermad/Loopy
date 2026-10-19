@@ -38,6 +38,7 @@ The rest follow demand. Each one is a new editor registered in `registerEditors.
 | Playtest log                | Considered | Tickets                      |
 | Lore wiki                   | Considered | Design document              |
 | Moodboards                  | Considered | Board images, Colours editor |
+| Item and card customisation | Planned    | Cards, board, Properties     |
 
 ## Game data tables
 
