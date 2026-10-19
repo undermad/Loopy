@@ -1,10 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { cardFieldSchema, cardTemplateInputSchema } from '@shared/cards';
+import { CARD_FIELD_KINDS, cardFieldSchema, cardTemplateInputSchema } from '@shared/cards';
 import {
+  FIELD_GROUPS,
   STARTER_TEMPLATES,
   blankTemplate,
+  changeFieldKind,
   coerceValue,
+  fieldKindsByGroup,
   createCardTemplate,
   deleteCardTemplate,
   duplicateCardTemplate,
@@ -45,7 +48,7 @@ describe('card fields', () => {
       max: 100,
       defaultValue: 50,
     });
-    expect(newField('select', 'Rarity').options).toEqual(['Option 1', 'Option 2']);
+    expect(newField('select', 'Rarity')).toMatchObject({ options: ['Option 1', 'Option 2'] });
     expect(newField('divider', '').showLabel).toBe(false);
     expect(newField('number', 'Cost').span).toBe(6);
     const ids = new Set(Array.from({ length: 20 }, () => newField('text', 'x').id));
@@ -77,6 +80,37 @@ describe('card fields', () => {
     ];
     expect(moveField(fields, 0, 2).map((item) => item.id)).toEqual(['b', 'c', 'a']);
     expect(moveField(fields, 0, 9)).toBe(fields);
+  });
+
+  it('files every field kind under exactly one group', () => {
+    const grouped = fieldKindsByGroup();
+    const listed = grouped.flatMap((group) => group.kinds);
+    expect(new Set(listed).size).toBe(listed.length);
+    expect([...listed].sort()).toEqual([...CARD_FIELD_KINDS].sort());
+    expect(grouped.map((group) => group.group)).toEqual([...FIELD_GROUPS]);
+  });
+
+  it('changes a field kind but keeps its id, label, width and style', () => {
+    const text = field({
+      id: 'role',
+      kind: 'text',
+      label: 'Role',
+      span: 6,
+      placeholder: 'Who',
+      style: { weight: 'bold' },
+    });
+    const select = changeFieldKind(text, 'select');
+    expect(select).toMatchObject({
+      id: 'role',
+      kind: 'select',
+      label: 'Role',
+      span: 6,
+      style: { weight: 'bold' },
+      options: ['Option 1', 'Option 2'],
+    });
+    expect(changeFieldKind(text, 'stat')).toMatchObject({ min: 0, max: 100, defaultValue: 50 });
+    expect(changeFieldKind(text, 'divider')).not.toHaveProperty('placeholder');
+    expect(changeFieldKind(text, 'text')).toBe(text);
   });
 
   it('ships valid starter and blank templates', () => {

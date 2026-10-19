@@ -19,8 +19,9 @@ export {
   useSavedCard,
   useSavedCards,
 } from './store';
+export { FIELD_GROUPS, FIELD_KINDS, fieldKindsByGroup } from './kinds';
 export {
-  FIELD_KINDS,
+  changeFieldKind,
   coerceValue,
   fieldValue,
   linkTargets,

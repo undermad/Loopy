@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BoardNode } from '@shared/board';
 import { cardFieldSchema, type CardField } from '@shared/cards';
 import { CardView } from '@renderer/components/editors/Cards/CardView';
-import { CardSettings, FieldSettings } from '@renderer/components/editors/Cards/TemplateSettings';
+import { CardSettings, FieldSettings } from '@renderer/components/editors/Cards/settings';
 import type { TemplateDraft } from '@renderer/components/editors/Cards/CardDesigner';
 import { NodeProperties } from '@renderer/components/editors/Properties/NodeProperties';
 import { importFiles } from '@renderer/lib/assets';
@@ -207,28 +207,30 @@ describe('template field settings', () => {
     const options = screen.getByRole('textbox', { name: /Choices/ });
     fireEvent.change(options, { target: { value: 'Common\n Rare \nRare\n\nEpic' } });
     fireEvent.blur(options);
-    expect(onChange).toHaveBeenLastCalledWith({ options: ['Common', 'Rare', 'Epic'] });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ options: ['Common', 'Rare', 'Epic'] });
     fireEvent.blur(options);
     expect(onChange).toHaveBeenCalledTimes(1);
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Placeholder' }), { target: { value: 'Pick' } });
-    expect(onChange).toHaveBeenLastCalledWith({ placeholder: 'Pick' });
+    fireEvent.blur(screen.getByRole('textbox', { name: 'Placeholder' }));
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ placeholder: 'Pick' });
 
     await user.click(screen.getByRole('switch', { name: 'Show label' }));
-    expect(onChange).toHaveBeenLastCalledWith({ showLabel: false });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ showLabel: false });
 
     await pick(user, screen.getByRole('combobox', { name: 'Width in the row' }), 'Half');
-    expect(onChange).toHaveBeenLastCalledWith({ span: 6 });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ span: 6 });
 
     await pick(user, screen.getByRole('combobox', { name: 'Default value' }), '–');
-    expect(onChange).toHaveBeenLastCalledWith({ defaultValue: null });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ defaultValue: null });
     await pick(user, screen.getByRole('combobox', { name: 'Default value' }), 'Common');
-    expect(onChange).toHaveBeenLastCalledWith({ defaultValue: 'Common' });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ defaultValue: 'Common' });
 
     await pick(user, screen.getByRole('combobox', { name: 'Text size' }), '–');
-    expect(onChange).toHaveBeenLastCalledWith({
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({
       style: { weight: 'bold', align: 'center', colour: { hex: '#123456', ref: null } },
     });
+    expect(onChange.mock.lastCall?.[0]).not.toHaveProperty('style.size');
     await pick(user, screen.getByRole('combobox', { name: 'Text size' }), 'Small');
     expect(onChange.mock.lastCall?.[0]).toMatchObject({ style: { size: 'sm' } });
     await pick(user, screen.getByRole('combobox', { name: 'Weight' }), '–');
@@ -243,8 +245,14 @@ describe('template field settings', () => {
     await user.click(screen.getByRole('button', { name: 'Default' }));
     expect(onChange.mock.lastCall?.[0]).toMatchObject({ style: { colour: null } });
 
-    await pick(user, screen.getByRole('combobox', { name: 'Field' }), 'Stat bar');
-    expect(onChange).toHaveBeenLastCalledWith({ kind: 'stat', defaultValue: null });
+    await pick(user, screen.getByRole('combobox', { name: 'Field type' }), 'Stat bar');
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({
+      id: 's',
+      label: 'Rarity',
+      kind: 'stat',
+      min: 0,
+      max: 100,
+    });
 
     rerender(
       <Providers>
@@ -254,16 +262,16 @@ describe('template field settings', () => {
     const min = screen.getByRole('spinbutton', { name: 'Minimum' });
     fireEvent.change(min, { target: { value: '2' } });
     fireEvent.blur(min);
-    expect(onChange).toHaveBeenLastCalledWith({ min: 2 });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ min: 2 });
     const max = screen.getByRole('spinbutton', { name: 'Maximum' });
     fireEvent.change(max, { target: { value: '9' } });
     fireEvent.blur(max);
-    expect(onChange).toHaveBeenLastCalledWith({ max: 9 });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ max: 9 });
     const fallback = screen.getByRole('spinbutton', { name: 'Default value' });
     expect(fallback).toHaveValue(null);
     fireEvent.change(fallback, { target: { value: '4' } });
     fireEvent.blur(fallback);
-    expect(onChange).toHaveBeenLastCalledWith({ defaultValue: 4 });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ defaultValue: 4 });
     const before = onChange.mock.calls.length;
     fireEvent.blur(fallback);
     expect(onChange).toHaveBeenCalledTimes(before);
@@ -282,23 +290,23 @@ describe('template field settings', () => {
     expect(tags).toHaveValue('a, b');
     fireEvent.change(tags, { target: { value: 'x, y' } });
     fireEvent.blur(tags);
-    expect(onChange).toHaveBeenLastCalledWith({ defaultValue: ['x', 'y'] });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ defaultValue: ['x', 'y'] });
 
     rerender(view(field({ id: 'g2', kind: 'tags' })));
     expect(screen.getByRole('textbox', { name: 'Default value' })).toHaveValue('');
 
     rerender(view(field({ id: 'c', kind: 'checkbox', defaultValue: true })));
     await user.click(screen.getByRole('switch', { name: 'Default value' }));
-    expect(onChange).toHaveBeenLastCalledWith({ defaultValue: false });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ defaultValue: false });
 
     rerender(view(field({ id: 't', kind: 'text', defaultValue: 'Hi' })));
     const text = screen.getByRole('textbox', { name: 'Default value' });
     expect(text).toHaveValue('Hi');
     fireEvent.change(text, { target: { value: '  ' } });
     fireEvent.blur(text);
-    expect(onChange).toHaveBeenLastCalledWith({ defaultValue: null });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ defaultValue: null });
     fireEvent.change(screen.getByRole('textbox', { name: 'Label' }), { target: { value: 'Name' } });
-    expect(onChange).toHaveBeenLastCalledWith({ label: 'Name' });
+    expect(onChange.mock.lastCall?.[0]).toMatchObject({ label: 'Name' });
 
     rerender(view(field({ id: 'i', kind: 'image' })));
     expect(screen.queryByText('Default value')).not.toBeInTheDocument();

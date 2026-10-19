@@ -58,7 +58,7 @@ import {
 } from '@renderer/ui';
 import { BoardCardDesigner } from './BoardCardDesigner';
 import { CardPreview } from './CardPreview';
-import { CardSettings, FieldSettings } from './TemplateSettings';
+import { CardSettings, FieldSettings } from './settings';
 import styles from './CardDesigner.module.scss';
 
 export type TemplateDraft = CardLayout & { name: string };
@@ -303,14 +303,14 @@ function Designer({
     }));
   }
 
-  function patchField(id: string, next: Partial<CardField>) {
+  function replaceField(next: CardField) {
     update((value) =>
       value.layout
         ? {
             ...value,
             layout: {
               ...value.layout,
-              fields: value.layout.fields.map((field) => (field.id === id ? { ...field, ...next } : field)),
+              fields: value.layout.fields.map((field) => (field.id === next.id ? next : field)),
             },
           }
         : value,
@@ -514,13 +514,7 @@ function Designer({
             aria-label={selectedField ? t('cards.fieldSettings') : t('cards.cardSettings')}
           >
             {selectedField ? (
-              <FieldSettings
-                key={selectedField.id}
-                field={selectedField}
-                onChange={(next) => {
-                  patchField(selectedField.id, next);
-                }}
-              />
+              <FieldSettings key={selectedField.id} field={selectedField} onChange={replaceField} />
             ) : (
               <CardSettings draft={{ ...current.layout, name: current.name }} onChange={patchLayout} />
             )}

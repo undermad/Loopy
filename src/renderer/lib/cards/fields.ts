@@ -1,22 +1,6 @@
 import { boardLinkSchema, type BoardLink, type CardValue } from '@shared/board';
-import { cardFieldSchema, type CardField, type CardFieldKind, type CardSpan } from '@shared/cards';
-
-export type FieldValueKind = 'text' | 'number' | 'boolean' | 'list' | 'link' | 'none';
-
-export const FIELD_KINDS: Record<CardFieldKind, { span: CardSpan; value: FieldValueKind }> = {
-  heading: { span: 12, value: 'text' },
-  text: { span: 12, value: 'text' },
-  longText: { span: 12, value: 'text' },
-  number: { span: 6, value: 'number' },
-  select: { span: 6, value: 'text' },
-  checkbox: { span: 6, value: 'boolean' },
-  tags: { span: 12, value: 'list' },
-  image: { span: 12, value: 'text' },
-  stat: { span: 12, value: 'number' },
-  colour: { span: 6, value: 'text' },
-  link: { span: 12, value: 'link' },
-  divider: { span: 12, value: 'none' },
-};
+import { cardFieldSchema, type CardField, type CardFieldKind, type FieldOf } from '@shared/cards';
+import { FIELD_KINDS } from './kinds';
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
@@ -31,15 +15,14 @@ export function newField(
 ): CardField {
   let id = shortId();
   while (existing.some((field) => field.id === id)) id = shortId();
-  return cardFieldSchema.parse({
-    id,
-    kind,
-    label,
-    span: FIELD_KINDS[kind].span,
-    ...(kind === 'stat' ? { min: 0, max: 100, defaultValue: 50 } : {}),
-    ...(kind === 'select' ? { options: ['Option 1', 'Option 2'] } : {}),
-    ...(kind === 'divider' ? { showLabel: false } : {}),
-  });
+  const definition = FIELD_KINDS[kind];
+  return cardFieldSchema.parse({ id, kind, label, span: definition.span, ...definition.defaults });
+}
+
+export function changeFieldKind(field: CardField, kind: CardFieldKind): CardField {
+  if (field.kind === kind) return field;
+  const { id, label, showLabel, span, style } = field;
+  return cardFieldSchema.parse({ id, label, showLabel, span, style, kind, ...FIELD_KINDS[kind].defaults });
 }
 
 export function linkTargets(raw: unknown): BoardLink[] {
@@ -52,7 +35,7 @@ export function linkTargets(raw: unknown): BoardLink[] {
   return links;
 }
 
-function coerceLinks(field: CardField, raw: unknown): CardValue {
+function coerceLinks(field: FieldOf<'link'>, raw: unknown): CardValue {
   const allowed = linkTargets(raw).filter(
     (link) => field.linkKinds.length === 0 || field.linkKinds.includes(link.kind),
   );
@@ -61,36 +44,49 @@ function coerceLinks(field: CardField, raw: unknown): CardValue {
   return field.multiple ? unique.slice(0, 50) : (unique[0] ?? null);
 }
 
+function bounds(field: CardField): { min: number; max: number } {
+  return 'min' in field ? { min: field.min ?? 0, max: field.max ?? 100 } : { min: 0, max: 100 };
+}
+
+function coerceNumber(field: CardField, raw: unknown): number | null {
+  const value =
+    typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : NaN;
+  if (!Number.isFinite(value)) return null;
+  if (field.kind !== 'stat') return value;
+  const { min, max } = bounds(field);
+  return Math.min(Math.max(value, Math.min(min, max)), Math.max(min, max));
+}
+
+function coerceText(field: CardField, raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  if (field.kind === 'select') return field.options.includes(raw) ? raw : null;
+  if (field.kind === 'colour') return HEX.test(raw) ? raw.toLowerCase() : null;
+  return raw.slice(0, 5000);
+}
+
+function coerceList(raw: unknown): string[] | null {
+  return Array.isArray(raw)
+    ? raw
+        .filter((item): item is string => typeof item === 'string' && item.trim() !== '')
+        .map((item) => item.trim().slice(0, 80))
+        .slice(0, 50)
+    : null;
+}
+
 export function coerceValue(field: CardField, raw: unknown): CardValue {
+  if (field.kind === 'link') return coerceLinks(field, raw);
   switch (FIELD_KINDS[field.kind].value) {
     case 'none':
-      return null;
     case 'link':
-      return coerceLinks(field, raw);
+      return null;
     case 'boolean':
       return typeof raw === 'boolean' ? raw : null;
     case 'list':
-      return Array.isArray(raw)
-        ? raw
-            .filter((item): item is string => typeof item === 'string' && item.trim() !== '')
-            .map((item) => item.trim().slice(0, 80))
-            .slice(0, 50)
-        : null;
-    case 'number': {
-      const value =
-        typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : NaN;
-      if (!Number.isFinite(value)) return null;
-      if (field.kind !== 'stat') return value;
-      const min = field.min ?? 0;
-      const max = field.max ?? 100;
-      return Math.min(Math.max(value, Math.min(min, max)), Math.max(min, max));
-    }
-    case 'text': {
-      if (typeof raw !== 'string') return null;
-      if (field.kind === 'select') return field.options.includes(raw) ? raw : null;
-      if (field.kind === 'colour') return HEX.test(raw) ? raw.toLowerCase() : null;
-      return raw.slice(0, 5000);
-    }
+      return coerceList(raw);
+    case 'number':
+      return coerceNumber(field, raw);
+    case 'text':
+      return coerceText(field, raw);
   }
 }
 
@@ -101,14 +97,17 @@ export function valueText(value: CardValue): string {
   return value.filter((item): item is string => typeof item === 'string').join(', ');
 }
 
+export function defaultOf(field: CardField): CardValue {
+  return 'defaultValue' in field ? field.defaultValue : null;
+}
+
 export function fieldValue(field: CardField, values: Record<string, CardValue>): CardValue {
   const own = coerceValue(field, values[field.id]);
-  return own ?? coerceValue(field, field.defaultValue);
+  return own ?? coerceValue(field, defaultOf(field));
 }
 
 export function statFraction(field: CardField, value: CardValue): number {
-  const min = field.min ?? 0;
-  const max = field.max ?? 100;
+  const { min, max } = bounds(field);
   if (typeof value !== 'number' || max === min) return 0;
   return Math.min(1, Math.max(0, (value - min) / (max - min)));
 }

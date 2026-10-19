@@ -1,55 +1,11 @@
 import { z } from 'zod';
-import { FONT_WEIGHTS, TEXT_ALIGNS, boardLinkKindSchema, cardValueSchema, itemStyleSchema } from './board';
-import { colourValueSchema } from './colours';
+import { cardValueSchema, itemStyleSchema } from '../board';
+import { colourValueSchema } from '../colours';
+import { cardFieldSchema } from './fields';
 
-export const CARD_FIELD_KINDS = [
-  'heading',
-  'text',
-  'longText',
-  'number',
-  'select',
-  'checkbox',
-  'tags',
-  'image',
-  'stat',
-  'colour',
-  'link',
-  'divider',
-] as const;
+export * from './fields';
 
-export const CARD_SPANS = [12, 9, 8, 6, 4, 3] as const;
-export const CARD_TEXT_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 export const CARD_MAX_FIELDS = 60;
-export const CARD_MAX_OPTIONS = 30;
-
-export const cardFieldKindSchema = z.enum(CARD_FIELD_KINDS);
-
-export const cardFieldStyleSchema = z.object({
-  size: z.enum(CARD_TEXT_SIZES).optional(),
-  weight: z.enum(FONT_WEIGHTS).optional(),
-  colour: colourValueSchema.nullable().optional(),
-  align: z.enum(TEXT_ALIGNS).optional(),
-});
-
-export const cardFieldSchema = z.object({
-  id: z.string().min(1).max(64),
-  kind: cardFieldKindSchema,
-  label: z.string().max(80).default(''),
-  showLabel: z.boolean().default(true),
-  span: z
-    .number()
-    .int()
-    .refine((value) => (CARD_SPANS as readonly number[]).includes(value))
-    .default(12),
-  placeholder: z.string().max(120).default(''),
-  defaultValue: cardValueSchema.default(null),
-  options: z.array(z.string().trim().min(1).max(40)).max(CARD_MAX_OPTIONS).default([]),
-  min: z.number().nullable().default(null),
-  max: z.number().nullable().default(null),
-  linkKinds: z.array(boardLinkKindSchema).max(8).default([]),
-  multiple: z.boolean().default(false),
-  style: cardFieldStyleSchema.default({}),
-});
 
 const cardWidthSchema = z.number().min(120).max(2000);
 const cardHeightSchema = z.number().min(80).max(4000);
@@ -126,10 +82,6 @@ export const savedCardPatchSchema = z
 export type SavedCard = z.infer<typeof savedCardSchema>;
 export type SavedCardInput = z.input<typeof savedCardInputSchema>;
 export type SavedCardPatch = z.input<typeof savedCardPatchSchema>;
-export type CardFieldKind = z.infer<typeof cardFieldKindSchema>;
-export type CardSpan = (typeof CARD_SPANS)[number];
-export type CardTextSize = (typeof CARD_TEXT_SIZES)[number];
-export type CardField = z.infer<typeof cardFieldSchema>;
 export type CardLayout = z.infer<typeof cardLayoutSchema>;
 export type CardTemplate = z.infer<typeof cardTemplateSchema>;
 export type CardTemplateInput = z.input<typeof cardTemplateInputSchema>;

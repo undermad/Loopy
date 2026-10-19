@@ -33,6 +33,77 @@ describe('card schemas', () => {
     expect(() => cardFieldSchema.parse({ id: 'x', kind: 'link', linkKinds: ['ticket'] })).toThrow();
   });
 
+  it('keeps only the keys a field kind uses', () => {
+    const field = cardFieldSchema.parse({
+      id: 'name',
+      kind: 'text',
+      options: ['A'],
+      min: 1,
+      max: 2,
+      linkKinds: ['note'],
+      multiple: true,
+      placeholder: 'Name',
+    });
+    expect(field).toMatchObject({ kind: 'text', placeholder: 'Name' });
+    expect(field).not.toHaveProperty('options');
+    expect(field).not.toHaveProperty('min');
+    expect(field).not.toHaveProperty('linkKinds');
+    expect(field).not.toHaveProperty('multiple');
+    expect(cardFieldSchema.parse({ id: 'r', kind: 'select', options: ['A', 'B'] })).toMatchObject({
+      options: ['A', 'B'],
+    });
+    expect(cardFieldSchema.parse({ id: 's', kind: 'stat', min: 1, max: 9 })).toMatchObject({
+      min: 1,
+      max: 9,
+    });
+  });
+
+  it('reads every stored flat field from before kinds had their own shape', () => {
+    const legacy = {
+      label: 'Field',
+      showLabel: true,
+      span: 12,
+      placeholder: '',
+      defaultValue: null,
+      options: [],
+      min: null,
+      max: null,
+      linkKinds: [],
+      multiple: false,
+      style: {},
+    };
+    const kinds = [
+      'heading',
+      'text',
+      'longText',
+      'number',
+      'select',
+      'checkbox',
+      'tags',
+      'image',
+      'stat',
+      'colour',
+      'link',
+      'divider',
+    ] as const;
+    for (const kind of kinds) {
+      expect(cardFieldSchema.parse({ ...legacy, id: kind, kind }).kind).toBe(kind);
+    }
+  });
+
+  it('drops a stored default that does not fit the kind', () => {
+    expect(cardFieldSchema.parse({ id: 'n', kind: 'number', defaultValue: 'abc' })).toMatchObject({
+      defaultValue: null,
+    });
+    expect(cardFieldSchema.parse({ id: 'c', kind: 'checkbox', defaultValue: 'yes' })).toMatchObject({
+      defaultValue: null,
+    });
+    expect(cardFieldSchema.parse({ id: 't', kind: 'tags', defaultValue: ['a'] })).toMatchObject({
+      defaultValue: ['a'],
+    });
+    expect(() => cardFieldSchema.parse({ id: 'x', kind: 'hologram' })).toThrow();
+  });
+
   it('lets a board card point at a saved card', () => {
     expect(cardDataSchema.parse({}).cardId).toBeNull();
     expect(cardDataSchema.parse({ cardId: 'c1' }).cardId).toBe('c1');

@@ -69,4 +69,17 @@ A board card item stores `templateId`, `cardId` and `values`. A card link is `{ 
 
 ## Library
 
-`src/renderer/lib/cards` keeps templates and saved cards, reloads them when the project changes, and exposes `useCardTemplates`, `useSavedCards`, `useBoardCard`, `resolveCardLayout`, the create, update, duplicate and delete actions, the field kinds and the starter templates. The components live in `src/renderer/components/editors/Cards`: `CardLibrary`, `CardDesigner`, `BoardCardDesigner` for a card on a board, `CardPreview`, `CardView` and `TemplateSettings`. The designer's area state is `target`: a template, a saved card, or `{ kind: 'item', id, boardId }` for a board card. A new field kind is an entry in `CARD_FIELD_KINDS`, its value rule in `FIELD_KINDS`, a case in `CardView` and a label in `editors.json`.
+`src/renderer/lib/cards` keeps templates and saved cards, reloads them when the project changes, and exposes `useCardTemplates`, `useSavedCards`, `useBoardCard`, `resolveCardLayout`, the create, update, duplicate and delete actions, the field kinds and the starter templates. The components live in `src/renderer/components/editors/Cards`: `CardLibrary`, `CardDesigner`, `BoardCardDesigner` for a card on a board, `CardPreview`, `CardView`, one view per field kind in `fields/` and the settings panels in `settings/`. The designer's area state is `target`: a template, a saved card, or `{ kind: 'item', id, boardId }` for a board card.
+
+## Adding a field kind
+
+Each kind is one schema in `src/shared/cards/fields.ts`, joined into the `cardFieldSchema` union on `kind`. A field keeps only the keys its kind uses, so a stored field from an older shape parses and drops the rest on the next save; a stored default of the wrong type becomes no default.
+
+| Step | Where                                                                                      |
+| ---- | ------------------------------------------------------------------------------------------ |
+| 1    | Schema and its place in `CARD_FIELD_KINDS` and the union in `src/shared/cards/fields.ts`   |
+| 2    | Group, width, value type, text style and starting settings in `FIELD_KINDS` in `lib/cards` |
+| 3    | View in `Cards/fields` and value settings in `Cards/settings/kindSettings.tsx`             |
+| 4    | Name in `cards.kinds` in `editors.json`                                                    |
+
+The view and settings maps are typed per kind, so a kind without a view fails the type check. Changing a field's kind with `changeFieldKind` keeps its id, label, width and style and starts the kind's own settings fresh.
