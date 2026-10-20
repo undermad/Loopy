@@ -33,3 +33,4 @@ export { evaluateFormula, type FormulaResult } from './expressions';
 export { parseDice } from './dice';
 export { cardAccent, computeFormulas, isFieldVisible } from './rules';
 export { CARD_SIZES, STARTER_TEMPLATES, blankTemplate } from './presets';
+export { clampSpan, fieldGridStyle, moveFieldTo, snapHeight, spanFromPixels, updateFields } from './layout';

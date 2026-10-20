@@ -1,8 +1,9 @@
 import { FONT_WEIGHTS, TEXT_ALIGNS } from '@shared/board';
 import { CARD_FIELD_KINDS, CARD_SPANS, CARD_TEXT_SIZES, CARD_ZONES, type CardField } from '@shared/cards';
-import { FIELD_KINDS, changeFieldKind } from '@renderer/lib/cards';
+import { FIELD_KINDS, changeFieldKind, clampSpan, snapHeight } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
-import { Field, Input, PropertySection, Select, Switch } from '@renderer/ui';
+import { Field, Input, PropertySection, Select, Switch, ToggleGroup } from '@renderer/ui';
+import { NumberField } from '../../Properties/NumberField';
 import { ColourRow } from './ColourRow';
 import { DraftInput, NONE } from './inputs';
 import { hasKindSettings, renderKindSettings } from './kindSettings';
@@ -135,19 +136,46 @@ export function FieldSettings({
             }}
           />
         </Field>
-        <Field label={t('cards.span')}>
-          <Select
-            size="sm"
-            value={String(field.span)}
-            options={CARD_SPANS.map((span) => ({
-              value: String(span),
-              label: t(`cards.spans.${String(span) as '12'}`),
-            }))}
-            onValueChange={(value) => {
-              onChange({ ...field, span: Number(value) });
-            }}
-          />
-        </Field>
+        <NumberField
+          label={t('cards.span')}
+          value={field.span}
+          min={1}
+          step={1}
+          digits={0}
+          onCommit={(span) => {
+            onChange({ ...field, span: clampSpan(span) });
+          }}
+        />
+        <ToggleGroup
+          size="sm"
+          aria-label={t('cards.widthPresets')}
+          value={String(field.span)}
+          items={CARD_SPANS.map((span) => ({
+            value: String(span),
+            label: t(`cards.spans.${String(span) as '12'}`),
+          }))}
+          onValueChange={(span) => {
+            onChange({ ...field, span: Number(span) });
+          }}
+        />
+        <Switch
+          size="sm"
+          label={t('cards.newRow')}
+          checked={field.newRow}
+          onCheckedChange={(newRow) => {
+            onChange({ ...field, newRow });
+          }}
+        />
+        <NumberField
+          label={t('cards.minHeight')}
+          value={field.height ?? 0}
+          min={0}
+          step={4}
+          digits={0}
+          onCommit={(height) => {
+            onChange({ ...field, height: snapHeight(height) });
+          }}
+        />
       </PropertySection>
       {FIELD_KINDS[field.kind].textStyle ? <TextStyleSettings field={field} onChange={onChange} /> : null}
       <PropertySection title={t('cards.sections.advanced')} defaultOpen={false}>

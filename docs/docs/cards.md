@@ -29,13 +29,13 @@ Fields sit on a 12-column grid. There are 14 field types. Add field lists preset
 
 Field settings always come in the same order, and each group folds away:
 
-| Section    | Holds                                                                         |
-| ---------- | ----------------------------------------------------------------------------- |
-| Basics     | Field type, label, show label                                                 |
-| Value      | What the kind needs: placeholder, choices, bounds, prefix and suffix, default |
-| Layout     | Width in the row: full, three quarters, two thirds, half, third or quarter    |
-| Text style | Size, weight, alignment and colour, for kinds that show text                  |
-| Advanced   | Help text, shown on an info mark beside the label, and Hide on card           |
+| Section    | Holds                                                                                         |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| Basics     | Field type, label, show label                                                                 |
+| Value      | What the kind needs: placeholder, choices, bounds, prefix and suffix, default                 |
+| Layout     | Zone, columns from 1 to 12 with presets, Start a new row, minimum height in steps of 4 pixels |
+| Text style | Size, weight, alignment and colour, for kinds that show text                                  |
+| Advanced   | Help text, shown on an info mark beside the label, and Hide on card                           |
 
 A hidden field keeps its value and shows, dimmed, in the designer and in Properties, but not on the card face.
 

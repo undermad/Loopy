@@ -211,7 +211,7 @@ describe('template field settings', () => {
     await user.click(screen.getByRole('switch', { name: 'Show label' }));
     expect(onChange.mock.lastCall?.[0]).toMatchObject({ showLabel: false });
 
-    await pick(user, screen.getByRole('combobox', { name: 'Width in the row' }), 'Half');
+    await user.click(screen.getByRole('radio', { name: 'Half' }));
     expect(onChange.mock.lastCall?.[0]).toMatchObject({ span: 6 });
 
     await pick(user, screen.getByRole('combobox', { name: 'Default value' }), '–');

@@ -50,10 +50,11 @@ export const visibilityRuleSchema = z.object({
   value: z.string().max(80).default(''),
 });
 
-const spanSchema = z
-  .number()
-  .int()
-  .refine((value) => (CARD_SPANS as readonly number[]).includes(value));
+export const CARD_COLUMNS = 12;
+export const CARD_MIN_FIELD_HEIGHT = 16;
+export const CARD_MAX_FIELD_HEIGHT = 2000;
+
+const spanSchema = z.number().int().min(1).max(CARD_COLUMNS);
 
 const base = {
   id: z.string().min(1).max(64),
@@ -65,6 +66,8 @@ const base = {
   hidden: z.boolean().default(false),
   visibleWhen: visibilityRuleSchema.nullable().default(null),
   zone: z.enum(CARD_ZONES).default('body'),
+  height: z.number().min(CARD_MIN_FIELD_HEIGHT).max(CARD_MAX_FIELD_HEIGHT).nullable().default(null),
+  newRow: z.boolean().default(false),
 };
 
 const fallback = <T extends z.ZodType>(schema: T) => schema.nullable().default(null).catch(null);

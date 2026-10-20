@@ -591,7 +591,7 @@
     "cardSettings": "Card",
     "label": "Label",
     "showLabel": "Show label",
-    "span": "Width in the row",
+    "span": "Columns",
     "spans": {
       "3": "Quarter",
       "4": "Third",
@@ -808,7 +808,10 @@
     },
     "allowNew": "Allow new entries",
     "commaHint": "Separate values with commas",
-    "line": "Draw a line"
+    "line": "Draw a line",
+    "widthPresets": "Width",
+    "newRow": "Start a new row",
+    "minHeight": "Minimum height"
   },
   "assetLink": {
     "open": "Open {{name}}",

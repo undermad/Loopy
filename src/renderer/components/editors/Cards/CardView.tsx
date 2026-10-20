@@ -4,6 +4,7 @@ import type { CardValue } from '@shared/board';
 import { CARD_ZONES, type CardField, type CardLayout, type CardTextSize } from '@shared/cards';
 import {
   computeFormulas,
+  fieldGridStyle,
   fieldValue,
   isFieldVisible,
   presetOf,
@@ -82,7 +83,7 @@ export function CardView({
           onSelectField && styles['fieldPickable'],
           !visible && styles['fieldHidden'],
         )}
-        style={{ gridColumn: `span ${String(field.span)}` }}
+        style={fieldGridStyle(field)}
         data-kind={field.kind}
         data-field-id={field.id}
         onClick={

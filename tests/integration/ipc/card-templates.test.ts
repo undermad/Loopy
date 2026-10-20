@@ -98,7 +98,7 @@ describe('card templates IPC handlers', () => {
       }),
     ).rejects.toThrow(/Duplicate field id/);
     await expect(
-      call(IpcChannel.cardTemplatesCreate, { name: 'Bad', fields: [{ id: 'a', kind: 'text', span: 5 }] }),
+      call(IpcChannel.cardTemplatesCreate, { name: 'Bad', fields: [{ id: 'a', kind: 'text', span: 13 }] }),
     ).rejects.toThrow();
     await expect(call(IpcChannel.cardTemplatesUpdate, 'missing', { name: 'x' })).rejects.toThrow(
       /Unknown card template/,
