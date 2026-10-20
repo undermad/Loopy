@@ -24,15 +24,15 @@ import {
   Type,
   type LucideIcon,
 } from 'lucide-react';
-import type { CardFieldKind } from '@shared/cards';
+import type { FieldPresetId } from '@renderer/lib/cards';
 
-export const FIELD_ICONS: Record<CardFieldKind, LucideIcon> = {
+export const FIELD_ICONS: Record<FieldPresetId, LucideIcon> = {
   heading: Heading,
   text: Type,
   longText: TextQuote,
   number: Hash,
   stat: ChartNoAxesColumn,
-  select: SquareChevronDown,
+  choice: SquareChevronDown,
   checkbox: SquareCheck,
   tags: Tags,
   image: Image,
@@ -46,7 +46,7 @@ export const FIELD_ICONS: Record<CardFieldKind, LucideIcon> = {
   attributes: Table2,
   formula: Sigma,
   dice: Dices,
-  multiSelect: ListChecks,
+  multiChoice: ListChecks,
   checklist: ListTodo,
   icon: Shapes,
   spacer: MoveVertical,

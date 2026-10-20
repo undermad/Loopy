@@ -49,46 +49,13 @@ describe('card schemas', () => {
     expect(field).not.toHaveProperty('min');
     expect(field).not.toHaveProperty('linkKinds');
     expect(field).not.toHaveProperty('multiple');
-    expect(cardFieldSchema.parse({ id: 'r', kind: 'select', options: ['A', 'B'] })).toMatchObject({
+    expect(cardFieldSchema.parse({ id: 'r', kind: 'choice', options: ['A', 'B'] })).toMatchObject({
       options: [{ value: 'A' }, { value: 'B' }],
     });
-    expect(cardFieldSchema.parse({ id: 's', kind: 'stat', min: 1, max: 9 })).toMatchObject({
+    expect(cardFieldSchema.parse({ id: 's', kind: 'number', display: 'bar', min: 1, max: 9 })).toMatchObject({
       min: 1,
       max: 9,
     });
-  });
-
-  it('reads every stored flat field from before kinds had their own shape', () => {
-    const legacy = {
-      label: 'Field',
-      showLabel: true,
-      span: 12,
-      placeholder: '',
-      defaultValue: null,
-      options: [],
-      min: null,
-      max: null,
-      linkKinds: [],
-      multiple: false,
-      style: {},
-    };
-    const kinds = [
-      'heading',
-      'text',
-      'longText',
-      'number',
-      'select',
-      'checkbox',
-      'tags',
-      'image',
-      'stat',
-      'colour',
-      'link',
-      'divider',
-    ] as const;
-    for (const kind of kinds) {
-      expect(cardFieldSchema.parse({ ...legacy, id: kind, kind }).kind).toBe(kind);
-    }
   });
 
   it('drops a stored default that does not fit the kind', () => {
@@ -98,26 +65,34 @@ describe('card schemas', () => {
     expect(cardFieldSchema.parse({ id: 'c', kind: 'checkbox', defaultValue: 'yes' })).toMatchObject({
       defaultValue: null,
     });
-    expect(cardFieldSchema.parse({ id: 't', kind: 'tags', defaultValue: ['a'] })).toMatchObject({
+    expect(
+      cardFieldSchema.parse({ id: 't', kind: 'choice', multiple: true, allowNew: true, defaultValue: ['a'] }),
+    ).toMatchObject({
       defaultValue: ['a'],
     });
     expect(() => cardFieldSchema.parse({ id: 'x', kind: 'hologram' })).toThrow();
   });
 
   it('gives every field help text and a hidden flag, and numbers a prefix and suffix', () => {
-    expect(cardFieldSchema.parse({ id: 'a', kind: 'divider' })).toMatchObject({ help: '', hidden: false });
+    expect(cardFieldSchema.parse({ id: 'a', kind: 'separator' })).toMatchObject({ help: '', hidden: false });
     expect(cardFieldSchema.parse({ id: 'n', kind: 'number', prefix: '$', suffix: ' g' })).toMatchObject({
       prefix: '$',
       suffix: ' g',
     });
-    expect(cardFieldSchema.parse({ id: 's', kind: 'stat' })).toMatchObject({ prefix: '', suffix: '' });
+    expect(cardFieldSchema.parse({ id: 's', kind: 'number', display: 'bar' })).toMatchObject({
+      prefix: '',
+      suffix: '',
+    });
     expect(() => cardFieldSchema.parse({ id: 'h', kind: 'text', help: 'x'.repeat(201) })).toThrow();
   });
 
   it('gives the new field kinds sensible defaults', () => {
-    expect(cardFieldSchema.parse({ id: 'r', kind: 'rating' })).toMatchObject({ max: 5, symbol: 'star' });
-    expect(cardFieldSchema.parse({ id: 's', kind: 'spacer' })).toMatchObject({ size: 16 });
-    expect(cardFieldSchema.parse({ id: 't', kind: 'staticText', text: 'Rules' })).toMatchObject({
+    expect(cardFieldSchema.parse({ id: 'r', kind: 'number', display: 'symbols' })).toMatchObject({
+      max: null,
+      symbol: 'star',
+    });
+    expect(cardFieldSchema.parse({ id: 's', kind: 'separator', line: false })).toMatchObject({ size: 16 });
+    expect(cardFieldSchema.parse({ id: 't', kind: 'text', fixed: true, text: 'Rules' })).toMatchObject({
       text: 'Rules',
     });
     expect(cardFieldSchema.parse({ id: 'f', kind: 'formula' })).toMatchObject({
@@ -129,16 +104,15 @@ describe('card schemas', () => {
     ).toMatchObject({
       rows: [{ id: 'str', label: 'Strength' }],
     });
-    for (const kind of ['multiSelect', 'checklist', 'range', 'dice', 'icon', 'date'] as const) {
+    for (const kind of ['checklist', 'dice', 'icon', 'date'] as const) {
       expect(cardFieldSchema.parse({ id: kind, kind }).kind).toBe(kind);
     }
-    expect(() => cardFieldSchema.parse({ id: 'r', kind: 'rating', max: 11 })).toThrow();
   });
 
   it('stores choices with an optional colour and accepts plain names', () => {
     const field = cardFieldSchema.parse({
       id: 'rarity',
-      kind: 'select',
+      kind: 'choice',
       options: ['Common', { value: 'Rare', colour: { hex: '#3366ff', ref: null } }],
     });
     expect(field).toMatchObject({

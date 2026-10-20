@@ -1,7 +1,7 @@
 import { Circle, Heart, Square, Star, type LucideIcon } from 'lucide-react';
 import type { NumberRange } from '@shared/board';
 import type { FieldOf } from '@shared/cards';
-import { parseDice, statFraction } from '@renderer/lib/cards';
+import { parseDice, statFraction, symbolCount } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { cx } from '@renderer/ui';
 import { INTERACTIVE, NumberValue, type FieldViewProps } from './inputs';
@@ -17,7 +17,7 @@ export function formatNumber(value: number, field: Affixes, decimals: number | n
   return `${field.prefix}${shown}${field.suffix}`;
 }
 
-export function NumberKindField({
+function PlainNumber({
   field,
   value,
   editable,
@@ -38,7 +38,7 @@ export function NumberKindField({
   );
 }
 
-export function StatField({
+function StatField({
   field,
   value,
   editable,
@@ -46,7 +46,7 @@ export function StatField({
   colour,
   textStyle,
   onChange,
-}: FieldViewProps<FieldOf<'stat'>>) {
+}: FieldViewProps<FieldOf<'number'>>) {
   const fraction = statFraction(field, value);
   return (
     <div className={styles['stat']} style={textStyle}>
@@ -71,14 +71,14 @@ export function StatField({
   );
 }
 
-const SYMBOLS: Record<FieldOf<'rating'>['symbol'], LucideIcon> = {
+const SYMBOLS: Record<FieldOf<'number'>['symbol'], LucideIcon> = {
   star: Star,
   heart: Heart,
   circle: Circle,
   pip: Square,
 };
 
-export function RatingField({
+function RatingField({
   field,
   value,
   editable,
@@ -86,11 +86,12 @@ export function RatingField({
   colour,
   textStyle,
   onChange,
-}: FieldViewProps<FieldOf<'rating'>>) {
+}: FieldViewProps<FieldOf<'number'>>) {
   const { t } = useTranslation('editors');
   const current = typeof value === 'number' ? value : 0;
+  const max = symbolCount(field);
   const Symbol = SYMBOLS[field.symbol];
-  const steps = Array.from({ length: field.max }, (_, index) => index + 1);
+  const steps = Array.from({ length: max }, (_, index) => index + 1);
   const symbol = (step: number) => (
     <Symbol
       aria-hidden="true"
@@ -104,7 +105,7 @@ export function RatingField({
         className={styles['rating']}
         style={{ ...textStyle, color: colour ?? textStyle.color }}
         role="img"
-        aria-label={t('cards.ratingValue', { label, value: current, max: field.max })}
+        aria-label={t('cards.ratingValue', { label, value: current, max })}
       >
         {steps.map((step) => (
           <span key={step}>{symbol(step)}</span>
@@ -119,7 +120,7 @@ export function RatingField({
           key={step}
           type="button"
           className={cx(INTERACTIVE, styles['ratingButton'])}
-          aria-label={t('cards.ratingValue', { label, value: step, max: field.max })}
+          aria-label={t('cards.ratingValue', { label, value: step, max })}
           aria-pressed={step <= current}
           onClick={() => {
             onChange(step === current ? 0 : step);
@@ -138,14 +139,14 @@ function asRange(value: unknown): NumberRange | null {
   return typeof min === 'number' && typeof max === 'number' ? { min, max } : null;
 }
 
-export function RangeField({
+function RangeField({
   field,
   value,
   editable,
   label,
   textStyle,
   onChange,
-}: FieldViewProps<FieldOf<'range'>>) {
+}: FieldViewProps<FieldOf<'number'>>) {
   const { t } = useTranslation('editors');
   const range = asRange(value);
   if (!editable) {
@@ -178,6 +179,14 @@ export function RangeField({
       {field.suffix ? <span>{field.suffix}</span> : null}
     </div>
   );
+}
+
+export function NumberKindField(props: FieldViewProps<FieldOf<'number'>>) {
+  const { field } = props;
+  if (field.range) return <RangeField {...props} />;
+  if (field.display === 'bar') return <StatField {...props} />;
+  if (field.display === 'symbols') return <RatingField {...props} />;
+  return <PlainNumber {...props} />;
 }
 
 export function AttributesField({

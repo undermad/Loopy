@@ -25,7 +25,7 @@ The designer shows the field list on the left, a live preview in the middle and 
 
 ## Fields
 
-Fields sit on a 12-column grid. Add field lists the kinds in groups: text, numbers, choices, media, references and layout. A new field gets an id taken from its label, such as `max_health`, and keeps it when the label changes, so values and future exports stay stable.
+Fields sit on a 12-column grid. There are 14 field types. Add field lists presets in groups (text, numbers, choices, media, references and layout): a preset is a type with settings already chosen, such as Stat bar, a number drawn as a bar. A new field gets an id taken from its label, such as `max_health`, and keeps it when the label changes, so values and future exports stay stable.
 
 Field settings always come in the same order, and each group folds away:
 
@@ -39,29 +39,24 @@ Field settings always come in the same order, and each group folds away:
 
 A hidden field keeps its value and shows, dimmed, in the designer and in Properties, but not on the card face.
 
-| Group      | Kind            | Value                                                          | Extra settings                             |
-| ---------- | --------------- | -------------------------------------------------------------- | ------------------------------------------ |
-| Text       | Heading         | Text, larger and bold by default                               | Placeholder, default                       |
-| Text       | Text, Long text | One line or several                                            | Placeholder, default                       |
-| Text       | Date            | A calendar date                                                |                                            |
-| Numbers    | Number          | A number, held inside its bounds                               | Minimum, maximum, default, prefix, suffix  |
-| Numbers    | Stat bar        | A number drawn as a bar                                        | Minimum, maximum, default, prefix, suffix  |
-| Numbers    | Rating          | Stars, hearts, circles or pips; click the current one to clear | Maximum up to 10, symbol, default          |
-| Numbers    | Range           | A low and a high number, kept in order                         | Minimum, maximum, prefix, suffix           |
-| Numbers    | Attributes      | A number per named row                                         | One row per line                           |
-| Numbers    | Formula         | Worked out from other fields, never typed                      | Formula, decimal places, prefix, suffix    |
-| Numbers    | Dice            | Dice notation such as `2d6+1`, with its range and average      | Default                                    |
-| Choices    | Choice          | One of a list                                                  | Choices with colours, placeholder, default |
-| Choices    | Multiple choice | Any of a list                                                  | Choices with colours                       |
-| Choices    | Checkbox        | Yes or no                                                      | Default                                    |
-| Choices    | Tags            | Short labels                                                   | Default, comma separated                   |
-| Choices    | Checklist       | Steps to tick, with a done count                               |                                            |
-| Media      | Image           | An image from assets                                           |                                            |
-| Media      | Icon            | One of the game icons                                          |                                            |
-| Media      | Colour          | A hex colour                                                   | Default                                    |
-| References | Asset link      | One or more boards, palettes, notes or cards                   | Links to, Allow several                    |
-| Layout     | Static text     | Fixed text the template writes on every card                   | Text                                       |
-| Layout     | Divider, Spacer | A line, or empty space of a set height                         | Height for a spacer                        |
+| Type       | Value                                                 | Settings                                                                     | Presets                               |
+| ---------- | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------- |
+| Text       | Text on one line or several                           | Lines, Same text on every card, placeholder, default                         | Heading, Text, Long text, Static text |
+| Date       | A calendar date                                       |                                                                              | Date                                  |
+| Number     | A number, or a low and high pair                      | Low and high, display (number, bar, symbols), bounds, symbol, default, affix | Number, Stat bar, Rating, Range       |
+| Attributes | A number per named row                                | One row per line                                                             | Attributes                            |
+| Formula    | Worked out from other fields, never typed             | Formula, decimal places, prefix, suffix                                      | Formula                               |
+| Dice       | Dice notation such as `2d6+1`, with range and average | Default                                                                      | Dice                                  |
+| Choice     | One value from a list, or several                     | Allow several, Allow new entries, choices with colours, default              | Choice, Multiple choice, Tags         |
+| Checkbox   | Yes or no                                             | Default                                                                      | Checkbox                              |
+| Checklist  | Steps to tick, with a done count                      |                                                                              | Checklist                             |
+| Image      | An image from assets                                  |                                                                              | Image                                 |
+| Icon       | One of the game icons                                 |                                                                              | Icon                                  |
+| Colour     | A hex colour                                          | Default                                                                      | Colour                                |
+| Asset link | One or more boards, palettes, notes or cards          | Links to, Allow several                                                      | Asset link                            |
+| Separator  | A line, or empty space of a set height                | Draw a line, height                                                          | Divider, Spacer                       |
+
+Symbols show up to 10 marks; the maximum sets how many. A choice with Allow new entries takes values that are not in its list, which is how Tags works. The field list names each field by the preset it matches, so a number drawn as a bar reads Stat bar.
 
 An asset link shows each target as the card a ticket's linked asset uses. Click it to open the target. Drop an internal asset on the field to set it; with Allow several the drop adds to the list. Links to limits the kinds, and a link to a deleted asset shows as Missing asset.
 
@@ -69,7 +64,7 @@ An asset link shows each target as the card a ticket's linked asset uses. Click 
 
 ### Formulas
 
-A formula names other fields by id: `attack * 2 + level`. It knows numbers, `+ - * / % ^`, brackets, the comparisons `== != > < >= <=`, which give 1 or 0, and `min`, `max`, `round`, `floor`, `ceil`, `abs`, `sqrt`, `clamp` and `if`. Number, stat bar, rating and checkbox fields count, a ticked checkbox as 1, and so do other formulas. An empty number counts as 0.
+A formula names other fields by id: `attack * 2 + level`. It knows numbers, `+ - * / % ^`, brackets, the comparisons `== != > < >= <=`, which give 1 or 0, and `min`, `max`, `round`, `floor`, `ceil`, `abs`, `sqrt`, `clamp` and `if`. Number fields count unless they hold a low and high pair, checkboxes count as 1 when ticked, and so do other formulas. An empty number counts as 0.
 
 The settings list the ids a formula can use and say what is wrong: an unknown name, a formula that depends on itself, or a mistake in the text. The card shows Check the formula until it is fixed. `evaluateFormula` in `src/renderer/lib/cards` parses the text itself; nothing is passed to `eval`.
 
@@ -89,7 +84,7 @@ Card settings, shown when no field is selected, come in the same order as field 
 | Border     | Colour, width, corner radius, shadow                                                                                                 |
 | Text       | Colour, size and font (app font, serif, monospace, rounded, condensed or handwritten)                                                |
 
-Accent from takes the colour of the option picked in a choice field, so a Legendary item turns gold. Without a pick, or for an option with no colour, the accent colour applies. The header placement paints the header zone in the accent and switches its text to a readable colour.
+Accent from takes the colour of the option picked in a choice field, or the first one picked when it allows several, so a Legendary item turns gold. Without a pick, or for an option with no colour, the accent colour applies. The header placement paints the header zone in the accent and switches its text to a readable colour.
 
 Each field sits in a zone: header, body or footer. The header and footer keep their height, and the body scrolls when the card runs out of room. Grow to fit fields lets the preview grow past its height; a card on a board keeps the size it was given.
 
@@ -124,11 +119,11 @@ A board card item stores `templateId`, `cardId` and `values`. A card link is `{ 
 
 Each kind is one schema in `src/shared/cards/fields.ts`, joined into the `cardFieldSchema` union on `kind`. A field keeps only the keys its kind uses, so a stored field from an older shape parses and drops the rest on the next save; a stored default of the wrong type becomes no default.
 
-| Step | Where                                                                                      |
-| ---- | ------------------------------------------------------------------------------------------ |
-| 1    | Schema and its place in `CARD_FIELD_KINDS` and the union in `src/shared/cards/fields.ts`   |
-| 2    | Group, width, value type, text style and starting settings in `FIELD_KINDS` in `lib/cards` |
-| 3    | View in `Cards/fields` and value settings in `Cards/settings/kindSettings.tsx`             |
-| 4    | Name in `cards.kinds` in `editors.json`                                                    |
+| Step | Where                                                                                    |
+| ---- | ---------------------------------------------------------------------------------------- |
+| 1    | Schema and its place in `CARD_FIELD_KINDS` and the union in `src/shared/cards/fields.ts` |
+| 2    | Text style in `FIELD_KINDS` and at least one entry in `FIELD_PRESETS` in `lib/cards`     |
+| 3    | View in `Cards/fields` and value settings in `Cards/settings/kindSettings.tsx`           |
+| 4    | Names in `cards.kinds` and `cards.presets` in `editors.json`                             |
 
-The view and settings maps are typed per kind, so a kind without a view fails the type check. Changing a field's kind with `changeFieldKind` keeps its id, label, width and style and starts the kind's own settings fresh.
+The view and settings maps are typed per kind, so a kind without a view fails the type check. Prefer a setting on an existing type over a new type when the value has the same shape. Changing a field's type with `changeFieldKind` keeps every setting both types share, such as placeholder, prefix or choices, and drops a default that no longer fits.

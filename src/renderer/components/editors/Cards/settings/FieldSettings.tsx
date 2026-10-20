@@ -1,6 +1,6 @@
 import { FONT_WEIGHTS, TEXT_ALIGNS } from '@shared/board';
-import { CARD_SPANS, CARD_TEXT_SIZES, CARD_ZONES, type CardField } from '@shared/cards';
-import { FIELD_KINDS, changeFieldKind, fieldKindsByGroup } from '@renderer/lib/cards';
+import { CARD_FIELD_KINDS, CARD_SPANS, CARD_TEXT_SIZES, CARD_ZONES, type CardField } from '@shared/cards';
+import { FIELD_KINDS, changeFieldKind } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Field, Input, PropertySection, Select, Switch } from '@renderer/ui';
 import { ColourRow } from './ColourRow';
@@ -93,9 +93,7 @@ export function FieldSettings({
             size="sm"
             value={field.kind}
             aria-label={t('cards.kind')}
-            options={fieldKindsByGroup().flatMap((group) =>
-              group.kinds.map((kind) => ({ value: kind, label: t(`cards.kinds.${kind}`) })),
-            )}
+            options={CARD_FIELD_KINDS.map((kind) => ({ value: kind, label: t(`cards.kinds.${kind}`) }))}
             onValueChange={(kind) => {
               onChange(changeFieldKind(field, kind as CardField['kind']));
             }}

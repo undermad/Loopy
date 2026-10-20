@@ -60,19 +60,19 @@ beforeEach(async () => {
 describe('card view', () => {
   it('renders every field kind read only with fallbacks', () => {
     const fields = [
-      field({ id: 'h', kind: 'heading', label: 'Title', style: { size: 'xl', weight: 'medium' } }),
+      field({ id: 'h', kind: 'text', label: 'Title', style: { size: 'xl', weight: 'medium' } }),
       field({ id: 't', kind: 'text', placeholder: 'Nothing yet' }),
       field({ id: 'n', kind: 'number', label: 'Level' }),
       field({ id: 'm', kind: 'number', label: 'Power' }),
-      field({ id: 's', kind: 'select', label: 'Rarity' }),
+      field({ id: 's', kind: 'choice', label: 'Rarity' }),
       field({ id: 'c', kind: 'checkbox', label: 'Ready' }),
-      field({ id: 'g', kind: 'tags', label: 'Tags' }),
+      field({ id: 'g', kind: 'choice', multiple: true, allowNew: true, label: 'Tags' }),
       field({ id: 'i', kind: 'image', label: 'Portrait' }),
       field({ id: 'j', kind: 'image', label: 'Icon' }),
-      field({ id: 'st', kind: 'stat', label: 'HP' }),
+      field({ id: 'st', kind: 'number', display: 'bar', label: 'HP' }),
       field({ id: 'co', kind: 'colour', label: 'Tint' }),
       field({ id: 'cx', kind: 'colour', label: 'Glow' }),
-      field({ id: 'd', kind: 'divider', showLabel: true }),
+      field({ id: 'd', kind: 'separator', showLabel: true }),
     ];
     render(
       <CardView
@@ -106,12 +106,12 @@ describe('card view', () => {
     const onChange = vi.fn();
     const onSelectField = vi.fn();
     const fields = [
-      field({ id: 'l', kind: 'longText', label: 'Story' }),
+      field({ id: 'l', kind: 'text', lines: 'multi', label: 'Story' }),
       field({ id: 't', kind: 'text', label: 'Name' }),
       field({ id: 'n', kind: 'number', label: 'Level' }),
-      field({ id: 's', kind: 'select', label: 'Rarity', options: ['Common'] }),
-      field({ id: 'g', kind: 'tags', label: 'Tags' }),
-      field({ id: 'st', kind: 'stat', label: 'HP', min: 0, max: 10 }),
+      field({ id: 's', kind: 'choice', label: 'Rarity', options: ['Common'] }),
+      field({ id: 'g', kind: 'choice', multiple: true, allowNew: true, label: 'Tags' }),
+      field({ id: 'st', kind: 'number', display: 'bar', label: 'HP', min: 0, max: 10 }),
       field({ id: 'co', kind: 'colour', label: 'Tint' }),
       field({ id: 'i', kind: 'image', label: 'Portrait' }),
     ];
@@ -192,7 +192,7 @@ describe('template field settings', () => {
     const onChange = vi.fn();
     const choice = field({
       id: 's',
-      kind: 'select',
+      kind: 'choice',
       label: 'Rarity',
       options: ['Common', 'Rare'],
       defaultValue: 'Rare',
@@ -238,18 +238,20 @@ describe('template field settings', () => {
     await user.click(screen.getByRole('button', { name: 'Default' }));
     expect(onChange.mock.lastCall?.[0]).toMatchObject({ style: { colour: null } });
 
-    await pick(user, screen.getByRole('combobox', { name: 'Field type' }), 'Stat bar');
+    await pick(user, screen.getByRole('combobox', { name: 'Field type' }), 'Number');
     expect(onChange.mock.lastCall?.[0]).toMatchObject({
       id: 's',
       label: 'Rarity',
-      kind: 'stat',
-      min: 0,
-      max: 100,
+      kind: 'number',
+      display: 'number',
     });
 
     rerender(
       <Providers>
-        <FieldSettings field={field({ id: 'st', kind: 'stat', label: 'HP' })} onChange={onChange} />
+        <FieldSettings
+          field={field({ id: 'st', kind: 'number', display: 'bar', label: 'HP' })}
+          onChange={onChange}
+        />
       </Providers>,
     );
     const min = screen.getByRole('spinbutton', { name: 'Minimum' });
@@ -278,14 +280,16 @@ describe('template field settings', () => {
         <FieldSettings field={next} onChange={onChange} />
       </Providers>
     );
-    const { rerender } = render(view(field({ id: 'g', kind: 'tags', defaultValue: ['a', 'b'] })));
+    const { rerender } = render(
+      view(field({ id: 'g', kind: 'choice', multiple: true, allowNew: true, defaultValue: ['a', 'b'] })),
+    );
     const tags = screen.getByRole('textbox', { name: 'Default value' });
     expect(tags).toHaveValue('a, b');
     fireEvent.change(tags, { target: { value: 'x, y' } });
     fireEvent.blur(tags);
     expect(onChange.mock.lastCall?.[0]).toMatchObject({ defaultValue: ['x', 'y'] });
 
-    rerender(view(field({ id: 'g2', kind: 'tags' })));
+    rerender(view(field({ id: 'g2', kind: 'choice', multiple: true, allowNew: true })));
     expect(screen.getByRole('textbox', { name: 'Default value' })).toHaveValue('');
 
     rerender(view(field({ id: 'c', kind: 'checkbox', defaultValue: true })));
@@ -305,7 +309,7 @@ describe('template field settings', () => {
     expect(screen.queryByText('Default value')).not.toBeInTheDocument();
     expect(screen.queryByText('Text style')).not.toBeInTheDocument();
 
-    rerender(view(field({ id: 'd', kind: 'divider' })));
+    rerender(view(field({ id: 'd', kind: 'separator' })));
     expect(screen.queryByText('Default value')).not.toBeInTheDocument();
   });
 });

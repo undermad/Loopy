@@ -1,13 +1,10 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CARD_FIELD_KINDS, cardFieldSchema, cardTemplateInputSchema } from '@shared/cards';
+import { cardFieldSchema, cardTemplateInputSchema } from '@shared/cards';
 import {
-  FIELD_GROUPS,
   STARTER_TEMPLATES,
   blankTemplate,
-  changeFieldKind,
   coerceValue,
-  fieldKindsByGroup,
   uniqueFieldId,
   createCardTemplate,
   deleteCardTemplate,
@@ -42,14 +39,15 @@ describe('card fields', () => {
   it('creates fields with kind defaults and unique ids', () => {
     const stat = newField('stat', 'Health');
     expect(stat).toMatchObject({
-      kind: 'stat',
+      kind: 'number',
+      display: 'bar',
       label: 'Health',
       span: 12,
       min: 0,
       max: 100,
       defaultValue: 50,
     });
-    expect(newField('select', 'Rarity')).toMatchObject({
+    expect(newField('choice', 'Rarity')).toMatchObject({
       options: [{ value: 'Option 1' }, { value: 'Option 2' }],
     });
     expect(newField('divider', '').showLabel).toBe(false);
@@ -61,19 +59,26 @@ describe('card fields', () => {
     expect(coerceValue(field({ id: 'a', kind: 'text' }), 3)).toBeNull();
     expect(coerceValue(field({ id: 'a', kind: 'number' }), '12')).toBe(12);
     expect(coerceValue(field({ id: 'a', kind: 'number' }), 'x')).toBeNull();
-    expect(coerceValue(field({ id: 'a', kind: 'stat', min: 0, max: 10 }), 99)).toBe(10);
+    expect(coerceValue(field({ id: 'a', kind: 'number', display: 'bar', min: 0, max: 10 }), 99)).toBe(10);
     expect(coerceValue(field({ id: 'a', kind: 'checkbox' }), 'yes')).toBeNull();
     expect(coerceValue(field({ id: 'a', kind: 'checkbox' }), true)).toBe(true);
-    expect(coerceValue(field({ id: 'a', kind: 'tags' }), [' Fire ', '', 4, 'Ice'])).toEqual(['Fire', 'Ice']);
-    expect(coerceValue(field({ id: 'a', kind: 'select', options: ['A'] }), 'B')).toBeNull();
+    expect(
+      coerceValue(field({ id: 'a', kind: 'choice', multiple: true, allowNew: true }), [
+        ' Fire ',
+        '',
+        4,
+        'Ice',
+      ]),
+    ).toEqual(['Fire', 'Ice']);
+    expect(coerceValue(field({ id: 'a', kind: 'choice', options: ['A'] }), 'B')).toBeNull();
     expect(coerceValue(field({ id: 'a', kind: 'colour' }), '#ABCDEF')).toBe('#abcdef');
     expect(coerceValue(field({ id: 'a', kind: 'colour' }), 'red')).toBeNull();
-    expect(coerceValue(field({ id: 'a', kind: 'divider' }), 'x')).toBeNull();
+    expect(coerceValue(field({ id: 'a', kind: 'separator' }), 'x')).toBeNull();
     const withDefault = field({ id: 'hp', kind: 'number', defaultValue: 7 });
     expect(fieldValue(withDefault, {})).toBe(7);
     expect(fieldValue(withDefault, { hp: 3 })).toBe(3);
-    expect(statFraction(field({ id: 's', kind: 'stat', min: 0, max: 200 }), 50)).toBe(0.25);
-    expect(statFraction(field({ id: 's', kind: 'stat', min: 5, max: 5 }), 5)).toBe(0);
+    expect(statFraction(field({ id: 's', kind: 'number', display: 'bar', min: 0, max: 200 }), 50)).toBe(0.25);
+    expect(statFraction(field({ id: 's', kind: 'number', display: 'bar', min: 5, max: 5 }), 5)).toBe(0);
     const fields = [
       field({ id: 'a', kind: 'text' }),
       field({ id: 'b', kind: 'text' }),
@@ -91,37 +96,6 @@ describe('card fields', () => {
     expect(newField('text', 'Café Menu').id).toBe('cafe_menu');
     expect(newField('text', 'x'.repeat(80)).id.length).toBeLessThanOrEqual(64);
     expect(uniqueFieldId('Name', [{ id: 'name' }, { id: 'name_2' }])).toBe('name_3');
-  });
-
-  it('files every field kind under exactly one group', () => {
-    const grouped = fieldKindsByGroup();
-    const listed = grouped.flatMap((group) => group.kinds);
-    expect(new Set(listed).size).toBe(listed.length);
-    expect([...listed].sort()).toEqual([...CARD_FIELD_KINDS].sort());
-    expect(grouped.map((group) => group.group)).toEqual([...FIELD_GROUPS]);
-  });
-
-  it('changes a field kind but keeps its id, label, width and style', () => {
-    const text = field({
-      id: 'role',
-      kind: 'text',
-      label: 'Role',
-      span: 6,
-      placeholder: 'Who',
-      style: { weight: 'bold' },
-    });
-    const select = changeFieldKind(text, 'select');
-    expect(select).toMatchObject({
-      id: 'role',
-      kind: 'select',
-      label: 'Role',
-      span: 6,
-      style: { weight: 'bold' },
-      options: [{ value: 'Option 1' }, { value: 'Option 2' }],
-    });
-    expect(changeFieldKind(text, 'stat')).toMatchObject({ min: 0, max: 100, defaultValue: 50 });
-    expect(changeFieldKind(text, 'divider')).not.toHaveProperty('placeholder');
-    expect(changeFieldKind(text, 'text')).toBe(text);
   });
 
   it('ships valid starter and blank templates', () => {

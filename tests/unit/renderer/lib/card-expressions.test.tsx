@@ -49,7 +49,7 @@ describe('formulas', () => {
   it('works out formula fields from other fields, including other formulas', () => {
     const fields = [
       field({ id: 'level', kind: 'number' }),
-      field({ id: 'hp', kind: 'stat', min: 0, max: 100 }),
+      field({ id: 'hp', kind: 'number', display: 'bar', min: 0, max: 100 }),
       field({ id: 'ready', kind: 'checkbox' }),
       field({ id: 'power', kind: 'formula', expression: 'level * 2 + ready' }),
       field({ id: 'total', kind: 'formula', expression: 'power + hp' }),
@@ -84,7 +84,7 @@ describe('dice', () => {
 
 describe('visibility rules', () => {
   const fields = [
-    field({ id: 'role', kind: 'select', options: ['Hero', 'Boss'] }),
+    field({ id: 'role', kind: 'choice', options: ['Hero', 'Boss'] }),
     field({ id: 'level', kind: 'number' }),
     field({ id: 'phase', kind: 'text', visibleWhen: { field: 'role', op: 'equals', value: 'Boss' } }),
     field({ id: 'notRole', kind: 'text', visibleWhen: { field: 'role', op: 'notEquals', value: 'Boss' } }),
@@ -112,7 +112,7 @@ describe('visibility rules', () => {
 
 describe('new field values', () => {
   it('keeps ratings whole and within the maximum', () => {
-    const rating = field({ id: 'r', kind: 'rating', max: 5 });
+    const rating = field({ id: 'r', kind: 'number', display: 'symbols', max: 5 });
     expect(coerceValue(rating, 3.6)).toBe(4);
     expect(coerceValue(rating, 9)).toBe(5);
     expect(coerceValue(rating, -1)).toBe(0);
@@ -120,7 +120,7 @@ describe('new field values', () => {
   });
 
   it('orders a range and clamps it to the bounds', () => {
-    const range = field({ id: 'g', kind: 'range', min: 0, max: 10 });
+    const range = field({ id: 'g', kind: 'number', range: true, min: 0, max: 10 });
     expect(coerceValue(range, { min: 8, max: 2 })).toEqual({ min: 2, max: 8 });
     expect(coerceValue(range, { min: -5, max: 20 })).toEqual({ min: 0, max: 10 });
     expect(coerceValue(range, { min: 'a', max: 2 })).toBeNull();
@@ -138,7 +138,7 @@ describe('new field values', () => {
       { text: 'Key', done: true },
       { text: 'Door', done: false },
     ]);
-    const multi = field({ id: 'm', kind: 'multiSelect', options: ['Fire', 'Ice'] });
+    const multi = field({ id: 'm', kind: 'choice', multiple: true, options: ['Fire', 'Ice'] });
     expect(coerceValue(multi, ['Ice', 'Mud', 'Ice'])).toEqual(['Ice']);
     expect(coerceValue(multi, [])).toBeNull();
     const attributes = field({
@@ -157,8 +157,8 @@ describe('new field values', () => {
     expect(coerceValue(field({ id: 'i', kind: 'icon' }), 'x'.repeat(41))).toBeNull();
     expect(coerceValue(field({ id: 'w', kind: 'date' }), '2026-10-19')).toBe('2026-10-19');
     expect(coerceValue(field({ id: 'w', kind: 'date' }), '2026-13-40')).toBeNull();
-    expect(coerceValue(field({ id: 's', kind: 'staticText' }), 'x')).toBeNull();
-    expect(coerceValue(field({ id: 's', kind: 'select', options: ['A'] }), 'A')).toBe('A');
+    expect(coerceValue(field({ id: 's', kind: 'text', fixed: true }), 'x')).toBeNull();
+    expect(coerceValue(field({ id: 's', kind: 'choice', options: ['A'] }), 'A')).toBe('A');
     expect(fieldValue(field({ id: 'f', kind: 'formula', expression: '1' }), { f: 3 })).toBeNull();
   });
 });

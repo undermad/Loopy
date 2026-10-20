@@ -1,13 +1,12 @@
 import { createElement, useId } from 'react';
 import { Plus } from 'lucide-react';
-import type { CardFieldKind } from '@shared/cards';
-import { fieldKindsByGroup } from '@renderer/lib/cards';
+import { fieldPresetsByGroup, type FieldPresetId } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Button, DropdownMenu } from '@renderer/ui';
 import { FIELD_ICONS } from './fieldIcons';
 import styles from './CardDesigner.module.scss';
 
-export function FieldPicker({ label, onPick }: { label: string; onPick: (kind: CardFieldKind) => void }) {
+export function FieldPicker({ label, onPick }: { label: string; onPick: (preset: FieldPresetId) => void }) {
   const { t } = useTranslation('editors');
   const id = useId();
   return (
@@ -18,19 +17,19 @@ export function FieldPicker({ label, onPick }: { label: string; onPick: (kind: C
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Content align="end" className={styles['picker']}>
-        {fieldKindsByGroup().map(({ group, kinds }, index) => (
+        {fieldPresetsByGroup().map(({ group, presets }, index) => (
           <DropdownMenu.Group key={group} aria-labelledby={`${id}-${group}`}>
             {index > 0 ? <DropdownMenu.Separator /> : null}
             <DropdownMenu.Label id={`${id}-${group}`}>{t(`cards.groups.${group}`)}</DropdownMenu.Label>
-            {kinds.map((kind) => (
+            {presets.map(({ id: preset }) => (
               <DropdownMenu.Item
-                key={kind}
+                key={preset}
                 onSelect={() => {
-                  onPick(kind);
+                  onPick(preset);
                 }}
               >
-                {createElement(FIELD_ICONS[kind], { 'aria-hidden': true, className: styles['pickerIcon'] })}
-                {t(`cards.kinds.${kind}`)}
+                {createElement(FIELD_ICONS[preset], { 'aria-hidden': true, className: styles['pickerIcon'] })}
+                {t(`cards.presets.${preset}`)}
               </DropdownMenu.Item>
             ))}
           </DropdownMenu.Group>

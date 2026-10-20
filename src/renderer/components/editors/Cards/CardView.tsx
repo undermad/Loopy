@@ -2,7 +2,13 @@ import type { CSSProperties } from 'react';
 import { Info } from 'lucide-react';
 import type { CardValue } from '@shared/board';
 import { CARD_ZONES, type CardField, type CardLayout, type CardTextSize } from '@shared/cards';
-import { computeFormulas, fieldValue, isFieldVisible, type FormulaResult } from '@renderer/lib/cards';
+import {
+  computeFormulas,
+  fieldValue,
+  isFieldVisible,
+  presetOf,
+  type FormulaResult,
+} from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useResolvedColour } from '@renderer/lib/palettes';
 import { cx } from '@renderer/ui';
@@ -41,10 +47,9 @@ interface FieldBodyProps {
 
 function FieldBody({ field, value, result, editable, label, onChange }: FieldBodyProps) {
   const colour = useResolvedColour(field.style.colour ?? null);
-  const heading = field.kind === 'heading';
   const textStyle: CSSProperties = {
-    fontSize: field.style.size ? SIZES[field.style.size] : heading ? SIZES.lg : undefined,
-    fontWeight: field.style.weight ? WEIGHTS[field.style.weight] : heading ? 700 : undefined,
+    fontSize: field.style.size ? SIZES[field.style.size] : undefined,
+    fontWeight: field.style.weight ? WEIGHTS[field.style.weight] : undefined,
     color: colour ?? undefined,
     textAlign: field.style.align,
   };
@@ -67,7 +72,7 @@ export function CardView({
     .map((field) => ({ field, visible: !field.hidden && isFieldVisible(field, layout.fields, values) }))
     .filter(({ visible }) => showHidden || visible);
   const renderField = ({ field, visible }: { field: CardField; visible: boolean }) => {
-    const label = field.label || t(`cards.kinds.${field.kind}`);
+    const label = field.label || t(`cards.presets.${presetOf(field)}`);
     return (
       <div
         key={field.id}
@@ -88,7 +93,7 @@ export function CardView({
             : undefined
         }
       >
-        {field.showLabel && field.kind !== 'divider' ? (
+        {field.showLabel && field.kind !== 'separator' ? (
           <span className={styles['label']}>
             {label}
             {field.help ? (

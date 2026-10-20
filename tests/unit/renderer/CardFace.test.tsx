@@ -20,7 +20,7 @@ const layout = (input: Record<string, unknown> = {}): CardLayout => cardLayoutSc
 
 const rarity = field({
   id: 'rarity',
-  kind: 'select',
+  kind: 'choice',
   label: 'Rarity',
   options: ['Common', { value: 'Rare', colour: { hex: '#3b82f6', ref: null } }],
 });
@@ -83,8 +83,8 @@ describe('card layout model', () => {
 describe('card face', () => {
   it('puts fields in header, body and footer zones', () => {
     const fields = [
-      field({ id: 'title', kind: 'heading', zone: 'header' }),
-      field({ id: 'bio', kind: 'longText' }),
+      field({ id: 'title', kind: 'text', zone: 'header' }),
+      field({ id: 'bio', kind: 'text', lines: 'multi' }),
       field({ id: 'cost', kind: 'number', zone: 'footer' }),
     ];
     const { container } = render(<CardView layout={{ fields, gap: 4 }} values={{}} editable={false} />);
@@ -210,7 +210,7 @@ describe('card settings sections', () => {
     const onChange = vi.fn();
     render(
       <Providers>
-        <FieldSettings field={field({ id: 'title', kind: 'heading' })} onChange={onChange} />
+        <FieldSettings field={field({ id: 'title', kind: 'text' })} onChange={onChange} />
       </Providers>,
     );
     await pick(user, 'Zone', 'Header');

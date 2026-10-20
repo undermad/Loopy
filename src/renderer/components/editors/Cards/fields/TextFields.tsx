@@ -10,7 +10,14 @@ export function TextKindField({
   label,
   textStyle,
   onChange,
-}: FieldViewProps<FieldOf<'heading' | 'text' | 'longText'>>) {
+}: FieldViewProps<FieldOf<'text'>>) {
+  if (field.fixed) {
+    return (
+      <p className={cx(styles['static'], styles['staticText'])} style={textStyle}>
+        {field.text}
+      </p>
+    );
+  }
   const text = typeof value === 'string' ? value : '';
   if (!editable) {
     return (
@@ -24,19 +31,11 @@ export function TextKindField({
       <TextInput
         value={text}
         placeholder={field.placeholder}
-        multiline={field.kind === 'longText'}
+        multiline={field.lines === 'multi'}
         label={label}
         onCommit={onChange}
       />
     </div>
-  );
-}
-
-export function StaticTextField({ field, textStyle }: FieldViewProps<FieldOf<'staticText'>>) {
-  return (
-    <p className={cx(styles['static'], styles['staticText'])} style={textStyle}>
-      {field.text}
-    </p>
   );
 }
 

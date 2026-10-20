@@ -17,9 +17,7 @@ export function VisibilityRule({
 }) {
   const { t } = useTranslation('editors');
   const rule = field.visibleWhen;
-  const others = fields.filter(
-    (item) => item.id !== field.id && item.kind !== 'divider' && item.kind !== 'spacer',
-  );
+  const others = fields.filter((item) => item.id !== field.id && item.kind !== 'separator');
   return (
     <>
       <Field label={t('cards.showWhen')}>

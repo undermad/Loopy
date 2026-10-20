@@ -69,7 +69,7 @@ describe('field settings order', () => {
   it('keeps help text and hiding under advanced', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(settings(field({ id: 'bio', kind: 'longText', label: 'Bio' }), onChange));
+    render(settings(field({ id: 'bio', kind: 'text', lines: 'multi', label: 'Bio' }), onChange));
     expect(screen.queryByRole('textbox', { name: 'Help text' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Advanced' }));
     const help = screen.getByRole('textbox', { name: 'Help text' });
@@ -138,7 +138,7 @@ describe('new field kinds on the card', () => {
   it('rates with clickable symbols', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    const rating = field({ id: 'r', kind: 'rating', label: 'Fun', max: 5 });
+    const rating = field({ id: 'r', kind: 'number', display: 'symbols', label: 'Fun', max: 5 });
     const { rerender } = render(view([rating], { r: 2 }, true, onChange));
     await user.click(screen.getByRole('button', { name: 'Fun: 4 of 5' }));
     expect(onChange).toHaveBeenLastCalledWith('r', 4);
@@ -172,7 +172,13 @@ describe('new field kinds on the card', () => {
   it('toggles several choices', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    const multi = field({ id: 'm', kind: 'multiSelect', label: 'Elements', options: ['Fire', 'Ice'] });
+    const multi = field({
+      id: 'm',
+      kind: 'choice',
+      multiple: true,
+      label: 'Elements',
+      options: ['Fire', 'Ice'],
+    });
     const { rerender } = render(view([multi], { m: ['Ice'] }, true, onChange));
     expect(screen.getByRole('button', { name: 'Ice' })).toHaveAttribute('aria-pressed', 'true');
     await user.click(screen.getByRole('button', { name: 'Fire' }));
@@ -186,7 +192,7 @@ describe('new field kinds on the card', () => {
 
   it('edits a range and shows numbers per attribute', () => {
     const onChange = vi.fn();
-    const range = field({ id: 'g', kind: 'range', label: 'Gold', suffix: 'g' });
+    const range = field({ id: 'g', kind: 'number', range: true, label: 'Gold', suffix: 'g' });
     const stats = field({
       id: 'a',
       kind: 'attributes',
@@ -219,8 +225,8 @@ describe('new field kinds on the card', () => {
       field({ id: 'dmg', kind: 'dice', label: 'Damage' }),
       field({ id: 'power', kind: 'formula', label: 'Power', expression: 'atk * 2', suffix: ' pts' }),
       field({ id: 'broken', kind: 'formula', label: 'Broken', expression: 'atk *' }),
-      field({ id: 'rules', kind: 'staticText', text: 'Discard after use.' }),
-      field({ id: 'gap', kind: 'spacer', size: 24 }),
+      field({ id: 'rules', kind: 'text', fixed: true, text: 'Discard after use.' }),
+      field({ id: 'gap', kind: 'separator', line: false, size: 24 }),
     ];
     const { container } = render(view(fields, { atk: 3, dmg: '2d6+1' }, false));
     expect(screen.getByText('2d6+1')).toBeInTheDocument();
@@ -250,7 +256,7 @@ describe('new field kinds on the card', () => {
 
   it('hides a field while its rule does not hold', () => {
     const fields = [
-      field({ id: 'role', kind: 'select', label: 'Role', options: ['Hero', 'Boss'] }),
+      field({ id: 'role', kind: 'choice', label: 'Role', options: ['Hero', 'Boss'] }),
       field({
         id: 'phase',
         kind: 'text',
@@ -270,7 +276,7 @@ describe('new field kind settings', () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
-      settings(field({ id: 'r', kind: 'select', label: 'Rarity', options: ['Common', 'Rare'] }), onChange),
+      settings(field({ id: 'r', kind: 'choice', label: 'Rarity', options: ['Common', 'Rare'] }), onChange),
     );
     const first = screen.getByRole('textbox', { name: 'Choice 1' });
     fireEvent.change(first, { target: { value: 'Plain' } });
@@ -314,7 +320,7 @@ describe('new field kind settings', () => {
   it('sets a rule for when the field shows', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    const role = field({ id: 'role', kind: 'select', label: 'Role', options: ['Hero', 'Boss'] });
+    const role = field({ id: 'role', kind: 'choice', label: 'Role', options: ['Hero', 'Boss'] });
     const phase = field({ id: 'phase', kind: 'text', label: 'Phase' });
     const { rerender } = render(
       <Providers>
@@ -359,17 +365,17 @@ describe('new field kind settings', () => {
         { id: 'max_health', label: 'Max Health' },
       ],
     });
-    rerender(settings(field({ id: 'r', kind: 'rating' }), onChange));
+    rerender(settings(field({ id: 'r', kind: 'number', display: 'symbols' }), onChange));
     const max = screen.getByRole('spinbutton', { name: 'Maximum' });
     fireEvent.change(max, { target: { value: '20' } });
     fireEvent.blur(max);
     expect(onChange.mock.lastCall?.[0]).toMatchObject({ max: 10 });
-    rerender(settings(field({ id: 't', kind: 'staticText' }), onChange));
+    rerender(settings(field({ id: 't', kind: 'text', fixed: true }), onChange));
     const text = screen.getByRole('textbox', { name: 'Text' });
     fireEvent.change(text, { target: { value: 'Rules' } });
     fireEvent.blur(text);
     expect(onChange.mock.lastCall?.[0]).toMatchObject({ text: 'Rules' });
-    rerender(settings(field({ id: 's', kind: 'spacer' }), onChange));
+    rerender(settings(field({ id: 's', kind: 'separator', line: false }), onChange));
     const size = screen.getByRole('spinbutton', { name: 'Height' });
     fireEvent.change(size, { target: { value: '40' } });
     fireEvent.blur(size);

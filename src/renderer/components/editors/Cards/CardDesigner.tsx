@@ -36,7 +36,9 @@ import {
   duplicateSavedCard,
   moveField,
   newField,
+  presetOf,
   uniqueFieldId,
+  type FieldPresetId,
   resolveCardLayout,
   updateCardTemplate,
   updateSavedCard,
@@ -134,7 +136,7 @@ function FieldRow({
       >
         <GripVertical aria-hidden="true" />
       </button>
-      {createElement(FIELD_ICONS[field.kind], { 'aria-hidden': true, className: styles['fieldIcon'] })}
+      {createElement(FIELD_ICONS[presetOf(field)], { 'aria-hidden': true, className: styles['fieldIcon'] })}
       <button
         type="button"
         className={styles['fieldSelect']}
@@ -142,7 +144,7 @@ function FieldRow({
         onClick={onSelect}
       >
         <span className={styles['fieldName']}>{label}</span>
-        <span className={styles['fieldKind']}>{t(`cards.kinds.${field.kind}`)}</span>
+        <span className={styles['fieldKind']}>{t(`cards.presets.${presetOf(field)}`)}</span>
       </button>
       <IconButton
         label={t('cards.duplicateField', { label })}
@@ -323,9 +325,9 @@ function Designer({
     setSelectedFieldId(null);
   }
 
-  function addField(kind: CardField['kind']) {
+  function addField(preset: FieldPresetId) {
     if (!current.layout) return;
-    const field = newField(kind, t(`cards.kinds.${kind}`), current.layout.fields);
+    const field = newField(preset, t(`cards.presets.${preset}`), current.layout.fields);
     patchLayout({ fields: [...current.layout.fields, field] });
     setSelectedFieldId(field.id);
   }

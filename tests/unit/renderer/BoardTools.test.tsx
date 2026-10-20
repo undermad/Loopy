@@ -130,7 +130,7 @@ describe('board tools', () => {
       name: 'Hero',
       width: 280,
       height: 300,
-      fields: [{ id: 'name', kind: 'heading' }],
+      fields: [{ id: 'name', kind: 'text' }],
     });
     render(<Harness />);
     await screen.findByRole('toolbar', { name: 'Board tools' });

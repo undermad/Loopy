@@ -83,11 +83,11 @@ describe('card and image items', () => {
     const template = await createCardTemplate({
       name: 'Hero',
       fields: [
-        { id: 'name', kind: 'heading', label: 'Name' },
-        { id: 'rarity', kind: 'select', label: 'Rarity', options: ['Common', 'Rare'] },
-        { id: 'hp', kind: 'stat', label: 'HP', min: 0, max: 10, defaultValue: 4 },
+        { id: 'name', kind: 'text', label: 'Name' },
+        { id: 'rarity', kind: 'choice', label: 'Rarity', options: ['Common', 'Rare'] },
+        { id: 'hp', kind: 'number', display: 'bar', label: 'HP', min: 0, max: 10, defaultValue: 4 },
         { id: 'ready', kind: 'checkbox', label: 'Ready' },
-        { id: 'tags', kind: 'tags', label: 'Tags' },
+        { id: 'tags', kind: 'choice', multiple: true, allowNew: true, label: 'Tags' },
       ],
     });
     const node = createItem({
@@ -124,7 +124,9 @@ describe('card and image items', () => {
     await user.click(screen.getByRole('button', { name: 'Remove Fire' }));
     expect(updateNode).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ values: expect.objectContaining({ tags: [] }) as object }) as object,
+        data: expect.objectContaining({
+          values: expect.objectContaining({ tags: null }) as object,
+        }) as object,
       }) as object,
     );
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'Tags: Add a tag…' }), { key: 'Enter' });

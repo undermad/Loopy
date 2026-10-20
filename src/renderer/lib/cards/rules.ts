@@ -8,7 +8,7 @@ function numberOf(field: CardField, values: Readonly<Record<string, CardValue>>)
   const value = fieldValue(field, values);
   if (typeof value === 'number') return value;
   if (field.kind === 'checkbox') return value === true ? 1 : 0;
-  if (field.kind === 'number' || field.kind === 'stat' || field.kind === 'rating') return 0;
+  if (field.kind === 'number' && !field.range) return 0;
   return null;
 }
 
@@ -100,7 +100,8 @@ export function cardAccent(
   values: Readonly<Record<string, CardValue>>,
 ): ColourValue | null {
   const source = layout.fields.find((field) => field.id === layout.accentField);
-  if (source?.kind !== 'select') return layout.accent;
-  const chosen = fieldValue(source, values);
+  if (source?.kind !== 'choice') return layout.accent;
+  const value = fieldValue(source, values);
+  const chosen = Array.isArray(value) ? value[0] : value;
   return source.options.find((option) => option.value === chosen)?.colour ?? layout.accent;
 }

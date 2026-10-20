@@ -1,5 +1,5 @@
 import { cardFieldSchema, type CardField, type CardFieldKind } from '@shared/cards';
-import { FIELD_KINDS } from './kinds';
+import { FIELD_KINDS, findPreset, type FieldPresetId } from './kinds';
 
 const MAX_ID = 64;
 
@@ -22,20 +22,24 @@ export function uniqueFieldId(label: string, existing: Pick<CardField, 'id'>[], 
   return `${base}_${String(index)}`;
 }
 
+function presetFor(source: FieldPresetId | CardFieldKind) {
+  return findPreset(source === 'separator' ? FIELD_KINDS.separator.preset : source);
+}
+
 export function newField(
-  kind: CardFieldKind,
+  source: FieldPresetId | CardFieldKind,
   label: string,
   existing: Pick<CardField, 'id'>[] = [],
 ): CardField {
-  const id = uniqueFieldId(label, existing, kind);
-  const definition = FIELD_KINDS[kind];
-  return cardFieldSchema.parse({ id, kind, label, span: definition.span, ...definition.defaults });
+  const preset = presetFor(source);
+  const id = uniqueFieldId(label, existing, preset.id);
+  return cardFieldSchema.parse({ id, kind: preset.kind, label, span: preset.span, ...preset.defaults });
 }
 
 export function changeFieldKind(field: CardField, kind: CardFieldKind): CardField {
   if (field.kind === kind) return field;
-  const { id, label, showLabel, span, style } = field;
-  return cardFieldSchema.parse({ id, label, showLabel, span, style, kind, ...FIELD_KINDS[kind].defaults });
+  const { kind: _old, ...shared } = field;
+  return cardFieldSchema.parse({ ...presetFor(kind).defaults, ...shared, kind });
 }
 
 export function moveField(fields: CardField[], from: number, to: number): CardField[] {

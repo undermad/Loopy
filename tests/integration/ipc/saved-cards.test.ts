@@ -44,7 +44,7 @@ async function template(call: ReturnType<typeof setup>): Promise<CardTemplate> {
     name: 'Character',
     width: 280,
     fields: [
-      { id: 'name', kind: 'heading' },
+      { id: 'name', kind: 'text' },
       { id: 'home', kind: 'link', linkKinds: ['board'] },
     ],
   });

@@ -103,7 +103,7 @@ describe('item properties', () => {
     const board = await openBoard();
     const template = await createCardTemplate({
       name: 'Hero',
-      fields: [{ id: 'name', kind: 'heading', label: 'Name' }],
+      fields: [{ id: 'name', kind: 'text', label: 'Name' }],
     });
     const frame = {
       ...createItem({ boardId: board.id, preset: 'container', rect: { x: 0, y: 0 }, z: 1 }),

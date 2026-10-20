@@ -193,7 +193,7 @@ function BackgroundSection({ draft, onChange }: { draft: TemplateDraft; onChange
 
 function AccentSection({ draft, onChange }: { draft: TemplateDraft; onChange: Patch }) {
   const { t } = useTranslation('editors');
-  const choices = draft.fields.filter((field) => field.kind === 'select');
+  const choices = draft.fields.filter((field) => field.kind === 'choice');
   return (
     <PropertySection title={t('cards.sections.accent')}>
       <ColourRow

@@ -122,7 +122,7 @@ describe('card designer', () => {
 
   it('edits, duplicates and deletes an existing template', async () => {
     const user = userEvent.setup();
-    const template = await createCardTemplate({ name: 'Item', fields: [{ id: 'name', kind: 'heading' }] });
+    const template = await createCardTemplate({ name: 'Item', fields: [{ id: 'name', kind: 'text' }] });
     render(<Stateful editor={CardDesigner} initial={{ target: { kind: 'template', id: template.id } }} />);
     const name = await screen.findByRole('textbox', { name: 'Template name' });
     await user.clear(name);
@@ -150,7 +150,7 @@ describe('card designer', () => {
     const onState = vi.fn();
     const template = await createCardTemplate({
       name: 'Hero',
-      fields: [{ id: 'title', kind: 'heading', label: 'Title' }],
+      fields: [{ id: 'title', kind: 'text', label: 'Title' }],
     });
     render(
       <Stateful
@@ -188,7 +188,7 @@ describe('card designer', () => {
     await user.click(screen.getByRole('button', { name: 'Save card' }));
     const created = vi.mocked(api.createCard).mock.calls[0]?.[0];
     expect(created?.templateId).toBeNull();
-    expect(created?.layout?.fields?.map((field) => field.kind)).toEqual(['heading', 'longText', 'number']);
+    expect(created?.layout?.fields?.map((field) => field.kind)).toEqual(['text', 'text', 'number']);
     expect(onState).toHaveBeenLastCalledWith({ target: { kind: 'card', id: 'card-1' } });
 
     await user.click(await screen.findByRole('button', { name: 'Save as template' }));
@@ -198,7 +198,7 @@ describe('card designer', () => {
 
   it('detaches a card from its template so its layout can change', async () => {
     const user = userEvent.setup();
-    const template = await createCardTemplate({ name: 'Hero', fields: [{ id: 'title', kind: 'heading' }] });
+    const template = await createCardTemplate({ name: 'Hero', fields: [{ id: 'title', kind: 'text' }] });
     const card = await createSavedCard({ name: 'Knight', templateId: template.id });
     render(<Stateful editor={CardDesigner} initial={{ target: { kind: 'card', id: card.id } }} />);
     await user.click(await screen.findByRole('combobox', { name: 'Template' }));
@@ -220,11 +220,11 @@ describe('card designer', () => {
   it('duplicates a card and moves it to another template', async () => {
     const user = userEvent.setup();
     const onState = vi.fn();
-    const hero = await createCardTemplate({ name: 'Hero', fields: [{ id: 'title', kind: 'heading' }] });
-    await createCardTemplate({ name: 'Villain', fields: [{ id: 'title', kind: 'heading' }] });
+    const hero = await createCardTemplate({ name: 'Hero', fields: [{ id: 'title', kind: 'text' }] });
+    await createCardTemplate({ name: 'Villain', fields: [{ id: 'title', kind: 'text' }] });
     const card = await createSavedCard({
       name: 'Knight',
-      layout: { fields: [{ id: 'title', kind: 'heading' }] },
+      layout: { fields: [{ id: 'title', kind: 'text' }] },
     });
     render(
       <Stateful
@@ -247,7 +247,7 @@ describe('card designer', () => {
   it('starts a card from a template on the start screen', async () => {
     const user = userEvent.setup();
     const onState = vi.fn();
-    await createCardTemplate({ name: 'Hero', fields: [{ id: 'title', kind: 'heading', label: 'Title' }] });
+    await createCardTemplate({ name: 'Hero', fields: [{ id: 'title', kind: 'text', label: 'Title' }] });
     render(<Stateful editor={CardDesigner} onState={onState} />);
     await user.click(await screen.findByRole('button', { name: 'Hero card' }));
     await user.click(screen.getByRole('button', { name: 'Save card' }));
@@ -261,7 +261,7 @@ describe('card designer', () => {
     const onState = vi.fn();
     const template = await createCardTemplate({
       name: 'Hero',
-      fields: [{ id: 'title', kind: 'heading', label: 'Title' }],
+      fields: [{ id: 'title', kind: 'text', label: 'Title' }],
     });
     const board = await createBoard({ name: 'Castle' });
     await loadBoard(board.id);

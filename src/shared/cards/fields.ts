@@ -9,29 +9,20 @@ import {
 import { colourValueSchema } from '../colours';
 
 export const CARD_FIELD_KINDS = [
-  'heading',
   'text',
-  'longText',
-  'staticText',
   'date',
   'number',
-  'stat',
-  'rating',
-  'range',
   'attributes',
   'formula',
   'dice',
-  'select',
-  'multiSelect',
+  'choice',
   'checkbox',
-  'tags',
   'checklist',
   'image',
   'icon',
   'colour',
   'link',
-  'divider',
-  'spacer',
+  'separator',
 ] as const;
 
 export const CARD_SPANS = [12, 9, 8, 6, 4, 3] as const;
@@ -39,6 +30,8 @@ export const CARD_TEXT_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 export const CARD_MAX_OPTIONS = 30;
 export const CARD_MAX_ROWS = 20;
 export const RATING_SYMBOLS = ['star', 'heart', 'circle', 'pip'] as const;
+export const NUMBER_DISPLAYS = ['number', 'bar', 'symbols'] as const;
+export const TEXT_LINES = ['single', 'multi'] as const;
 export const CARD_ZONES = ['header', 'body', 'footer'] as const;
 export const VISIBILITY_OPS = ['filled', 'empty', 'equals', 'notEquals', 'above', 'below'] as const;
 
@@ -77,8 +70,6 @@ const base = {
 const fallback = <T extends z.ZodType>(schema: T) => schema.nullable().default(null).catch(null);
 
 const textDefault = fallback(z.string().max(5000));
-const numberDefault = fallback(z.number());
-const listDefault = fallback(z.array(z.string().max(80)).max(50));
 const placeholder = z.string().max(120).default('');
 const bound = z.number().nullable().default(null);
 const affix = z.string().max(12).default('');
@@ -93,18 +84,14 @@ export const choiceOptionSchema = z.preprocess(
 
 const options = z.array(choiceOptionSchema).max(CARD_MAX_OPTIONS).default([]);
 
-const textKind = <K extends 'heading' | 'text' | 'longText'>(kind: K) =>
-  z.object({ ...base, kind: z.literal(kind), placeholder, defaultValue: textDefault });
-
-export const headingFieldSchema = textKind('heading');
-export const textFieldSchema = textKind('text');
-export const longTextFieldSchema = textKind('longText');
-
-export const staticTextFieldSchema = z.object({
+export const textFieldSchema = z.object({
   ...base,
-  kind: z.literal('staticText'),
-  showLabel: z.boolean().default(false),
+  kind: z.literal('text'),
+  lines: z.enum(TEXT_LINES).default('single'),
+  fixed: z.boolean().default(false),
   text: z.string().max(2000).default(''),
+  placeholder,
+  defaultValue: textDefault,
 });
 
 export const dateFieldSchema = z.object({
@@ -116,39 +103,14 @@ export const dateFieldSchema = z.object({
 export const numberFieldSchema = z.object({
   ...base,
   kind: z.literal('number'),
-  min: bound,
-  max: bound,
-  prefix: affix,
-  suffix: affix,
-  defaultValue: numberDefault,
-});
-
-export const statFieldSchema = z.object({
-  ...base,
-  kind: z.literal('stat'),
-  min: bound,
-  max: bound,
-  prefix: affix,
-  suffix: affix,
-  defaultValue: numberDefault,
-});
-
-export const ratingFieldSchema = z.object({
-  ...base,
-  kind: z.literal('rating'),
-  max: z.number().int().min(1).max(10).default(5),
+  display: z.enum(NUMBER_DISPLAYS).default('number'),
   symbol: z.enum(RATING_SYMBOLS).default('star'),
-  defaultValue: numberDefault,
-});
-
-export const rangeFieldSchema = z.object({
-  ...base,
-  kind: z.literal('range'),
+  range: z.boolean().default(false),
   min: bound,
   max: bound,
   prefix: affix,
   suffix: affix,
-  defaultValue: fallback(numberRangeSchema),
+  defaultValue: fallback(z.union([z.number(), numberRangeSchema])),
 });
 
 export const attributeRowSchema = z.object({
@@ -178,19 +140,14 @@ export const diceFieldSchema = z.object({
   defaultValue: fallback(z.string().max(40)),
 });
 
-export const selectFieldSchema = z.object({
+export const choiceFieldSchema = z.object({
   ...base,
-  kind: z.literal('select'),
+  kind: z.literal('choice'),
+  multiple: z.boolean().default(false),
+  allowNew: z.boolean().default(false),
   placeholder,
   options,
-  defaultValue: textDefault,
-});
-
-export const multiSelectFieldSchema = z.object({
-  ...base,
-  kind: z.literal('multiSelect'),
-  options,
-  defaultValue: listDefault,
+  defaultValue: fallback(z.union([z.string().max(80), z.array(z.string().max(80)).max(50)])),
 });
 
 export const checkboxFieldSchema = z.object({
@@ -198,8 +155,6 @@ export const checkboxFieldSchema = z.object({
   kind: z.literal('checkbox'),
   defaultValue: fallback(z.boolean()),
 });
-
-export const tagsFieldSchema = z.object({ ...base, kind: z.literal('tags'), defaultValue: listDefault });
 
 export const checklistFieldSchema = z.object({
   ...base,
@@ -228,43 +183,29 @@ export const linkFieldSchema = z.object({
   multiple: z.boolean().default(false),
 });
 
-export const dividerFieldSchema = z.object({
+export const separatorFieldSchema = z.object({
   ...base,
-  kind: z.literal('divider'),
+  kind: z.literal('separator'),
   showLabel: z.boolean().default(false),
-});
-
-export const spacerFieldSchema = z.object({
-  ...base,
-  kind: z.literal('spacer'),
-  showLabel: z.boolean().default(false),
+  line: z.boolean().default(true),
   size: z.number().min(4).max(200).default(16),
 });
 
 export const cardFieldSchema = z.discriminatedUnion('kind', [
-  headingFieldSchema,
   textFieldSchema,
-  longTextFieldSchema,
-  staticTextFieldSchema,
   dateFieldSchema,
   numberFieldSchema,
-  statFieldSchema,
-  ratingFieldSchema,
-  rangeFieldSchema,
   attributesFieldSchema,
   formulaFieldSchema,
   diceFieldSchema,
-  selectFieldSchema,
-  multiSelectFieldSchema,
+  choiceFieldSchema,
   checkboxFieldSchema,
-  tagsFieldSchema,
   checklistFieldSchema,
   imageFieldSchema,
   iconFieldSchema,
   colourFieldSchema,
   linkFieldSchema,
-  dividerFieldSchema,
-  spacerFieldSchema,
+  separatorFieldSchema,
 ]);
 
 export type CardFieldKind = z.infer<typeof cardFieldKindSchema>;

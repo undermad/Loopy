@@ -20,17 +20,41 @@ function ChoiceBadge({ option, style }: { option: ChoiceOption | undefined; styl
   );
 }
 
-export function SelectField({
-  field,
-  value,
-  editable,
-  label,
-  textStyle,
-  onChange,
-}: FieldViewProps<FieldOf<'select'>>) {
+function strings(value: unknown): string[] {
+  if (typeof value === 'string') return [value];
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function SingleChoice({ field, value, label, textStyle, onChange }: FieldViewProps<FieldOf<'choice'>>) {
   const text = typeof value === 'string' ? value : '';
-  if (!editable) {
-    return <ChoiceBadge option={field.options.find((option) => option.value === text)} style={textStyle} />;
+  if (field.allowNew) {
+    const list = `${field.id}-choices`;
+    return (
+      <>
+        <input
+          className={cx(INTERACTIVE, styles['input'])}
+          style={textStyle}
+          defaultValue={text}
+          key={text}
+          list={list}
+          placeholder={field.placeholder}
+          aria-label={label}
+          onKeyDown={(event) => {
+            event.stopPropagation();
+            if (event.key === 'Enter') event.currentTarget.blur();
+          }}
+          onBlur={(event) => {
+            const next = event.target.value.trim();
+            if (next !== text) onChange(next || null);
+          }}
+        />
+        <datalist id={list}>
+          {field.options.map((option) => (
+            <option key={option.value} value={option.value} />
+          ))}
+        </datalist>
+      </>
+    );
   }
   return (
     <select
@@ -53,29 +77,15 @@ export function SelectField({
   );
 }
 
-export function MultiSelectField({
-  field,
-  value,
-  editable,
-  label,
-  textStyle,
-  onChange,
-}: FieldViewProps<FieldOf<'multiSelect'>>) {
-  const picked = Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-  if (!editable) {
-    return (
-      <span className={styles['tags']} role="list" aria-label={label}>
-        {picked.length === 0 ? <span className={styles['empty']}>–</span> : null}
-        {field.options
-          .filter((option) => picked.includes(option.value))
-          .map((option) => (
-            <span key={option.value} role="listitem">
-              <ChoiceBadge option={option} style={textStyle} />
-            </span>
-          ))}
-      </span>
-    );
-  }
+function MultipleChoice({ field, value, label, textStyle, onChange }: FieldViewProps<FieldOf<'choice'>>) {
+  const { t } = useTranslation('editors');
+  const picked = strings(value);
+  const known = field.options.map((option) => option.value);
+  const extra = picked.filter((item) => !known.includes(item));
+  const [draft, setDraft] = useState('');
+  const commit = (next: string[]) => {
+    onChange(next.length > 0 ? next : null);
+  };
   return (
     <span className={styles['tags']} role="group" aria-label={label}>
       {field.options.map((option) => {
@@ -88,14 +98,70 @@ export function MultiSelectField({
             style={textStyle}
             aria-pressed={on}
             onClick={() => {
-              const next = on ? picked.filter((item) => item !== option.value) : [...picked, option.value];
-              onChange(next.length > 0 ? next : null);
+              commit(on ? picked.filter((item) => item !== option.value) : [...picked, option.value]);
             }}
           >
             {option.value}
           </button>
         );
       })}
+      {extra.map((tag) => (
+        <span key={tag} className={styles['tag']}>
+          {tag}
+          <button
+            type="button"
+            className={cx(INTERACTIVE, styles['tagRemove'])}
+            aria-label={t('cards.removeTag', { tag })}
+            onClick={() => {
+              commit(picked.filter((item) => item !== tag));
+            }}
+          >
+            <X aria-hidden="true" />
+          </button>
+        </span>
+      ))}
+      {field.allowNew ? (
+        <input
+          className={cx(INTERACTIVE, styles['tagInput'])}
+          value={draft}
+          placeholder={t('cards.addTag')}
+          aria-label={`${label}: ${t('cards.addTag')}`}
+          onChange={(event) => {
+            setDraft(event.target.value);
+          }}
+          onKeyDown={(event) => {
+            event.stopPropagation();
+            const next = draft.trim().slice(0, 80);
+            if (event.key === 'Enter' && next) {
+              event.preventDefault();
+              if (!picked.includes(next)) commit([...picked, next]);
+              setDraft('');
+            }
+          }}
+        />
+      ) : null}
+    </span>
+  );
+}
+
+export function ChoiceField(props: FieldViewProps<FieldOf<'choice'>>) {
+  const { field, value, editable, label, textStyle } = props;
+  if (editable) return field.multiple ? <MultipleChoice {...props} /> : <SingleChoice {...props} />;
+  const picked = strings(value);
+  const optionFor = (item: string) =>
+    field.options.find((option) => option.value === item) ?? { value: item, colour: null };
+  if (!field.multiple) {
+    const first = picked[0];
+    return <ChoiceBadge option={first === undefined ? undefined : optionFor(first)} style={textStyle} />;
+  }
+  return (
+    <span className={styles['tags']} role="list" aria-label={label}>
+      {picked.length === 0 ? <span className={styles['empty']}>–</span> : null}
+      {picked.map((item) => (
+        <span key={item} role="listitem">
+          <ChoiceBadge option={optionFor(item)} style={textStyle} />
+        </span>
+      ))}
     </span>
   );
 }
@@ -122,52 +188,6 @@ export function CheckboxField({
       />
       <span>{value === true ? t('cards.yes') : t('cards.no')}</span>
     </label>
-  );
-}
-
-export function TagsField({ value, editable, label, onChange }: FieldViewProps<FieldOf<'tags'>>) {
-  const { t } = useTranslation('editors');
-  const tags = Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-  const [draft, setDraft] = useState('');
-  return (
-    <div className={styles['tags']} aria-label={label} role="list">
-      {tags.map((tag) => (
-        <span key={tag} className={styles['tag']} role="listitem">
-          {tag}
-          {editable ? (
-            <button
-              type="button"
-              className={cx(INTERACTIVE, styles['tagRemove'])}
-              aria-label={t('cards.removeTag', { tag })}
-              onClick={() => {
-                onChange(tags.filter((item) => item !== tag));
-              }}
-            >
-              <X aria-hidden="true" />
-            </button>
-          ) : null}
-        </span>
-      ))}
-      {editable ? (
-        <input
-          className={cx(INTERACTIVE, styles['tagInput'])}
-          value={draft}
-          placeholder={t('cards.addTag')}
-          aria-label={`${label}: ${t('cards.addTag')}`}
-          onChange={(event) => {
-            setDraft(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            event.stopPropagation();
-            if (event.key === 'Enter' && draft.trim()) {
-              event.preventDefault();
-              if (!tags.includes(draft.trim())) onChange([...tags, draft.trim()]);
-              setDraft('');
-            }
-          }}
-        />
-      ) : null}
-    </div>
   );
 }
 

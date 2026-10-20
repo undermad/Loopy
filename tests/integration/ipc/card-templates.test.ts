@@ -60,9 +60,9 @@ describe('card templates IPC handlers', () => {
     const template = await call<CardTemplate>(IpcChannel.cardTemplatesCreate, {
       name: 'Character',
       fields: [
-        { id: 'name', kind: 'heading', label: 'Name', span: 9 },
-        { id: 'rarity', kind: 'select', label: 'Rarity', span: 3, options: ['Common', 'Rare'] },
-        { id: 'hp', kind: 'stat', label: 'HP', min: 0, max: 100, defaultValue: 50 },
+        { id: 'name', kind: 'text', label: 'Name', span: 9 },
+        { id: 'rarity', kind: 'choice', label: 'Rarity', span: 3, options: ['Common', 'Rare'] },
+        { id: 'hp', kind: 'number', display: 'bar', label: 'HP', min: 0, max: 100, defaultValue: 50 },
       ],
     });
     expect(template).toMatchObject({ name: 'Character', width: 320, height: 360, gap: 8, accent: null });
@@ -80,7 +80,7 @@ describe('card templates IPC handlers', () => {
     const resized = await call<CardTemplate>(IpcChannel.cardTemplatesUpdate, template.id, {
       width: 400,
       accent: { hex: '#ff0000', ref: null },
-      fields: [{ id: 'name', kind: 'heading' }],
+      fields: [{ id: 'name', kind: 'text' }],
     });
     expect(resized).toMatchObject({ name: 'Hero', width: 400, accent: { hex: '#ff0000' } });
     expect(resized.fields.map((field) => field.id)).toEqual(['name']);

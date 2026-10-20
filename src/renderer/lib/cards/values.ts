@@ -44,8 +44,40 @@ function none(): null {
   return null;
 }
 
-function optionValues(field: FieldOf<'select' | 'multiSelect'>): string[] {
+function optionValues(field: FieldOf<'choice'>): string[] {
   return field.options.map((option) => option.value);
+}
+
+export function symbolCount(field: FieldOf<'number'>): number {
+  return Math.min(10, Math.max(1, Math.round(field.max ?? 5)));
+}
+
+function numberRange(field: FieldOf<'number'>, raw: unknown): CardValue {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
+  const low = toNumber((raw as Record<string, unknown>)['min']);
+  const high = toNumber((raw as Record<string, unknown>)['max']);
+  if (low === null || high === null) return null;
+  return {
+    min: clampTo(Math.min(low, high), field.min, field.max),
+    max: clampTo(Math.max(low, high), field.min, field.max),
+  };
+}
+
+function number(field: FieldOf<'number'>, raw: unknown): CardValue {
+  if (field.range) return numberRange(field, raw);
+  const value = toNumber(raw);
+  if (value === null) return null;
+  if (field.display === 'symbols') return clampTo(Math.round(value), 0, symbolCount(field));
+  if (field.display === 'bar') return clampTo(value, field.min ?? 0, field.max ?? 100);
+  return clampTo(value, field.min, field.max);
+}
+
+function choice(field: FieldOf<'choice'>, raw: unknown): CardValue {
+  const known = optionValues(field);
+  const fits = (item: string) => field.allowNew || known.includes(item);
+  const picked = [...new Set(list(typeof raw === 'string' ? [raw] : raw) ?? [])].filter(fits);
+  if (field.multiple) return picked.length > 0 ? picked : null;
+  return picked[0] ?? null;
 }
 
 function links(field: FieldOf<'link'>, raw: unknown): CardValue {
@@ -72,33 +104,9 @@ function checklist(raw: unknown): ChecklistItem[] | null {
 type ValueRules = { [K in CardFieldKind]: (field: FieldOf<K>, raw: unknown) => CardValue };
 
 const VALUE_RULES: ValueRules = {
-  heading: (_field, raw) => text(raw),
-  text: (_field, raw) => text(raw),
-  longText: (_field, raw) => text(raw),
-  staticText: none,
+  text: (field, raw) => (field.fixed ? null : text(raw)),
   date: (_field, raw) => (typeof raw === 'string' && ISO_DATE.test(raw) ? raw : null),
-  number: (field, raw) => {
-    const value = toNumber(raw);
-    return value === null ? null : clampTo(value, field.min, field.max);
-  },
-  stat: (field, raw) => {
-    const value = toNumber(raw);
-    return value === null ? null : clampTo(value, field.min ?? 0, field.max ?? 100);
-  },
-  rating: (field, raw) => {
-    const value = toNumber(raw);
-    return value === null ? null : clampTo(Math.round(value), 0, field.max);
-  },
-  range: (field, raw) => {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
-    const low = toNumber((raw as Record<string, unknown>)['min']);
-    const high = toNumber((raw as Record<string, unknown>)['max']);
-    if (low === null || high === null) return null;
-    return {
-      min: clampTo(Math.min(low, high), field.min, field.max),
-      max: clampTo(Math.max(low, high), field.min, field.max),
-    };
-  },
+  number,
   attributes: (field, raw) => {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
     const entries = field.rows.flatMap((row) => {
@@ -109,21 +117,14 @@ const VALUE_RULES: ValueRules = {
   },
   formula: none,
   dice: (_field, raw) => (typeof raw === 'string' ? (parseDice(raw)?.notation ?? null) : null),
-  select: (field, raw) => (typeof raw === 'string' && optionValues(field).includes(raw) ? raw : null),
-  multiSelect: (field, raw) => {
-    const known = optionValues(field);
-    const picked = [...new Set(list(raw) ?? [])].filter((item) => known.includes(item));
-    return picked.length > 0 ? picked : null;
-  },
+  choice,
   checkbox: (_field, raw) => (typeof raw === 'boolean' ? raw : null),
-  tags: (_field, raw) => list(raw),
   checklist: (_field, raw) => checklist(raw),
   image: (_field, raw) => text(raw),
   icon: (_field, raw) => (typeof raw === 'string' && raw !== '' && raw.length <= 40 ? raw : null),
   colour: (_field, raw) => (typeof raw === 'string' && HEX.test(raw) ? raw.toLowerCase() : null),
   link: links,
-  divider: none,
-  spacer: none,
+  separator: none,
 };
 
 export function coerceValue(field: CardField, raw: unknown): CardValue {
