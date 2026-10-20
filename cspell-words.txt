@@ -34,8 +34,10 @@ lucide
 lycheeverse
 markdownlint
 maximizable
+mcpb
 minimap
 minimizable
+modelcontextprotocol
 moodboards
 nocase
 nodrag
