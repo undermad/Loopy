@@ -27,6 +27,7 @@ const NAMES = {
   assets: 'Assets',
   ideas: 'Idea Map',
   cards: 'Cards',
+  tables: 'Data tables',
 };
 
 function areasOf(node: LayoutNode): { id: string; editor: string; state: Record<string, unknown> }[] {

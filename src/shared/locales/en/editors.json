@@ -680,7 +680,8 @@
       "board": "Boards",
       "palette": "Palettes",
       "note": "Notes",
-      "card": "Cards"
+      "card": "Cards",
+      "table": "Data tables"
     },
     "groups": {
       "text": "Text",
@@ -822,8 +823,11 @@
       "palette": "Colour palette",
       "asset": "File",
       "note": "Note",
-      "card": "Card"
-    }
+      "card": "Card",
+      "table": "Data table"
+    },
+    "rows_one": "{{count}} row",
+    "rows_other": "{{count}} rows"
   },
   "drawing": {
     "layerName": "Drawing {{count}}",

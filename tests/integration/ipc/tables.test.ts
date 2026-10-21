@@ -7,6 +7,7 @@ import type { DataTable, DataTableSummary, RowChanges, TableSnapshot } from '@sh
 import { registerTablesHandlers } from '../../../src/main/ipc/tables';
 import { createProject, type ProjectDatabase } from '../../../src/main/storage';
 import { createFolder, deleteFolder } from '../../../src/main/storage/assets-repository';
+import { createNote, listNotes } from '../../../src/main/storage/notes-repository';
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown;
 
@@ -184,6 +185,16 @@ describe('tables IPC handlers', () => {
 
     await expect(call(IpcChannel.tablesDelete, table.id)).resolves.toEqual([]);
     expect(project.db.prepare('SELECT COUNT(*) AS count FROM data_rows').get()).toEqual({ count: 0 });
+  });
+
+  it('rewrites note links when a table is renamed', async () => {
+    const call = setup();
+    const { table } = await items(call);
+    createNote(project.db, { title: 'Balance', body: 'See [[table:Items]] for numbers.' });
+
+    await call(IpcChannel.tablesUpdate, table.id, { name: 'Weapons' });
+
+    expect(listNotes(project.db)[0]?.body).toBe('See [[table:Weapons]] for numbers.');
   });
 
   it('fails without an open project', async () => {

@@ -1,0 +1,229 @@
+@use '../../../styles/mixins' as *;
+
+.grid {
+  position: relative;
+  height: 100%;
+  background: var(--color-surface);
+  font-size: var(--font-size-sm);
+  outline: none;
+  overflow: auto;
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--color-focus);
+  }
+}
+
+.row {
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  height: var(--row-height);
+  grid-template-columns: var(--columns);
+}
+
+.header {
+  position: sticky;
+  height: 34px;
+  background: var(--color-surface-sunken);
+  z-index: 2;
+  top: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.headerCell {
+  @include row(0);
+
+  position: relative;
+  min-width: 0;
+  color: var(--color-fg-muted);
+  font-weight: 600;
+  padding-left: var(--space-2);
+  border-right: 1px solid var(--color-border);
+
+  &:first-child {
+    position: sticky;
+    background: var(--color-surface-sunken);
+    z-index: 1;
+    left: 0;
+  }
+}
+
+.activeColumn {
+  box-shadow: inset 0 -2px 0 var(--color-accent);
+}
+
+.sort {
+  @include row(var(--space-1));
+
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  flex: 1;
+  text-align: left;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex: none;
+  }
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings {
+  flex: none;
+  opacity: 0;
+
+  .headerCell:hover &,
+  .headerCell:focus-within &,
+  .activeColumn & {
+    opacity: 1;
+  }
+}
+
+.resize {
+  position: absolute;
+  width: 6px;
+  cursor: col-resize;
+  top: 0;
+  right: -3px;
+  bottom: 0;
+}
+
+.body {
+  position: relative;
+
+  .row {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+}
+
+.cell {
+  @include row(var(--space-1));
+
+  min-width: 0;
+  padding: 0 var(--space-2);
+  background: var(--color-surface);
+  color: var(--color-fg);
+  cursor: cell;
+  overflow: hidden;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keyCell {
+  position: sticky;
+  background: var(--color-surface-sunken);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  z-index: 1;
+  left: 0;
+}
+
+.computed {
+  color: var(--color-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.selected {
+  background: color-mix(in srgb, var(--color-selection) 45%, var(--color-surface));
+}
+
+.focused {
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.invalid {
+  box-shadow: inset 0 -2px 0 var(--color-danger);
+}
+
+.focused.invalid {
+  box-shadow:
+    inset 0 0 0 2px var(--color-accent),
+    inset 0 -4px 0 var(--color-danger);
+}
+
+.dropTarget {
+  box-shadow: inset 0 0 0 2px var(--color-success);
+}
+
+.editor {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+.checkbox {
+  margin: 0;
+  cursor: pointer;
+}
+
+.chips {
+  @include row(var(--space-1));
+
+  overflow: hidden;
+}
+
+.chip {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-hover);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+.missing {
+  color: var(--color-danger);
+}
+
+.error {
+  color: var(--color-danger);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+}
+
+.colour {
+  @include row(var(--space-1));
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.image {
+  @include row(var(--space-1));
+
+  overflow: hidden;
+
+  img {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+  }
+}

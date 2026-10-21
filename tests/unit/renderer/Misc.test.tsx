@@ -32,7 +32,7 @@ describe('remaining branches', () => {
     expect(await screen.findByText('Empty area')).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: ' ', code: 'Space', ctrlKey: true });
-    expect(screen.getAllByRole('tab')).toHaveLength(6);
+    expect(screen.getAllByRole('tab')).toHaveLength(7);
   });
 
   it('reports an imported layout from the Window menu', async () => {

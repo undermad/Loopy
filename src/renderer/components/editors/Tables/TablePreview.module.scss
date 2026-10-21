@@ -1,0 +1,37 @@
+.preview {
+  max-height: 100%;
+  font-size: var(--font-size-xs);
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    max-width: 160px;
+    padding: 2px var(--space-1);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  thead th {
+    background: var(--color-surface-sunken);
+    color: var(--color-fg-muted);
+    font-weight: 600;
+  }
+
+  tbody th {
+    font-family: var(--font-family-mono);
+    font-weight: 400;
+  }
+}
+
+.more {
+  margin: var(--space-1) 0 0;
+  color: var(--color-fg-muted);
+}

@@ -160,13 +160,13 @@ An item's `data` holds a shared base and its own content. The base is `style`, `
 | `icon`      | `icon`, one of the game icons, drawn in the text colour           |
 | `checklist` | `title`, `items` (`id`, `text`, `done`) and `showProgress`        |
 | `table`     | `rows`, up to 50 rows of 12 cells, and `header`                   |
-| `embed`     | `target`, a board, palette, note or card shown live               |
+| `embed`     | `target`, a board, palette, note, card or data table shown live   |
 
 `ItemFrame` in `src/renderer/components/editors/Board/items` draws the shape in SVG under the content, clips the content to the shape, and adds the resizer, the handles and the lock badge. A new item type supplies its content component, a data schema in `src/shared/board.ts`, a preset in `items.ts`, an entry in `ITEM_KINDS`, a Layers icon and a Properties section; the maps are typed per kind, so a missing entry fails the type check. Items with no fill take their text colour from the board background, so they stay readable on dark boards.
 
 ### Content items
 
-An icon scales to fit its box. A checklist ticks steps on the board; while it is selected, steps can be added and removed, and the title and Show progress live in Properties. A table edits its cells in place while selected, and Properties sets the number of rows and columns and whether the first row is a header. An embed shows a note's opening text, a palette's swatches, a saved card's face or a board's name, keeps up with changes, and opens the target from its header.
+An icon scales to fit its box. A checklist ticks steps on the board; while it is selected, steps can be added and removed, and the title and Show progress live in Properties. A table edits its cells in place while selected, and Properties sets the number of rows and columns and whether the first row is a header. An embed shows a note's opening text, a palette's swatches, a saved card's face, a data table's first rows or a board's name, keeps up with changes, and opens the target from its header.
 
 ## Arrows
 

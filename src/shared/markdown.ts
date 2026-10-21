@@ -1,4 +1,4 @@
-export const LOOPY_LINK_KINDS = ['board', 'palette', 'asset', 'ticket', 'card'] as const;
+export const LOOPY_LINK_KINDS = ['board', 'palette', 'asset', 'ticket', 'card', 'table'] as const;
 export type LoopyLinkKind = (typeof LOOPY_LINK_KINDS)[number];
 export type NoteLinkKind = 'note' | LoopyLinkKind;
 

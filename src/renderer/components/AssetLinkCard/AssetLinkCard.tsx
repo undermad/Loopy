@@ -8,6 +8,7 @@ import { useSavedCards } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { useNotes } from '@renderer/lib/notes';
 import { usePalettes } from '@renderer/lib/palettes';
+import { useTables } from '@renderer/lib/tables';
 import { cx } from '@renderer/ui';
 import { KIND_ICONS } from '../editors/Assets/kinds';
 import styles from './AssetLinkCard.module.scss';
@@ -28,6 +29,7 @@ export function useResolvedLink(link: TicketLink): ResolvedLink {
   const { assets } = useAssetsSnapshot();
   const notes = useNotes();
   const cards = useSavedCards() ?? [];
+  const tables = useTables() ?? [];
   const detail = t(`assetLink.kinds.${link.kind}`);
   if (link.kind === 'board') {
     const board = boards.find((item) => item.id === link.id);
@@ -71,6 +73,17 @@ export function useResolvedLink(link: TicketLink): ResolvedLink {
       colours: [],
       asset: null,
       missing: !card,
+    };
+  }
+  if (link.kind === 'table') {
+    const table = tables.find((item) => item.id === link.id);
+    return {
+      link,
+      name: table?.name ?? t('assetLink.missing'),
+      detail: table ? t('assetLink.rows', { count: table.rowCount }) : detail,
+      colours: [],
+      asset: null,
+      missing: !table,
     };
   }
   const asset = assets.find((item) => item.id === link.id) ?? null;

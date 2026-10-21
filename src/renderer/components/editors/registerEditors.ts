@@ -13,7 +13,9 @@ import {
   NotebookTabs,
   Palette,
   PenTool,
+  Sheet,
   SlidersHorizontal,
+  Table2,
   Ticket,
 } from 'lucide-react';
 import { registerEditor } from '@renderer/lib/editors';
@@ -31,6 +33,8 @@ import { NoteEditor } from './Notes/NoteEditor';
 import { NotesExplorer } from './Notes/NotesExplorer';
 import { SplitNoteEditor } from './Notes/SplitNoteEditor';
 import { PropertiesEditor } from './Properties/PropertiesEditor';
+import { TableEditor } from './Tables/TableEditor';
+import { TableLibrary } from './Tables/TableLibrary';
 import { TicketEditor } from './Tickets/TicketEditor';
 import { TicketsEditor } from './Tickets/TicketsEditor';
 
@@ -157,5 +161,21 @@ export function registerEditors(): void {
     component: CardDesigner,
     category: 'cards',
     defaultState: () => ({ target: null }),
+  });
+  registerEditor({
+    id: 'tableLibrary',
+    titleKey: 'tables:types.tableLibrary',
+    icon: Table2,
+    component: TableLibrary,
+    category: 'tables',
+    defaultState: () => ({ search: '' }),
+  });
+  registerEditor({
+    id: 'table',
+    titleKey: 'tables:types.table',
+    icon: Sheet,
+    component: TableEditor,
+    category: 'tables',
+    defaultState: () => ({ tableId: null }),
   });
 }

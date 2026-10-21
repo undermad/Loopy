@@ -149,7 +149,13 @@ export function rewriteNoteLinks(db: DatabaseSync, kind: NoteLinkKind, from: str
   return changed;
 }
 
-const NAMED_TABLES = { board: 'boards', palette: 'palettes', asset: 'assets', card: 'cards' } as const;
+const NAMED_TABLES = {
+  board: 'boards',
+  palette: 'palettes',
+  asset: 'assets',
+  card: 'cards',
+  table: 'data_tables',
+} as const;
 
 export function trackRename<T>(
   db: DatabaseSync,

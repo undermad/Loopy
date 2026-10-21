@@ -8,6 +8,7 @@ import { useNote } from '@renderer/lib/notes';
 import { IconButton, cx } from '@renderer/ui';
 import { useResolvedLink } from '../../../AssetLinkCard/AssetLinkCard';
 import { CardFace } from '../../Cards/CardFace';
+import { TablePreview } from '../../Tables/TablePreview';
 import { useBoardActions } from '../BoardContext';
 import { ItemFrame } from './ItemFrame';
 import type { ItemFlowNode } from './TextItem';
@@ -40,6 +41,7 @@ function CardPreview({ id }: { id: string }) {
 function Preview({ link, colours }: { link: BoardLink; colours: string[] }) {
   if (link.kind === 'note') return <NotePreview id={link.id} />;
   if (link.kind === 'card') return <CardPreview id={link.id} />;
+  if (link.kind === 'table') return <TablePreview tableId={link.id} className={styles['embedTable']} />;
   if (link.kind === 'palette') {
     return (
       <div className={styles['embedSwatches']}>

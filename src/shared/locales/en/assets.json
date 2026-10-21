@@ -25,7 +25,8 @@
     "board": "Board",
     "palette": "Colour palette",
     "note": "Note",
-    "card": "Card"
+    "card": "Card",
+    "table": "Data table"
   },
   "import": "Import files…",
   "newFolder": "New folder",
@@ -111,7 +112,8 @@
       "board": "Delete board",
       "palette": "Delete colour palette",
       "note": "Delete note",
-      "card": "Delete card"
+      "card": "Delete card",
+      "table": "Delete data table"
     },
     "deleteMany": "Delete {{count}} items",
     "deleteConfirm": "Delete \"{{name}}\"? This cannot be undone.",
@@ -127,6 +129,8 @@
     "note": "New note",
     "noteName": "Untitled note",
     "card": "New card",
-    "cardName": "New card"
+    "cardName": "New card",
+    "table": "New data table",
+    "tableName": "Untitled table"
   }
 }

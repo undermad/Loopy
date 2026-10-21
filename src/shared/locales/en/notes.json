@@ -9,7 +9,8 @@
     "palette": "Palette",
     "asset": "File",
     "ticket": "Ticket",
-    "card": "Card"
+    "card": "Card",
+    "table": "Data table"
   },
   "templates": {
     "blank": { "name": "Blank note", "body": "" },

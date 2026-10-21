@@ -7,34 +7,34 @@ description: The Assets editor, where project files live, how folders and drop t
 
 The Assets editor stores every file a project needs inside the project: sprites, audio, video, documents, fonts, 3D models and archives. Files are bytes in the `.loopy` SQLite file, so a project moves as one file and nothing points at a path on disk.
 
-Assets come in two groups. External assets are imported files. Internal assets are things made in Loopy: boards, colour palettes, notes and saved cards. Both appear in the editor, so a search finds a board or a palette as well as a file.
+Assets come in two groups. External assets are imported files. Internal assets are things made in Loopy: boards, colour palettes, notes, saved cards and data tables. Both appear in the editor, so a search finds a board or a palette as well as a file.
 
 ## Using it
 
-| Action                     | How                                                                                                               |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Browse by folder           | The Folders view shows a tree with All files at the top. Click a folder, or use the arrow keys and Enter          |
-| Browse by kind             | The File types view lists the eight kinds with counts. Imports and drops there land in the folder for each kind   |
-| Import                     | The upload button beside the search box opens the file dialog, or drop files from the desktop on the editor       |
-| Drop into a folder         | Drop files on a folder row in the tree; the row highlights while you hover                                        |
-| Move files                 | Drag a card onto a folder row, pick Move to… in the card's menu, or change Folder in the details panel            |
-| Select many                | Ctrl-click adds an item, Shift-click selects a range, Ctrl+A selects everything shown, Escape clears              |
-| Rename                     | Click a selected item again after half a second, press F2, or use the menu. Enter saves and Escape cancels        |
-| Delete                     | Press Delete or Backspace, or use the menu. A confirmation names the item or counts the selection                 |
-| Export, open               | Right-click a file to export it. Right-click a board or palette to open it                                        |
-| Place on a board or ticket | Drag one card or a selection onto a board or a ticket window, see the board and tickets pages                     |
-| Create                     | The + menu beside the search box makes a folder in the selected folder, a board, a palette, a note or a card      |
-| Folder menu                | Right-click a row to rename, nest, move or delete it. Delete on a focused row deletes it                          |
-| Files in the tree          | The tree button in the header lists files, boards and palettes under their folders and hides the list             |
-| Layout                     | The grid and list toggle in the header; list rows show the folder path                                            |
-| Search                     | The box above the tree matches names, kinds and tags in the current folder or kind. All files searches everything |
-| Internal assets            | Boards, Colour palettes, Notes and Cards have their own trees under Internal, and their own entries in File types |
+| Action                     | How                                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Browse by folder           | The Folders view shows a tree with All files at the top. Click a folder, or use the arrow keys and Enter            |
+| Browse by kind             | The File types view lists the eight kinds with counts. Imports and drops there land in the folder for each kind     |
+| Import                     | The upload button beside the search box opens the file dialog, or drop files from the desktop on the editor         |
+| Drop into a folder         | Drop files on a folder row in the tree; the row highlights while you hover                                          |
+| Move files                 | Drag a card onto a folder row, pick Move to… in the card's menu, or change Folder in the details panel              |
+| Select many                | Ctrl-click adds an item, Shift-click selects a range, Ctrl+A selects everything shown, Escape clears                |
+| Rename                     | Click a selected item again after half a second, press F2, or use the menu. Enter saves and Escape cancels          |
+| Delete                     | Press Delete or Backspace, or use the menu. A confirmation names the item or counts the selection                   |
+| Export, open               | Right-click a file to export it. Right-click a board or palette to open it                                          |
+| Place on a board or ticket | Drag one card or a selection onto a board or a ticket window, see the board and tickets pages                       |
+| Create                     | The + menu beside the search box makes a folder in the selected folder, a board, a palette, a note or a card        |
+| Folder menu                | Right-click a row to rename, nest, move or delete it. Delete on a focused row deletes it                            |
+| Files in the tree          | The tree button in the header lists files, boards and palettes under their folders and hides the list               |
+| Layout                     | The grid and list toggle in the header; list rows show the folder path                                              |
+| Search                     | The box above the tree matches names, kinds and tags in the current folder or kind. All files searches everything   |
+| Internal assets            | Boards, Colour palettes, Notes, Cards and Data tables have their own trees under Internal and entries in File types |
 
 Deleting a folder keeps its files and subfolders and moves them to the parent. Deleting a file removes its bytes.
 
 ## Internal assets
 
-The sidebar has an External section with the file tree and an Internal section with a Boards tree, a Colour palettes tree, a Notes tree and a Cards tree. Their top-level folders are fixed and cannot be renamed, moved or deleted. Subfolders can be made inside them to sort boards and palettes, but a board can only go into a Boards folder and a palette into a Colour palettes folder. The main process refuses any other move.
+The sidebar has an External section with the file tree and an Internal section with a Boards tree, a Colour palettes tree, a Notes tree, a Cards tree and a Data tables tree. Their top-level folders are fixed and cannot be renamed, moved or deleted. Subfolders can be made inside them to sort boards and palettes, but a board can only go into a Boards folder and a palette into a Colour palettes folder. The main process refuses any other move.
 
 | Action       | How                                                                                   |
 | ------------ | ------------------------------------------------------------------------------------- |
@@ -61,7 +61,7 @@ With the first setting a table maps each kind to a folder or to Top level. A kin
 
 Project migration 8 adds `asset_folders` and extends the `assets` table from migration 3 with `folder_id`, `name`, `kind`, `width`, `height`, `tags` and `updated_at`. It also inserts the seven default folders with the ids in `DEFAULT_FOLDER_IDS` in `src/shared/assets.ts`. Settings live in the project `settings` table as JSON: `dropTarget` is `byKind`, `root` or a folder id, and `kindFolders` maps a kind to a folder id or `null` for the top level.
 
-Project migration 11 adds `scope` to `asset_folders` (`files`, `boards` or `palettes`, default `files`) and `folder_id` to `boards` and `palettes`. A folder's parent must have the same scope, and `assertFolderScope` in `assets-repository.ts` checks every folder move and every board or palette move. A board or palette with no folder sits in the fixed top-level folder; deleting a folder moves its boards and palettes to the parent. Project migration 14 adds the `notes` scope for Markdown notes, and migration 16 the `cards` scope for saved cards. Both follow the same rules, see the notes and cards pages.
+Project migration 11 adds `scope` to `asset_folders` (`files`, `boards` or `palettes`, default `files`) and `folder_id` to `boards` and `palettes`. A folder's parent must have the same scope, and `assertFolderScope` in `assets-repository.ts` checks every folder move and every board or palette move. A board or palette with no folder sits in the fixed top-level folder; deleting a folder moves its boards and palettes to the parent. Project migration 14 adds the `notes` scope for Markdown notes, migration 16 the `cards` scope for saved cards and migration 18 the `tables` scope for data tables. They follow the same rules, see the notes, cards and tables pages. Migration 18 also drops the scope `CHECK`, so the zod schema and `assertFolderScope` are the only guards.
 
 The kind of a file comes from its extension first and its MIME type second, see `assetKindOf`. Images get their pixel size on import from `src/main/storage/image-size.ts`. A file larger than 64 MB is refused.
 

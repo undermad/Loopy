@@ -35,12 +35,14 @@ import {
   Plus,
   Settings2,
   Shapes,
+  Sheet,
   Upload,
 } from 'lucide-react';
 import { ASSET_KINDS, assetKindOf, type Asset, type AssetScope, type AssetTarget } from '@shared/assets';
 import type { BoardLink } from '@shared/board';
 import { createBoard, updateBoard, useBoards } from '@renderer/lib/board';
 import { createSavedCard, useSavedCards } from '@renderer/lib/cards';
+import { createTable, useTables } from '@renderer/lib/tables';
 import { harmonyColours } from '@renderer/lib/colour';
 import { createNote, nextNoteTitle, useNotes } from '@renderer/lib/notes';
 import { createPalette, updatePalette, usePalettes } from '@renderer/lib/palettes';
@@ -177,12 +179,14 @@ function readSplit(state: Record<string, unknown>, key: string, fallback: number
 export function AssetsEditor({ state, setState }: EditorProps) {
   const { t } = useTranslation('assets');
   const { t: tc } = useTranslation('common');
+  const { t: tt } = useTranslation('tables');
   const loaded = useAssetsLoaded();
   const { folders, assets, settings } = useAssetsSnapshot();
   const boards = useBoards();
   const palettes = usePalettes();
   const notes = useNotes();
   const savedCards = useSavedCards();
+  const tables = useTables();
   const names = useWorkspaceNames();
   const editorRef = useRef<HTMLDivElement>(null);
   const [portrait, setPortrait] = useState(false);
@@ -249,6 +253,13 @@ export function AssetsEditor({ state, setState }: EditorProps) {
       folderId: card.folderId,
       colours: [],
     })),
+    ...(tables ?? []).map((table) => ({
+      kind: 'table' as const,
+      id: table.id,
+      name: table.name,
+      folderId: table.folderId,
+      colours: [],
+    })),
   ].sort((a, b) => a.name.localeCompare(b.name));
   const internalKind: InternalKind | null =
     view === 'types'
@@ -263,7 +274,9 @@ export function AssetsEditor({ state, setState }: EditorProps) {
             ? 'note'
             : scope === 'cards'
               ? 'card'
-              : null;
+              : scope === 'tables'
+                ? 'table'
+                : null;
   const searching = search.trim().length > 0;
   const shownInternal = internalItems.filter(
     (item) =>
@@ -419,6 +432,16 @@ export function AssetsEditor({ state, setState }: EditorProps) {
       const note = await createNote({ title: nextNoteTitle(name), folderId: target });
       setSelection([`note:${note.id}`]);
       setState({ internalId: `note:${note.id}` });
+      return;
+    }
+    if (of === 'table') {
+      const { table } = await createTable({
+        name,
+        folderId: target,
+        columns: [{ id: 'name', label: tt('library.firstColumn'), kind: 'text' }],
+      });
+      setSelection([`table:${table.id}`]);
+      setState({ internalId: `table:${table.id}` });
       return;
     }
     if (of === 'card') {
@@ -769,6 +792,14 @@ export function AssetsEditor({ state, setState }: EditorProps) {
               <IdCard aria-hidden="true" />
               {t('create.card')}
             </DropdownMenu.Item>
+            <DropdownMenu.Item
+              onSelect={() => {
+                setDialog('table');
+              }}
+            >
+              <Sheet aria-hidden="true" />
+              {t('create.table')}
+            </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       </div>
@@ -824,6 +855,7 @@ export function AssetsEditor({ state, setState }: EditorProps) {
               palette: internalItems.filter((item) => item.kind === 'palette').length,
               note: internalItems.filter((item) => item.kind === 'note').length,
               card: internalItems.filter((item) => item.kind === 'card').length,
+              table: internalItems.filter((item) => item.kind === 'table').length,
             }}
             counts={kindCounts(assets)}
             selected={kind}

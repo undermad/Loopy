@@ -82,6 +82,7 @@ describe('notes as internal assets', () => {
           assets: 'Assets',
           ideas: 'Idea Map',
           cards: 'Cards',
+          tables: 'Data tables',
         },
       ),
     ).toEqual({

@@ -26,7 +26,7 @@ The rest follow demand. Each one is a new editor registered in `registerEditors.
 
 | Feature                     | Status      | Builds on                    |
 | --------------------------- | ----------- | ---------------------------- |
-| Game data tables            | Considered  | Project file                 |
+| Game data tables            | In progress | Project file                 |
 | Runnable loop diagrams      | Considered  | Board, Properties type map   |
 | Design and ticket links     | Considered  | Tickets, data tables, board  |
 | Balancing sheets            | Considered  | Data tables                  |
@@ -41,6 +41,8 @@ The rest follow demand. Each one is a new editor registered in `registerEditors.
 | Item and card customisation | In progress | Cards, board, Properties     |
 
 ## Game data tables
+
+In progress, see the [plan](./plans/data-tables.md) and the [Tables](./tables.md) page.
 
 A spreadsheet-style editor for items, enemies, abilities and levels. Each table has typed columns: number, text, enum, reference to a row in another table, colour or asset. Rows are validated against those types.
 

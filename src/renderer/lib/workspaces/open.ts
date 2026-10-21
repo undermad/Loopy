@@ -12,7 +12,10 @@ export interface OpenTarget {
   workspaceName: string;
 }
 
-export type WorkspaceNames = Record<'planning' | 'design' | 'palette' | 'assets' | 'ideas' | 'cards', string>;
+export type WorkspaceNames = Record<
+  'planning' | 'design' | 'palette' | 'assets' | 'ideas' | 'cards' | 'tables',
+  string
+>;
 
 export const noteAlternates = ['noteSplit'];
 
@@ -91,6 +94,8 @@ export function linkTarget(link: TicketLink, names: WorkspaceNames): OpenTarget 
       };
     case 'card':
       return cardTarget({ kind: 'card', id: link.id }, names);
+    case 'table':
+      return tableTarget(link.id, names);
   }
 }
 
@@ -103,6 +108,15 @@ export function cardTarget(target: CardTarget | null, names: WorkspaceNames): Op
     state: { target },
     template: 'cards',
     workspaceName: names.cards,
+  };
+}
+
+export function tableTarget(tableId: string | null, names: WorkspaceNames): OpenTarget {
+  return {
+    editor: 'table',
+    state: { tableId },
+    template: 'tables',
+    workspaceName: names.tables,
   };
 }
 
@@ -119,5 +133,6 @@ export function useWorkspaceNames(): WorkspaceNames {
     assets: t('layout.presets.assets'),
     ideas: t('layout.presets.ideas'),
     cards: t('layout.presets.cards'),
+    tables: t('layout.presets.tables'),
   };
 }

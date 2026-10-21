@@ -6,6 +6,7 @@ import { useAssetsSnapshot } from '@renderer/lib/assets';
 import { useBoards } from '@renderer/lib/board';
 import { useSavedCards } from '@renderer/lib/cards';
 import { usePalettes } from '@renderer/lib/palettes';
+import { useTables } from '@renderer/lib/tables';
 import { useCurrentProject } from '@renderer/lib/project';
 import { useTicketsSnapshot } from '@renderer/lib/tickets';
 
@@ -36,6 +37,7 @@ export function useLoopyItems(): LoopyItems {
   const { assets } = useAssetsSnapshot();
   const tickets = useTicketsSnapshot();
   const savedCards = useSavedCards();
+  const tables = useTables();
   const project = useCurrentProject();
   const projectName = project?.name ?? '';
 
@@ -62,6 +64,7 @@ export function useLoopyItems(): LoopyItems {
         };
       }),
       card: (savedCards ?? []).map((card) => base('card', card.id, card.name)),
+      table: (tables ?? []).map((table) => base('table', table.id, table.name)),
     };
     const lookup = new Map<string, LoopyItem>();
     for (const list of Object.values(items)) {
@@ -81,5 +84,5 @@ export function useLoopyItems(): LoopyItems {
     const imageUrl = (item: LoopyItem | null) =>
       item?.asset?.kind === 'image' ? assetUrl(item.asset.id) : null;
     return { items, find, imageUrl };
-  }, [boards, palettes, assets, tickets, projectName, savedCards]);
+  }, [boards, palettes, assets, tickets, projectName, savedCards, tables]);
 }

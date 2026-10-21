@@ -863,6 +863,7 @@ const data: CompletionData = {
     asset: [{ name: 'hero.png', detail: 'image' }],
     ticket: [{ name: '1', detail: 'SG-1 Combat' }],
     card: [],
+    table: [],
   },
   tags: ['enemy', 'design'],
   kindLabel: (kind) => `Kind ${kind}`,

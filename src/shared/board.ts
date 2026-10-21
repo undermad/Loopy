@@ -73,7 +73,7 @@ export const itemStyleSchema = z.object({
     .optional(),
 });
 
-export const BOARD_LINK_KINDS = ['board', 'palette', 'note', 'card'] as const;
+export const BOARD_LINK_KINDS = ['board', 'palette', 'note', 'card', 'table'] as const;
 export const boardLinkKindSchema = z.enum(BOARD_LINK_KINDS);
 export const boardLinkSchema = z.object({ kind: boardLinkKindSchema, id: z.string().min(1) });
 export type BoardLink = z.infer<typeof boardLinkSchema>;

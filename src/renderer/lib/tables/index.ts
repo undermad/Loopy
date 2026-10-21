@@ -5,7 +5,6 @@ export {
   duplicateTable,
   editRows,
   loadTables,
-  openTable,
   redoTable,
   resetTablesStore,
   tableLookup,
@@ -27,5 +26,5 @@ export {
   sortRows,
   visibleRange,
 } from './grid';
-export type { CellRange, Computed, PasteError, SortState } from './grid';
+export type { CellRange, Computed, SortState } from './grid';
 export { inverseOps } from './history';

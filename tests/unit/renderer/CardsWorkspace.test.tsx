@@ -22,6 +22,7 @@ const NAMES = {
   assets: 'Assets',
   ideas: 'Idea Map',
   cards: 'Cards',
+  tables: 'Data tables',
 };
 
 function editorsOf(node: LayoutNode): string[] {
@@ -113,7 +114,7 @@ describe('card designer', () => {
     expect(saved?.name).toBe('Quest');
     expect(saved?.fields?.at(-1)).toMatchObject({
       kind: 'link',
-      linkKinds: ['board', 'note', 'card'],
+      linkKinds: ['board', 'note', 'card', 'table'],
       multiple: true,
     });
     expect(onState).toHaveBeenLastCalledWith({ target: { kind: 'template', id: 'template-1' } });
