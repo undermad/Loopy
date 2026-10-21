@@ -2,6 +2,9 @@ import { createElement, type ComponentType, type ReactNode } from 'react';
 import { BOARD_LINK_KINDS } from '@shared/board';
 import {
   CARD_MAX_ROWS,
+  CHOICE_DISPLAYS,
+  DATE_FORMATS,
+  DICE_MODES,
   NUMBER_DISPLAYS,
   RATING_SYMBOLS,
   TEXT_LINES,
@@ -72,6 +75,14 @@ function TextSettings({ field, onChange }: KindSettingsProps<FieldOf<'text'>>) {
             maxLength={120}
             onCommit={(placeholder) => {
               onChange({ ...field, placeholder });
+            }}
+          />
+          <DraftInput
+            label={t('cards.maxLength')}
+            value={field.maxLength === null ? '' : String(field.maxLength)}
+            onCommit={(raw) => {
+              const max = Math.round(Number(raw));
+              onChange({ ...field, maxLength: raw.trim() !== '' && max >= 1 ? Math.min(5000, max) : null });
             }}
           />
           <DraftInput
@@ -195,6 +206,19 @@ function NumberSettings({ field, onChange }: KindSettingsProps<FieldOf<'number'>
           }}
         />
       )}
+      {field.range ? null : (
+        <DraftInput
+          label={t('cards.step')}
+          value={field.step === null ? '' : String(field.step)}
+          onCommit={(raw) => {
+            const step = Number(raw);
+            onChange({
+              ...field,
+              step: raw.trim() !== '' && Number.isFinite(step) && step > 0 ? step : null,
+            });
+          }}
+        />
+      )}
       {symbols ? null : <AffixInputs field={field} onChange={onChange} />}
     </>
   );
@@ -203,20 +227,37 @@ function NumberSettings({ field, onChange }: KindSettingsProps<FieldOf<'number'>
 function AttributesSettings({ field, onChange }: KindSettingsProps<FieldOf<'attributes'>>) {
   const { t } = useTranslation('editors');
   return (
-    <LinesInput
-      label={t('cards.attributeRows')}
-      hint={t('cards.attributeRowsHint')}
-      value={field.rows.map((row) => row.label)}
-      onCommit={(labels) => {
-        const rows: FieldOf<'attributes'>['rows'] = [];
-        for (const label of labels.slice(0, CARD_MAX_ROWS)) {
-          const short = label.slice(0, 40);
-          const existing = field.rows.find((row) => row.label === short);
-          rows.push(existing ?? { id: uniqueFieldId(short, rows, 'attribute'), label: short });
-        }
-        onChange({ ...field, rows });
-      }}
-    />
+    <>
+      <BoundsInput
+        min={field.min}
+        max={field.max}
+        onCommit={(bounds) => {
+          onChange({ ...field, ...bounds });
+        }}
+      />
+      <Switch
+        size="sm"
+        label={t('cards.showTotal')}
+        checked={field.showTotal}
+        onCheckedChange={(showTotal) => {
+          onChange({ ...field, showTotal });
+        }}
+      />
+      <LinesInput
+        label={t('cards.attributeRows')}
+        hint={t('cards.attributeRowsHint')}
+        value={field.rows.map((row) => row.label)}
+        onCommit={(labels) => {
+          const rows: FieldOf<'attributes'>['rows'] = [];
+          for (const label of labels.slice(0, CARD_MAX_ROWS)) {
+            const short = label.slice(0, 40);
+            const existing = field.rows.find((row) => row.label === short);
+            rows.push(existing ?? { id: uniqueFieldId(short, rows, 'attribute'), label: short });
+          }
+          onChange({ ...field, rows });
+        }}
+      />
+    </>
   );
 }
 
@@ -279,12 +320,88 @@ function FormulaSettings({ field, fields, onChange }: KindSettingsProps<FieldOf<
 function DiceSettings({ field, onChange }: KindSettingsProps<FieldOf<'dice'>>) {
   const { t } = useTranslation('editors');
   return (
-    <DraftInput
-      label={t('cards.defaultValue')}
-      value={field.defaultValue ?? ''}
-      maxLength={40}
-      onCommit={(value) => {
-        onChange({ ...field, defaultValue: value.trim() === '' ? null : value.trim() });
+    <>
+      <Field label={t('cards.diceMode')}>
+        <ToggleGroup
+          size="sm"
+          aria-label={t('cards.diceMode')}
+          value={field.mode}
+          items={DICE_MODES.map((mode) => ({ value: mode, label: t(`cards.diceModes.${mode}`) }))}
+          onValueChange={(mode) => {
+            onChange({ ...field, mode: mode as FieldOf<'dice'>['mode'] });
+          }}
+        />
+      </Field>
+      <DraftInput
+        label={t('cards.diceSides')}
+        hint={t('cards.diceSidesHint')}
+        value={field.sides.join(', ')}
+        onCommit={(raw) => {
+          const sides = [
+            ...new Set(
+              raw
+                .split(',')
+                .map((item) => Number(item.trim().replace(/^d/i, '')))
+                .filter((item) => Number.isInteger(item) && item >= 2 && item <= 1000),
+            ),
+          ].slice(0, 10);
+          onChange({ ...field, sides });
+        }}
+      />
+      <Switch
+        size="sm"
+        label={t('cards.showOdds')}
+        checked={field.showOdds}
+        onCheckedChange={(showOdds) => {
+          onChange({ ...field, showOdds });
+        }}
+      />
+      <Switch
+        size="sm"
+        label={t('cards.rollButton')}
+        checked={field.roll}
+        onCheckedChange={(roll) => {
+          onChange({ ...field, roll });
+        }}
+      />
+      <DraftInput
+        label={t('cards.defaultValue')}
+        value={field.defaultValue ?? ''}
+        maxLength={40}
+        onCommit={(value) => {
+          onChange({ ...field, defaultValue: value.trim() === '' ? null : value.trim() });
+        }}
+      />
+    </>
+  );
+}
+
+function DateSettings({ field, onChange }: KindSettingsProps<FieldOf<'date'>>) {
+  const { t } = useTranslation('editors');
+  return (
+    <Field label={t('cards.dateFormat')}>
+      <ToggleGroup
+        size="sm"
+        aria-label={t('cards.dateFormat')}
+        value={field.format}
+        items={DATE_FORMATS.map((format) => ({ value: format, label: t(`cards.dateFormats.${format}`) }))}
+        onValueChange={(format) => {
+          onChange({ ...field, format: format as FieldOf<'date'>['format'] });
+        }}
+      />
+    </Field>
+  );
+}
+
+function ChecklistSettings({ field, onChange }: KindSettingsProps<FieldOf<'checklist'>>) {
+  const { t } = useTranslation('editors');
+  return (
+    <Switch
+      size="sm"
+      label={t('cards.showProgress')}
+      checked={field.showProgress}
+      onCheckedChange={(showProgress) => {
+        onChange({ ...field, showProgress });
       }}
     />
   );
@@ -319,6 +436,22 @@ function ChoiceSettings({ field, onChange }: KindSettingsProps<FieldOf<'choice'>
           onChange({ ...field, allowNew });
         }}
       />
+      {field.multiple || field.allowNew ? null : (
+        <Field label={t('cards.choiceDisplay')}>
+          <ToggleGroup
+            size="sm"
+            aria-label={t('cards.choiceDisplay')}
+            value={field.display}
+            items={CHOICE_DISPLAYS.map((display) => ({
+              value: display,
+              label: t(`cards.choiceDisplays.${display}`),
+            }))}
+            onValueChange={(display) => {
+              onChange({ ...field, display: display as FieldOf<'choice'>['display'] });
+            }}
+          />
+        </Field>
+      )}
       {field.multiple ? null : (
         <DraftInput
           label={t('cards.placeholder')}
@@ -367,13 +500,34 @@ function ChoiceSettings({ field, onChange }: KindSettingsProps<FieldOf<'choice'>
 }
 
 function CheckboxSettings({ field, onChange }: KindSettingsProps<FieldOf<'checkbox'>>) {
+  const { t } = useTranslation('editors');
   return (
-    <BooleanDefault
-      value={field.defaultValue}
-      onCommit={(defaultValue) => {
-        onChange({ ...field, defaultValue });
-      }}
-    />
+    <>
+      <BooleanDefault
+        value={field.defaultValue}
+        onCommit={(defaultValue) => {
+          onChange({ ...field, defaultValue });
+        }}
+      />
+      <div className={styles['pair']}>
+        <DraftInput
+          label={t('cards.onLabel')}
+          value={field.onLabel}
+          maxLength={40}
+          onCommit={(onLabel) => {
+            onChange({ ...field, onLabel });
+          }}
+        />
+        <DraftInput
+          label={t('cards.offLabel')}
+          value={field.offLabel}
+          maxLength={40}
+          onCommit={(offLabel) => {
+            onChange({ ...field, offLabel });
+          }}
+        />
+      </div>
+    </>
   );
 }
 
@@ -457,14 +611,14 @@ type KindSettingsMap = { [K in CardFieldKind]: ComponentType<KindSettingsProps<F
 
 const KIND_SETTINGS: KindSettingsMap = {
   text: TextSettings,
-  date: null,
+  date: DateSettings,
   number: NumberSettings,
   attributes: AttributesSettings,
   formula: FormulaSettings,
   dice: DiceSettings,
   choice: ChoiceSettings,
   checkbox: CheckboxSettings,
-  checklist: null,
+  checklist: ChecklistSettings,
   image: null,
   icon: null,
   colour: ColourSettings,

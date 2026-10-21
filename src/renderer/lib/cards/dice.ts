@@ -37,3 +37,51 @@ export function parseDice(text: string): DiceRoll | null {
   }
   return { notation, min, max, average };
 }
+
+export interface DiceParts {
+  count: number;
+  sides: number;
+  modifier: number;
+}
+
+const SIMPLE = /^(\d*)d(\d+)([+-]\d+)?$/;
+
+export function diceParts(notation: string): DiceParts | null {
+  const match = SIMPLE.exec(notation.replace(/\s+/g, '').toLowerCase());
+  if (!match) return null;
+  return {
+    count: match[1] ? Number(match[1]) : 1,
+    sides: Number(match[2]),
+    modifier: match[3] ? Number(match[3]) : 0,
+  };
+}
+
+export function diceNotation({ count, sides, modifier }: DiceParts): string {
+  const tail = modifier === 0 ? '' : modifier > 0 ? `+${String(modifier)}` : String(modifier);
+  return `${String(count)}d${String(sides)}${tail}`;
+}
+
+export function rollDice(
+  notation: string,
+  random: () => number = Math.random,
+): { total: number; rolls: number[] } | null {
+  const roll = parseDice(notation);
+  if (!roll) return null;
+  let total = 0;
+  const rolls: number[] = [];
+  for (const [, sign, count, isDie, number] of roll.notation.matchAll(TERM)) {
+    const direction = sign === '-' ? -1 : 1;
+    const value = Number(number);
+    if (!isDie) {
+      total += direction * value;
+      continue;
+    }
+    const amount = count === '' ? 1 : Number(count);
+    for (let die = 0; die < amount; die += 1) {
+      const face = Math.min(value, Math.floor(random() * value) + 1) * direction;
+      rolls.push(face);
+      total += face;
+    }
+  }
+  return { total, rolls };
+}

@@ -30,7 +30,7 @@ export {
 export { changeFieldKind, moveField, newField, uniqueFieldId } from './fields';
 export { coerceValue, fieldValue, linkTargets, statFraction, symbolCount, valueText } from './values';
 export { evaluateFormula, type FormulaResult } from './expressions';
-export { parseDice } from './dice';
+export { diceNotation, diceParts, parseDice, rollDice } from './dice';
 export { cardAccent, computeFormulas, isFieldVisible } from './rules';
 export { CARD_SIZES, STARTER_TEMPLATES, blankTemplate } from './presets';
 export {

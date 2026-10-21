@@ -1,7 +1,8 @@
-import { Circle, Heart, Square, Star, type LucideIcon } from 'lucide-react';
+import { useState } from 'react';
+import { Circle, Dices, Heart, Square, Star, type LucideIcon } from 'lucide-react';
 import type { NumberRange } from '@shared/board';
 import type { FieldOf } from '@shared/cards';
-import { parseDice, statFraction, symbolCount } from '@renderer/lib/cards';
+import { diceNotation, diceParts, parseDice, rollDice, statFraction, symbolCount } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { cx } from '@renderer/ui';
 import { INTERACTIVE, NumberValue, type FieldViewProps } from './inputs';
@@ -196,6 +197,7 @@ export function AttributesField({
   textStyle,
   onChange,
 }: FieldViewProps<FieldOf<'attributes'>>) {
+  const { t } = useTranslation('editors');
   const own =
     typeof value === 'object' && value !== null && !Array.isArray(value)
       ? (value as Record<string, number | null>)
@@ -226,6 +228,14 @@ export function AttributesField({
           </div>
         );
       })}
+      {field.showTotal ? (
+        <div className={cx(styles['attribute'], styles['attributeTotal'])}>
+          <dt>{t('cards.total')}</dt>
+          <dd>
+            {Object.values(own).reduce<number>((sum, item) => sum + (typeof item === 'number' ? item : 0), 0)}
+          </dd>
+        </div>
+      ) : null}
     </dl>
   );
 }
@@ -246,6 +256,59 @@ export function FormulaField({ field, result, textStyle }: FieldViewProps<FieldO
   );
 }
 
+function DiceBuilder({
+  field,
+  notation,
+  label,
+  onChange,
+}: {
+  field: FieldOf<'dice'>;
+  notation: string;
+  label: string;
+  onChange: (value: string | null) => void;
+}) {
+  const { t } = useTranslation('editors');
+  const parts = diceParts(notation) ?? { count: 1, sides: field.sides[0] ?? 6, modifier: 0 };
+  const sides = field.sides.includes(parts.sides) ? field.sides : [...field.sides, parts.sides];
+  const commit = (next: Partial<typeof parts>) => {
+    onChange(diceNotation({ ...parts, ...next }));
+  };
+  return (
+    <span className={styles['diceBuilder']}>
+      <NumberValue
+        value={notation ? parts.count : null}
+        label={t('cards.diceCount', { label })}
+        onCommit={(count) => {
+          if (count === null) onChange(null);
+          else commit({ count: Math.min(100, Math.max(1, Math.round(count))) });
+        }}
+      />
+      <select
+        className={cx(INTERACTIVE, styles['input'], styles['select'])}
+        value={String(parts.sides)}
+        aria-label={t('cards.diceDie', { label })}
+        onKeyDown={(event) => {
+          event.stopPropagation();
+        }}
+        onChange={(event) => {
+          commit({ sides: Number(event.target.value) });
+        }}
+      >
+        {sides.map((side) => (
+          <option key={side} value={String(side)}>{`d${String(side)}`}</option>
+        ))}
+      </select>
+      <NumberValue
+        value={notation ? parts.modifier : null}
+        label={t('cards.diceModifier', { label })}
+        onCommit={(modifier) => {
+          commit({ modifier: Math.round(modifier ?? 0) });
+        }}
+      />
+    </span>
+  );
+}
+
 export function DiceField({
   field,
   value,
@@ -255,14 +318,21 @@ export function DiceField({
   onChange,
 }: FieldViewProps<FieldOf<'dice'>>) {
   const { t } = useTranslation('editors');
+  const [rolled, setRolled] = useState<{ total: number; rolls: number[] } | null>(null);
   const notation = typeof value === 'string' ? value : '';
   const roll = notation ? parseDice(notation) : null;
-  const odds = roll
-    ? t('cards.diceOdds', { min: roll.min, max: roll.max, average: Math.round(roll.average * 10) / 10 })
-    : null;
+  const odds =
+    roll && field.showOdds
+      ? t('cards.diceOdds', { min: roll.min, max: roll.max, average: Math.round(roll.average * 10) / 10 })
+      : null;
+  const builder = field.mode === 'builder' && (notation === '' || diceParts(notation) !== null);
   return (
     <div className={styles['dice']} style={textStyle}>
-      {editable ? (
+      {!editable ? (
+        <span className={styles['diceNotation']}>{notation || '–'}</span>
+      ) : builder ? (
+        <DiceBuilder field={field} notation={notation} label={label} onChange={onChange} />
+      ) : (
         <input
           className={cx(INTERACTIVE, styles['input'], styles['diceInput'])}
           defaultValue={notation}
@@ -278,10 +348,26 @@ export function DiceField({
             if (next !== (notation || null)) onChange(next);
           }}
         />
-      ) : (
-        <span className={styles['diceNotation']}>{notation || '–'}</span>
       )}
       {odds ? <span className={styles['diceOdds']}>{odds}</span> : null}
+      {field.roll && roll ? (
+        <span className={styles['diceRoll']}>
+          <button
+            type="button"
+            className={cx(INTERACTIVE, styles['chip'])}
+            aria-label={t('cards.rollDice', { label })}
+            onClick={(event) => {
+              event.stopPropagation();
+              setRolled(rollDice(notation));
+            }}
+          >
+            <Dices aria-hidden="true" />
+          </button>
+          <span role="status">
+            {rolled ? t('cards.rolled', { total: rolled.total, rolls: rolled.rolls.join(', ') }) : ''}
+          </span>
+        </span>
+      ) : null}
     </div>
   );
 }

@@ -32,6 +32,7 @@ export function TextKindField({
         value={text}
         placeholder={field.placeholder}
         multiline={field.lines === 'multi'}
+        maxLength={field.maxLength}
         label={label}
         onCommit={onChange}
       />
@@ -39,12 +40,19 @@ export function TextKindField({
   );
 }
 
-export function DateField({ value, editable, label, textStyle, onChange }: FieldViewProps<FieldOf<'date'>>) {
+export function DateField({
+  field,
+  value,
+  editable,
+  label,
+  textStyle,
+  onChange,
+}: FieldViewProps<FieldOf<'date'>>) {
   const date = typeof value === 'string' ? value : '';
   if (!editable) {
     return (
       <div className={cx(styles['static'], !date && styles['empty'])} style={textStyle}>
-        {date ? new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '–'}
+        {date ? new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { dateStyle: field.format }) : '–'}
       </div>
     );
   }

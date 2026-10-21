@@ -70,24 +70,24 @@ Field settings always come in the same order, and each group folds away:
 
 A hidden field keeps its value and shows, dimmed, in the designer and in Properties, but not on the card face.
 
-| Type       | Value                                                 | Settings                                                                     | Presets                               |
-| ---------- | ----------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------- |
-| Text       | Text on one line or several                           | Lines, Same text on every card, placeholder, default                         | Heading, Text, Long text, Static text |
-| Date       | A calendar date                                       |                                                                              | Date                                  |
-| Number     | A number, or a low and high pair                      | Low and high, display (number, bar, symbols), bounds, symbol, default, affix | Number, Stat bar, Rating, Range       |
-| Attributes | A number per named row                                | One row per line                                                             | Attributes                            |
-| Formula    | Worked out from other fields, never typed             | Formula, decimal places, prefix, suffix                                      | Formula                               |
-| Dice       | Dice notation such as `2d6+1`, with range and average | Default                                                                      | Dice                                  |
-| Choice     | One value from a list, or several                     | Allow several, Allow new entries, choices with colours, default              | Choice, Multiple choice, Tags         |
-| Checkbox   | Yes or no                                             | Default                                                                      | Checkbox                              |
-| Checklist  | Steps to tick, with a done count                      |                                                                              | Checklist                             |
-| Image      | An image from assets                                  |                                                                              | Image                                 |
-| Icon       | One of the game icons                                 |                                                                              | Icon                                  |
-| Colour     | A hex colour                                          | Default                                                                      | Colour                                |
-| Asset link | One or more boards, palettes, notes or cards          | Links to, Allow several                                                      | Asset link                            |
-| Separator  | A line, or empty space of a set height                | Draw a line, height                                                          | Divider, Spacer                       |
+| Type       | Value                                                 | Settings                                                                                                  | Presets                               |
+| ---------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Text       | Text on one line or several                           | Lines, Same text on every card, placeholder, maximum length, default                                      | Heading, Text, Long text, Static text |
+| Date       | A calendar date                                       | Format: short, medium or long                                                                             | Date                                  |
+| Number     | A number, or a low and high pair                      | Low and high, display (number, bar, symbols), bounds, step, symbol, default, affix                        | Number, Stat bar, Rating, Range       |
+| Attributes | A number per named row                                | Rows, bounds for every row, Show total                                                                    | Attributes                            |
+| Formula    | Worked out from other fields, never typed             | Formula, decimal places, prefix, suffix                                                                   | Formula                               |
+| Dice       | Dice such as `2d6+1`, from a builder or free notation | Builder or free notation, dice sides, Show range and average, Roll button, default                        | Dice                                  |
+| Choice     | One value from a list, or several                     | Allow several, Allow new entries, show as dropdown, chips or radio buttons, choices with colours, default | Choice, Multiple choice, Tags         |
+| Checkbox   | Yes or no                                             | Labels when ticked and not ticked, default                                                                | Checkbox                              |
+| Checklist  | Steps to tick, with a done count                      | Show progress                                                                                             | Checklist                             |
+| Image      | An image from assets                                  |                                                                                                           | Image                                 |
+| Icon       | One of the game icons                                 |                                                                                                           | Icon                                  |
+| Colour     | A hex colour                                          | Default                                                                                                   | Colour                                |
+| Asset link | One or more boards, palettes, notes or cards          | Links to, Allow several                                                                                   | Asset link                            |
+| Separator  | A line, or empty space of a set height                | Draw a line, height                                                                                       | Divider, Spacer                       |
 
-Symbols show up to 10 marks; the maximum sets how many. A choice with Allow new entries takes values that are not in its list, which is how Tags works. The field list names each field by the preset it matches, so a number drawn as a bar reads Stat bar.
+Symbols show up to 10 marks; the maximum sets how many. The dice builder picks a count, a die from the field's sides and a modifier; notation it cannot split, such as `2d6+1d4`, shows as text. Roll button rolls on the card, also on boards, and does not change the value. A choice with Allow new entries takes values that are not in its list, which is how Tags works. The field list names each field by the preset it matches, so a number drawn as a bar reads Stat bar.
 
 An asset link shows each target as the card a ticket's linked asset uses. Click it to open the target. Drop an internal asset on the field to set it; with Allow several the drop adds to the list. Links to limits the kinds, and a link to a deleted asset shows as Missing asset.
 

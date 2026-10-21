@@ -874,7 +874,40 @@
     "usedBy_other": "Used by {{count}} cards",
     "discardTitle": "Discard unsaved changes?",
     "discardDescription": "The card designer has changes that are not saved.",
-    "discardConfirm": "Discard"
+    "discardConfirm": "Discard",
+    "total": "Total",
+    "diceCount": "{{label}}: dice",
+    "diceDie": "{{label}}: die",
+    "diceModifier": "{{label}}: modifier",
+    "rollDice": "Roll {{label}}",
+    "rolled": "Rolled {{total}} ({{rolls}})",
+    "diceMode": "Dice input",
+    "diceModes": {
+      "builder": "Builder",
+      "free": "Free notation"
+    },
+    "diceSides": "Dice sides",
+    "diceSidesHint": "Sides the builder offers, separated by commas",
+    "showOdds": "Show range and average",
+    "rollButton": "Roll button",
+    "showTotal": "Show total",
+    "onLabel": "Label when ticked",
+    "offLabel": "Label when not ticked",
+    "dateFormat": "Date format",
+    "dateFormats": {
+      "short": "Short",
+      "medium": "Medium",
+      "long": "Long"
+    },
+    "showProgress": "Show progress",
+    "step": "Step",
+    "choiceDisplay": "Show choices as",
+    "choiceDisplays": {
+      "dropdown": "Dropdown",
+      "chips": "Chips",
+      "radio": "Radio buttons"
+    },
+    "maxLength": "Maximum length"
   },
   "assetLink": {
     "open": "Open {{name}}",

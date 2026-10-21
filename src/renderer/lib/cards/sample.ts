@@ -66,12 +66,17 @@ export function sampleValues(fields: readonly CardField[], seed = 1): Record<str
       case 'checklist':
         return STEPS.slice(0, 2).map((text, index) => ({ text, done: index === 0 }));
       case 'dice':
-        return pick(DICE);
+        return field.sides.length > 0 ? `${String(between(1, 3))}d${String(pick(field.sides))}` : pick(DICE);
       case 'colour':
         return pick(COLOURS);
       case 'attributes':
         return field.rows.length > 0
-          ? Object.fromEntries(field.rows.map((row) => [row.id, between(1, 10)]))
+          ? Object.fromEntries(
+              field.rows.map((row) => [
+                row.id,
+                between(field.min ?? 1, Math.max(field.min ?? 1, field.max ?? 10)),
+              ]),
+            )
           : null;
       default:
         return null;
