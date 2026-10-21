@@ -182,6 +182,32 @@ describe('table library', () => {
     expect(await screen.findByText('Could not read broken.json as a table')).toBeTruthy();
   });
 
+  it('numbers new and copied names past ones already taken and says when nothing matches', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<Stateful editor={TableLibrary} />);
+    expect(screen.getByText('No tables yet')).toBeTruthy();
+    unmount();
+    await act(() => createTable({ name: 'Untitled table' }));
+    await act(() => createTable({ name: 'Untitled table 2' }));
+    await act(() => createTable({ name: 'Untitled table copy' }));
+    render(<Stateful editor={TableLibrary} initial={{ search: 7 }} />);
+
+    await user.click(screen.getByRole('button', { name: 'New table' }));
+    await waitFor(() => {
+      expect(api.tablesData.tables.map((table) => table.name)).toContain('Untitled table 3');
+    });
+    await user.click(screen.getByRole('button', { name: 'More for Untitled table' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Duplicate' }));
+    await waitFor(() => {
+      expect(api.tablesData.tables.map((table) => table.name)).toContain('Untitled table copy 2');
+    });
+    await user.click(screen.getByRole('button', { name: 'More for Untitled table 2' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Open' }));
+
+    await user.type(screen.getByRole('searchbox', { name: 'Search tables' }), 'zzz');
+    expect(screen.getByText('No tables match')).toBeTruthy();
+  });
+
   it('duplicates and deletes a table from its menu', async () => {
     await weapons();
     const user = userEvent.setup();
@@ -249,6 +275,35 @@ describe('table editor', () => {
     await user.keyboard('{Control>}y{/Control}');
     await waitFor(() => {
       expect(cell(0, 2).textContent).toBe('9');
+    });
+  });
+
+  it('keeps typing in the next cell while the previous edit is still saving', async () => {
+    const { table } = await weapons();
+    const user = userEvent.setup();
+    render(<Stateful editor={TableEditor} initial={{ tableId: table.id }} />);
+    await screen.findByRole('grid');
+    const original = vi.mocked(api.patchTableRows).getMockImplementation();
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.mocked(api.patchTableRows).mockImplementationOnce(async (id, ops) => {
+      await held;
+      return original ? original(id, ops) : { rows: [], removed: [] };
+    });
+
+    await user.click(cell(0, 1));
+    await user.keyboard('Iron{Tab}7');
+    expect(screen.getByRole('textbox', { name: 'Edit cell' })).toHaveProperty('value', '7');
+    release();
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(cell(0, 1).textContent).toBe('Iron');
+    });
+    await waitFor(() => {
+      expect(cell(0, 2).textContent).toBe('7');
     });
   });
 

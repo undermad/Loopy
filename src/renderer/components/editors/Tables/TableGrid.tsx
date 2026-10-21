@@ -202,25 +202,32 @@ export function TableGrid({
     grid.current?.focus({ preventScroll: true });
   }
 
-  async function commit(current: Editing, move: Point | null) {
-    if (editingRef.current !== current) return;
-    setEditing(null);
+  function commitOps(current: Editing): RowOp[] {
     const row = rows[current.row];
-    if (!row) return;
+    if (!row) return [];
     if (current.column === 0) {
       const key = current.draft.trim();
       if (key === '') onError(t('errors.emptyKey'));
-      else if (key !== row.key) await onEdit([{ op: 'update', id: row.id, key }]);
-    } else {
-      const column = columnAt(current.column);
-      if (!column) return;
-      const parsed = parseCell(column, current.draft, lookup);
-      if ('error' in parsed) onError(cellErrorMessage(messages, column, parsed.error, current.draft));
-      else if (JSON.stringify(parsed.value) !== JSON.stringify(row.cells[column.id] ?? null))
-        await onEdit([{ op: 'update', id: row.id, cells: { [column.id]: parsed.value } }]);
+      return key === '' || key === row.key ? [] : [{ op: 'update', id: row.id, key }];
     }
+    const column = columnAt(current.column);
+    if (!column) return [];
+    const parsed = parseCell(column, current.draft, lookup);
+    if ('error' in parsed) {
+      onError(cellErrorMessage(messages, column, parsed.error, current.draft));
+      return [];
+    }
+    if (JSON.stringify(parsed.value) === JSON.stringify(row.cells[column.id] ?? null)) return [];
+    return [{ op: 'update', id: row.id, cells: { [column.id]: parsed.value } }];
+  }
+
+  async function commit(current: Editing, move: Point | null) {
+    if (editingRef.current !== current) return;
+    setEditing(null);
+    const ops = commitOps(current);
     if (move) select(move, false);
     focusGrid();
+    if (ops.length > 0) await onEdit(ops);
   }
 
   function clearOps(): RowOp[] {
