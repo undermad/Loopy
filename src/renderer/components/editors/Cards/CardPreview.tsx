@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { CardValue } from '@shared/board';
 import type { CardLayout } from '@shared/cards';
 import { resolveItemStyle } from '@renderer/lib/board';
@@ -15,6 +16,7 @@ export function CardPreview({
   onSelectField,
   showHidden = false,
   design,
+  overlay,
 }: {
   layout: CardLayout;
   values: Record<string, CardValue>;
@@ -23,6 +25,7 @@ export function CardPreview({
   onSelectField?: ((fieldId: string) => void) | undefined;
   showHidden?: boolean;
   design?: CardViewDesign | undefined;
+  overlay?: ReactNode;
 }) {
   const style = resolveItemStyle('card', layout.style);
   const fill = useResolvedColour(style.fill);
@@ -61,6 +64,7 @@ export function CardPreview({
         {...(onSelectField ? { onSelectField } : {})}
         className={styles['previewBody']}
       />
+      {overlay}
     </div>
   );
 }

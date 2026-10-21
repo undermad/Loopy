@@ -814,10 +814,6 @@
     "newRow": "Start a new row",
     "minHeight": "Minimum height",
     "fieldTools": "Field tools",
-    "narrower": "Narrower",
-    "wider": "Wider",
-    "moveEarlier": "Move earlier",
-    "moveLater": "Move later",
     "hideLabel": "Hide label",
     "showLabelAction": "Show label",
     "lock": "Lock",
@@ -827,7 +823,6 @@
     "resizeWidth": "Resize width of {{label}}",
     "resizeHeight": "Resize height of {{label}}",
     "renameField": "Rename {{label}}",
-    "addFieldAfter": "Add field after {{label}}",
     "zoneName": "{{zone}} zone",
     "dropHere": "Drop fields here",
     "badges": {
@@ -907,7 +902,30 @@
       "chips": "Chips",
       "radio": "Radio buttons"
     },
-    "maxLength": "Maximum length"
+    "maxLength": "Maximum length",
+    "resizeCardWidth": "Resize card width",
+    "resizeCardHeight": "Resize card height",
+    "resizeCard": "Resize card",
+    "addFieldTo": "Add field to {{zone}}",
+    "palette": "Field palette",
+    "paletteHint": "Click to add, or drag onto the card",
+    "heightAuto": "auto height",
+    "heightPx": "{{height}} px",
+    "resizeBoth": "Resize {{label}}",
+    "sizeText": "{{span}} columns, {{height}}",
+    "fieldOptions": "Field options",
+    "fieldActions": "Field actions",
+    "bold": "Bold",
+    "largerText": "Larger text",
+    "smallerText": "Smaller text",
+    "showAs": {
+      "number": "Show as number",
+      "bar": "Show as bar",
+      "symbols": "Show as symbols"
+    },
+    "diceBuilder": "Dice builder",
+    "lessSpace": "Less space",
+    "moreSpace": "More space"
   },
   "assetLink": {
     "open": "Open {{name}}",

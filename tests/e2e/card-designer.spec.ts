@@ -35,6 +35,7 @@ async function addPreset(window: Page, name: string) {
 }
 
 async function drag(window: Page, from: Locator, to: { x: number; y: number }) {
+  await from.scrollIntoViewIfNeeded();
   const box = await from.boundingBox();
   if (!box) throw new Error('nothing to drag');
   await window.mouse.move(box.x + 10, box.y + box.height / 2);
@@ -112,7 +113,10 @@ test('edits fields with the toolbar, keyboard and inline rename', async ({ windo
   await openBlankTemplate(window);
   await field(window, 'Description').click();
   const tools = window.getByRole('toolbar', { name: 'Field tools' });
-  await tools.getByRole('button', { name: 'Narrower' }).click();
+  await tools.getByRole('group', { name: 'Field options' }).getByRole('button', { name: 'Bold' }).click();
+  await expect(tools.getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'true');
+  await canvas(window).focus();
+  await window.keyboard.press('[');
   await expect(window.getByRole('slider', { name: 'Resize width of Description' })).toHaveAttribute(
     'aria-valuenow',
     '11',
@@ -154,4 +158,62 @@ test('fills sample values, fits the card height and saves the template', async (
 
   await window.getByRole('button', { name: 'Save template' }).click();
   await expect(window.getByRole('list', { name: 'Templates' }).getByText('Card 1')).toBeVisible();
+});
+
+test('drags a preset from the palette onto the card', async ({ window }) => {
+  await openBlankTemplate(window);
+  const palette = window.getByRole('toolbar', { name: 'Field palette' });
+  const title = await field(window, 'Title').boundingBox();
+  if (!title) throw new Error('no title box');
+  await drag(window, palette.getByRole('button', { name: 'Rating' }), { x: title.x + 20, y: title.y + 6 });
+  await expect.poll(() => fieldIds(window)).toEqual(['rating', 'title', 'description']);
+  await expect(field(window, 'Rating')).toHaveAttribute('data-selected', 'true');
+
+  await window.getByRole('button', { name: 'Add field to Footer' }).click();
+  await window.getByRole('menuitem', { name: 'Checkbox', exact: true }).click();
+  await expect(
+    canvas(window).getByRole('region', { name: 'Footer zone' }).locator('[data-field-id="checkbox"]'),
+  ).toBeVisible();
+});
+
+test('resizes a field from its corner and the card from its handles', async ({ window }) => {
+  await openBlankTemplate(window);
+  await field(window, 'Description').click();
+  const corner = window.getByRole('slider', { name: 'Resize Description' });
+  const body = await canvas(window).getByRole('region', { name: 'Body zone' }).boundingBox();
+  const box = await corner.boundingBox();
+  if (!body || !box) throw new Error('no corner');
+  await window.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await window.mouse.down();
+  await window.mouse.move(body.x + body.width / 2, box.y + 60, { steps: 10 });
+  await window.mouse.up();
+  await expect(window.getByRole('slider', { name: 'Resize width of Description' })).toHaveAttribute(
+    'aria-valuenow',
+    '6',
+  );
+  expect((await minHeight(window, 'Description')) ?? 0).toBeGreaterThan(40);
+
+  const cardCorner = window.getByRole('slider', { name: 'Resize card', exact: true });
+  const before = Number(
+    await window.getByRole('slider', { name: 'Resize card width' }).getAttribute('aria-valuenow'),
+  );
+  const grip = await cardCorner.boundingBox();
+  if (!grip) throw new Error('no card corner');
+  await window.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+  await window.mouse.down();
+  await window.mouse.move(grip.x + 64, grip.y + 30, { steps: 8 });
+  await window.mouse.up();
+  const after = Number(
+    await window.getByRole('slider', { name: 'Resize card width' }).getAttribute('aria-valuenow'),
+  );
+  expect(after - before).toBeGreaterThanOrEqual(50);
+  expect(after % 10).toBe(0);
+
+  await canvas(window)
+    .locator('[data-preview-card]')
+    .click({ position: { x: 4, y: 120 } });
+  await expect(window.getByRole('heading', { name: 'Card', exact: true })).toBeVisible();
+  await expect(window.getByRole('spinbutton', { name: 'Width', exact: true }).first()).toHaveValue(
+    String(after),
+  );
 });

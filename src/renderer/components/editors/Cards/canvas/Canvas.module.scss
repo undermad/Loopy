@@ -59,10 +59,6 @@
   &:hover {
     outline-color: color-mix(in srgb, currentcolor 35%, transparent);
   }
-
-  &:hover .add {
-    opacity: 1;
-  }
 }
 
 .locked {
@@ -208,4 +204,149 @@
   border-radius: 6px;
   color: var(--color-warning);
   font-size: var(--font-size-xs);
+}
+
+.cells span {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(var(--grid-row) - 1px),
+      color-mix(in srgb, var(--color-accent) 30%, transparent) calc(var(--grid-row) - 1px) var(--grid-row)
+    ),
+    color-mix(in srgb, var(--color-accent) 8%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+.zoneAdd {
+  display: flex;
+  justify-content: center;
+  grid-column: 1 / -1;
+
+  .add {
+    position: static;
+    opacity: 0.45;
+  }
+}
+
+.zone:hover .zoneAdd .add {
+  opacity: 1;
+}
+
+.handleCorner {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  cursor: nwse-resize;
+  right: -4px;
+  bottom: -4px;
+}
+
+.toolGroup {
+  display: flex;
+  gap: 2px;
+
+  & + & {
+    padding-left: 4px;
+    margin-left: 2px;
+    border-left: 1px solid var(--color-border);
+  }
+}
+
+.palette {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  flex: none;
+  align-self: stretch;
+  padding-bottom: 4px;
+  margin-bottom: var(--space-2);
+  scrollbar-width: thin;
+}
+
+.paletteItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface-raised);
+  color: var(--color-fg);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  cursor: grab;
+  flex: none;
+  white-space: nowrap;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  &:hover {
+    border-color: var(--color-accent);
+  }
+}
+
+.paletteDragging {
+  opacity: 0.4;
+}
+
+.paletteChip {
+  box-shadow: var(--shadow-md);
+  cursor: grabbing;
+}
+
+.cardHandle {
+  position: absolute;
+  background: var(--color-accent);
+  z-index: 5;
+  opacity: 0.6;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+.cardHandleWidth {
+  width: 6px;
+  height: 32px;
+  border-radius: 3px;
+  cursor: ew-resize;
+  top: 50%;
+  right: -7px;
+  transform: translateY(-50%);
+}
+
+.cardHandleHeight {
+  width: 32px;
+  height: 6px;
+  border-radius: 3px;
+  cursor: ns-resize;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cardHandleCorner {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  cursor: nwse-resize;
+  right: -8px;
+  bottom: -8px;
+}
+
+.cardBadge {
+  position: absolute;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+  font-size: 11px;
+  z-index: 5;
+  right: 0;
+  bottom: -28px;
+  font-variant-numeric: tabular-nums;
 }

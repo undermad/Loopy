@@ -29,11 +29,13 @@ Implemented. [Cards](../cards.md) describes what ships; this page keeps the reas
 
 ## Phases
 
-| Phase | Scope                                                                                     |
-| ----- | ----------------------------------------------------------------------------------------- |
-| 1     | Merge field types into 14 with presets; changing type keeps shared settings               |
-| 2     | Any column count, minimum height and Start a new row                                      |
-| 3     | Canvas, toolbar, handles, rename in place, undo, keys, several fields, clipboard, helpers |
+| Phase | Scope                                                                                                 |
+| ----- | ----------------------------------------------------------------------------------------------------- |
+| 1     | Merge field types into 14 with presets; changing type keeps shared settings                           |
+| 2     | Any column count, minimum height and Start a new row                                                  |
+| 3     | Canvas, toolbar, handles, rename in place, undo, keys, several fields, clipboard, helpers             |
+| 4     | Dice builder and roll; own options for attributes, checkbox, date, checklist, number, choice and text |
+| 5     | Toolbar options per type, corner handle, zone +, field palette, card resizing, cell grid              |
 
 ## Left out
 
@@ -55,4 +57,4 @@ Template inheritance, saved text styles for fields and a lock on whole zones wai
 | Every canvas feature, keys, several fields, helpers and the unsaved guard | `tests/unit/renderer/CardDesignerCanvas.test.tsx`  | component  |
 | Presets, mouse drags, resize handles, toolbar, keys, Fit height, save     | `tests/e2e/card-designer.spec.ts`                  | end to end |
 
-Each phase was red before its code and green after it: 25, 13 and 42 failing tests. The last run passed 1162 unit and component tests and 28 end-to-end tests, with 95 percent statement coverage.
+Each phase was red before its code and green after it: 25, 13, 42, 16 and 11 failing tests. The last run passed 1187 unit and component tests and 30 end-to-end tests, with 95 percent statement coverage.

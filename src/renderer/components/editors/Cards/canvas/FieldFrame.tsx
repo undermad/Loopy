@@ -1,12 +1,11 @@
 import { useRef, useState, type MouseEvent } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { EyeOff, Lock, Plus, Scissors, Sigma, Split } from 'lucide-react';
+import { EyeOff, Lock, Scissors, Sigma, Split } from 'lucide-react';
 import { fieldGridStyle } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { cx } from '@renderer/ui';
 import type { CardDesignFieldProps } from '../CardView';
-import { FieldPicker } from '../FieldPicker';
 import { useCanvas } from './context';
 import { FieldResizer } from './FieldResizer';
 import { FieldToolbar } from './FieldToolbar';
@@ -83,7 +82,6 @@ export function FieldFrame({
   helpMark,
   body,
 }: CardDesignFieldProps) {
-  const { t } = useTranslation('editors');
   const canvas = useCanvas();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: field.id,
@@ -140,26 +138,6 @@ export function FieldFrame({
       <Badges field={field} />
       {primary ? <FieldToolbar field={field} /> : null}
       {primary && !field.locked ? <FieldResizer field={field} label={label} /> : null}
-      <span
-        onPointerDown={(event) => {
-          event.stopPropagation();
-        }}
-        onClick={(event) => {
-          event.stopPropagation();
-        }}
-      >
-        <FieldPicker
-          label={t('cards.addFieldAfter', { label })}
-          onPick={(preset) => {
-            canvas.addAfter(field.id, preset);
-          }}
-          trigger={
-            <button type="button" className={styles['add']} aria-label={t('cards.addFieldAfter', { label })}>
-              <Plus aria-hidden="true" />
-            </button>
-          }
-        />
-      </span>
     </div>
   );
 }

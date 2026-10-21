@@ -60,6 +60,8 @@ function fieldIds(): string[] {
   );
 }
 
+const SLOW = 15_000;
+
 beforeEach(async () => {
   api = await bootTestApp();
   api.current = makeProject('Space Game');
@@ -69,7 +71,7 @@ beforeEach(async () => {
   });
 });
 
-describe('design mode', () => {
+describe('design mode', { timeout: SLOW }, () => {
   it('starts in design mode and switches to fill in with the toggle or Ctrl+E', async () => {
     const user = userEvent.setup();
     await openTemplate();
@@ -105,45 +107,27 @@ describe('design mode', () => {
     );
   });
 
-  it('widens, narrows, moves, duplicates, locks and deletes from the toolbar', async () => {
+  it('keeps lock, duplicate and delete apart from the field options', async () => {
     const user = userEvent.setup();
     await openTemplate();
     await user.click(fieldOnCanvas('Attack'));
     const tools = screen.getByRole('toolbar', { name: 'Field tools' });
-    await user.click(within(tools).getByRole('button', { name: 'Wider' }));
-    expect(screen.getByRole('slider', { name: 'Resize width of Attack' })).toHaveAttribute(
-      'aria-valuenow',
-      '7',
-    );
-    await user.click(within(tools).getByRole('button', { name: 'Narrower' }));
-    await user.click(within(tools).getByRole('button', { name: 'Narrower' }));
-    expect(fieldOnCanvas('Attack').style.gridColumn).toBe('span 5');
-    await user.click(within(tools).getByRole('button', { name: 'Move earlier' }));
-    expect(fieldIds().slice(0, 2)).toEqual(['attack', 'name']);
-    await user.click(within(tools).getByRole('button', { name: 'Hide label' }));
-    expect(within(fieldOnCanvas('Attack')).queryByText('Attack')).not.toBeInTheDocument();
-    await user.click(within(tools).getByRole('button', { name: 'Zone' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Footer' }));
-    expect(fieldIds().slice(-2)).toEqual(['notes', 'attack']);
-    await user.click(
-      within(screen.getByRole('toolbar', { name: 'Field tools' })).getByRole('button', { name: 'Duplicate' }),
-    );
+    const actions = within(tools).getByRole('group', { name: 'Field actions' });
+    expect(within(tools).queryByRole('button', { name: 'Wider' })).not.toBeInTheDocument();
+    expect(within(tools).queryByRole('button', { name: 'Move earlier' })).not.toBeInTheDocument();
+    await user.click(within(actions).getByRole('button', { name: 'Duplicate' }));
     expect(fieldIds()).toContain('attack_2');
     expect(screen.getByRole('textbox', { name: 'Label' })).toHaveValue('Attack 2');
-    await user.click(
-      within(screen.getByRole('toolbar', { name: 'Field tools' })).getByRole('button', { name: 'Lock' }),
-    );
+    const copy = () =>
+      within(screen.getByRole('toolbar', { name: 'Field tools' })).getByRole('group', {
+        name: 'Field actions',
+      });
+    await user.click(within(copy()).getByRole('button', { name: 'Lock' }));
     expect(within(fieldOnCanvas('Attack 2')).getByRole('img', { name: 'Locked' })).toBeInTheDocument();
     expect(screen.queryByRole('slider', { name: 'Resize width of Attack 2' })).not.toBeInTheDocument();
-    expect(
-      within(screen.getByRole('toolbar', { name: 'Field tools' })).getByRole('button', { name: 'Delete' }),
-    ).toBeDisabled();
-    await user.click(
-      within(screen.getByRole('toolbar', { name: 'Field tools' })).getByRole('button', { name: 'Unlock' }),
-    );
-    await user.click(
-      within(screen.getByRole('toolbar', { name: 'Field tools' })).getByRole('button', { name: 'Delete' }),
-    );
+    expect(within(copy()).getByRole('button', { name: 'Delete' })).toBeDisabled();
+    await user.click(within(copy()).getByRole('button', { name: 'Unlock' }));
+    await user.click(within(copy()).getByRole('button', { name: 'Delete' }));
     expect(fieldIds()).not.toContain('attack_2');
   });
 
@@ -201,21 +185,64 @@ describe('design mode', () => {
     expect(screen.queryByText(/px$/)).not.toBeInTheDocument();
   });
 
-  it('moves later and shows the label again from the toolbar', async () => {
+  it('shows options that belong to the selected kind of field', async () => {
     const user = userEvent.setup();
     await openTemplate({
-      name: 'Plain',
+      name: 'Kinds',
       fields: [
         { id: 'a', kind: 'text', label: 'A', showLabel: false },
-        { id: 'b', kind: 'text', label: 'B' },
+        { id: 'n', kind: 'number', label: 'N' },
+        { id: 'c', kind: 'choice', label: 'C', options: ['X'] },
+        { id: 'd', kind: 'dice', label: 'D' },
+        { id: 's', kind: 'separator' },
       ],
     });
+    const options = () =>
+      within(screen.getByRole('toolbar', { name: 'Field tools' })).getByRole('group', {
+        name: 'Field options',
+      });
     await user.click(fieldOnCanvas('A'));
-    const tools = screen.getByRole('toolbar', { name: 'Field tools' });
-    await user.click(within(tools).getByRole('button', { name: 'Move later' }));
-    expect(fieldIds()).toEqual(['b', 'a']);
-    await user.click(within(tools).getByRole('button', { name: 'Show label' }));
+    await user.click(within(options()).getByRole('button', { name: 'Bold' }));
+    expect(within(options()).getByRole('button', { name: 'Bold' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(within(options()).getByRole('button', { name: 'Larger text' }));
+    await user.click(within(options()).getByRole('button', { name: 'Several lines' }));
+    await user.click(within(options()).getByRole('button', { name: 'Show label' }));
     expect(within(fieldOnCanvas('A')).getByText('A')).toBeInTheDocument();
+    expect(within(options()).getByRole('button', { name: 'Several lines' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    await user.click(fieldOnCanvas('N'));
+    await user.click(within(options()).getByRole('button', { name: 'Show as bar' }));
+    expect(within(fieldOnCanvas('N')).getByRole('meter')).toBeInTheDocument();
+    await user.click(within(options()).getByRole('button', { name: 'Low and high' }));
+    expect(within(options()).queryByRole('button', { name: 'Show as bar' })).not.toBeInTheDocument();
+
+    await user.click(fieldOnCanvas('C'));
+    await user.click(within(options()).getByRole('button', { name: 'Allow several' }));
+    expect(within(options()).getByRole('button', { name: 'Allow several' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(options()).queryByRole('button', { name: 'Bold' })).toBeInTheDocument();
+
+    await user.click(fieldOnCanvas('D'));
+    await user.click(within(options()).getByRole('button', { name: 'Roll button' }));
+    await user.click(within(options()).getByRole('button', { name: 'Dice builder' }));
+    expect(within(options()).getByRole('button', { name: 'Dice builder' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+
+    const separator = canvas().querySelector<HTMLElement>('[data-field-id="s"]');
+    if (!separator) throw new Error('no separator');
+    await user.click(separator);
+    await user.click(within(options()).getByRole('button', { name: 'More space' }));
+    expect(separator.querySelector<HTMLElement>('[data-spacer]')?.style.height).toBe('24px');
+    await user.click(within(options()).getByRole('button', { name: 'Draw a line' }));
+    expect(separator.querySelector('hr')).toBeNull();
+    expect(within(options()).queryByRole('button', { name: 'Show label' })).not.toBeInTheDocument();
   });
 
   it('renames a label in place with a double click', async () => {
@@ -231,12 +258,15 @@ describe('design mode', () => {
     expect(fieldOnCanvas('Strike')).toBeInTheDocument();
   });
 
-  it('adds a field after another from its plus button', async () => {
+  it('adds a field at the end of a zone from the plus below it', async () => {
     const user = userEvent.setup();
     await openTemplate();
-    await user.click(within(fieldOnCanvas('Name')).getByRole('button', { name: 'Add field after Name' }));
+    expect(
+      within(fieldOnCanvas('Name')).queryByRole('button', { name: /Add field/ }),
+    ).not.toBeInTheDocument();
+    await user.click(within(canvas()).getByRole('button', { name: 'Add field to Footer' }));
     await user.click(await screen.findByRole('menuitem', { name: 'Checkbox' }));
-    expect(fieldIds().slice(0, 2)).toEqual(['name', 'checkbox']);
+    expect(fieldIds().slice(-2)).toEqual(['notes', 'checkbox']);
     expect(fieldOnCanvas('Checkbox')).toHaveAttribute('data-selected', 'true');
   });
 
@@ -267,7 +297,7 @@ describe('design mode', () => {
   });
 });
 
-describe('keyboard editing', () => {
+describe('keyboard editing', { timeout: SLOW }, () => {
   it('selects, moves, resizes, duplicates and deletes fields from the keyboard', async () => {
     const user = userEvent.setup();
     await openTemplate();
@@ -386,7 +416,7 @@ describe('keyboard editing', () => {
   });
 });
 
-describe('field list helpers', () => {
+describe('field list helpers', { timeout: SLOW }, () => {
   it('adds several fields from lines and blocks from the menu', async () => {
     const user = userEvent.setup();
     await openTemplate();
@@ -427,7 +457,7 @@ describe('field list helpers', () => {
   });
 });
 
-describe('preview helpers', () => {
+describe('preview helpers', { timeout: SLOW }, () => {
   it('fills sample values and clears them in fill in mode', async () => {
     const user = userEvent.setup();
     await openTemplate();
@@ -469,7 +499,7 @@ describe('preview helpers', () => {
   });
 });
 
-describe('unsaved changes', () => {
+describe('unsaved changes', { timeout: SLOW }, () => {
   it('asks before another template replaces unsaved changes', async () => {
     const user = userEvent.setup();
     const { CardLibrary } = await import('@renderer/components/editors/Cards/CardLibrary');

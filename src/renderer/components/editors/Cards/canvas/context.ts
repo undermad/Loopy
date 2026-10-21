@@ -4,12 +4,14 @@ import type { FieldPresetId } from '@renderer/lib/cards';
 
 export interface Resizing {
   id: string;
+  axis: 'width' | 'height' | 'both';
   span: number | null;
   height: number | null;
 }
 
 export interface CanvasApi {
   gap: number;
+  zoom: number;
   selected: readonly string[];
   renaming: string | null;
   showGrid: boolean;
@@ -20,11 +22,9 @@ export interface CanvasApi {
   change: (field: CardField, key?: string) => void;
   rename: (id: string, label: string | null) => void;
   startRename: (id: string) => void;
-  addAfter: (id: string, preset: FieldPresetId) => void;
+  addToZone: (zone: CardField['zone'], preset: FieldPresetId) => void;
   duplicate: (id: string) => void;
   remove: (id: string) => void;
-  moveBy: (id: string, delta: -1 | 1) => void;
-  moveToZone: (id: string, zone: CardField['zone']) => void;
 }
 
 export const CanvasContext = createContext<CanvasApi | null>(null);

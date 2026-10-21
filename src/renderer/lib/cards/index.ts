@@ -36,6 +36,7 @@ export { CARD_SIZES, STARTER_TEMPLATES, blankTemplate } from './presets';
 export {
   clampSpan,
   dropField,
+  placeField,
   fieldGridStyle,
   moveFieldTo,
   snapHeight,

@@ -15,10 +15,10 @@ import {
   fieldClipboard,
   fieldsFromLines,
   moveFieldBy,
-  moveFieldTo,
   newBlock,
   newField,
   pasteFields,
+  placeField,
   removeFields,
   renameFieldId,
   resolveCardLayout,
@@ -199,6 +199,12 @@ export function Designer({
 
   function addField(preset: FieldPresetId) {
     insert([newField(preset, t(`cards.presets.${preset}`), fields)]);
+  }
+
+  function place(preset: FieldPresetId, overId: string) {
+    const field = newField(preset, t(`cards.presets.${preset}`), fields);
+    setFields(placeField(fields, field, overId));
+    selectOnly([field.id]);
   }
 
   function addBlock(block: FieldBlockId) {
@@ -515,14 +521,8 @@ export function Designer({
                   canvasRef.current?.focus({ preventScroll: true });
                 },
                 startRename: setRenaming,
-                addAfter: (id, preset) => {
-                  const result = pasteFields(
-                    fields,
-                    [newField(preset, t(`cards.presets.${preset}`), fields)],
-                    id,
-                  );
-                  setFields(result.fields);
-                  selectOnly(result.ids);
+                addToZone: (zone, preset) => {
+                  place(preset, `zone:${zone}`);
                 },
                 duplicate: (id) => {
                   duplicate([id]);
@@ -530,16 +530,17 @@ export function Designer({
                 remove: (id) => {
                   remove([id]);
                 },
-                moveBy: (id, delta) => {
-                  setFields(moveFieldBy(fields, id, delta));
-                },
-                moveToZone: (id, zone) => {
-                  setFields(moveFieldTo(fields, id, { zone, beforeId: null }));
-                },
               }}
               onValue={setValue}
               onFields={(next) => {
                 setFields(next);
+              }}
+              onAddPreset={(preset, overId) => {
+                if (overId === null) addField(preset);
+                else place(preset, overId);
+              }}
+              onCardSize={(size) => {
+                patchLayout(size);
               }}
               onFitHeight={(height) => {
                 patchLayout({ height });

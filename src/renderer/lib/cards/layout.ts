@@ -66,3 +66,13 @@ export function dropField(fields: CardField[], activeId: string, overId: string 
   if (moved) next.splice(fields.indexOf(target), 0, moved);
   return next;
 }
+
+export function placeField(fields: CardField[], added: CardField, overId: string | null): CardField[] {
+  const target = overId ? fields.find((field) => field.id === overId) : undefined;
+  if (target) {
+    const at = fields.indexOf(target);
+    return [...fields.slice(0, at), { ...added, zone: target.zone }, ...fields.slice(at)];
+  }
+  const zone = overId?.startsWith('zone:') ? (overId.slice(5) as CardField['zone']) : 'body';
+  return [...fields, { ...added, zone }];
+}

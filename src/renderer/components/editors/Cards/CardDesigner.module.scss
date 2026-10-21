@@ -162,7 +162,7 @@
 .stage {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: safe center;
   min-height: 0;
   padding: var(--space-3);
   border-radius: var(--radius-md);

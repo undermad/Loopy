@@ -5,6 +5,7 @@ import {
   dropField,
   fieldGridStyle,
   moveFieldTo,
+  placeField,
   snapHeight,
   spanFromPixels,
   updateFields,
@@ -110,5 +111,24 @@ describe('dropping a dragged field', () => {
     expect(dropField(fields, 'a', 'a')).toBe(fields);
     expect(dropField(fields, 'a', 'missing')).toBe(fields);
     expect(dropField(fields, 'missing', 'a')).toBe(fields);
+  });
+});
+
+describe('placing a new field from the palette', () => {
+  const fields = [field({ id: 'a' }), field({ id: 'b', zone: 'footer' })];
+  const added = field({ id: 'n' });
+
+  it('puts it before the field it lands on, in that zone', () => {
+    expect(placeField(fields, added, 'b').map((item) => `${item.id}:${item.zone}`)).toEqual([
+      'a:body',
+      'n:footer',
+      'b:footer',
+    ]);
+  });
+
+  it('appends it to a zone, or to the body when it lands nowhere', () => {
+    expect(placeField(fields, added, 'zone:header').at(-1)).toMatchObject({ id: 'n', zone: 'header' });
+    expect(placeField(fields, added, null).at(-1)).toMatchObject({ id: 'n', zone: 'body' });
+    expect(placeField(fields, added, 'missing').at(-1)).toMatchObject({ id: 'n', zone: 'body' });
   });
 });

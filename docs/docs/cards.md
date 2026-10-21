@@ -27,17 +27,17 @@ The designer shows the field list on the left, the canvas in the middle and sett
 
 The canvas has two modes, switched in its bar or with `Ctrl+E`. Design arranges fields; Fill in types values into the card as it will look.
 
-| Action | How in Design                                                                                                     |
-| ------ | ----------------------------------------------------------------------------------------------------------------- |
-| Select | Click a field. `Shift` or `Ctrl` click adds to the selection, in the canvas and in the field list                 |
-| Move   | Drag a field to another place or zone. Empty zones show Drop fields here                                          |
-| Resize | Drag the right handle to snap to columns, or the bottom handle to set a minimum height. `Alt` skips the 4 px snap |
-| Edit   | The toolbar above a field: narrower, wider, move, show or hide the label, zone, lock, duplicate, delete           |
-| Rename | Double-click the label, or press `Enter`                                                                          |
-| Add    | The + at a field's corner adds after it; `/` opens Add field after the selection                                  |
-| Undo   | `Ctrl+Z`, `Ctrl+Shift+Z`, `Ctrl+Y`, the canvas bar or the Edit menu                                               |
+| Action | How in Design                                                                                                                                                                                 |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Select | Click a field. `Shift` or `Ctrl` click adds to the selection, in the canvas and in the field list. Click the card away from fields for card settings                                          |
+| Move   | Drag a field to another place or zone. Empty zones show Drop fields here                                                                                                                      |
+| Resize | Drag a field's right handle to snap to columns, its bottom handle for a minimum height, or its corner for both. `Alt` skips the 4 px snap. The card's own handles resize it in steps of 10 px |
+| Edit   | The toolbar above a field: options for its type on the left, such as Bold, Show as bar or Roll button, and lock, duplicate and delete on the right                                            |
+| Rename | Double-click the label, or press `Enter`                                                                                                                                                      |
+| Add    | Drag a preset from the field palette onto the card, or click it to add after the selection. The + below each zone adds at its end; `/` opens Add field                                        |
+| Undo   | `Ctrl+Z`, `Ctrl+Shift+Z`, `Ctrl+Y`, the canvas bar or the Edit menu                                                                                                                           |
 
-Resize handles also take the keyboard: arrow keys, `Home` and `End` for width; arrow keys and `Delete` for height. Other keys on the canvas: arrows select, `Alt` with arrows moves within the zone, `[` and `]` change width, `Ctrl+D` duplicates, `Ctrl+C`, `Ctrl+X` and `Ctrl+V` copy fields between templates, `Ctrl+A` selects all, `Delete` removes and `Escape` returns to card settings. The shortcuts dialog lists them under Card designer.
+Resize handles also take the keyboard: arrow keys, `Home` and `End` for width; arrow keys and `Delete` for height; the corner takes both. Card handles move 10 px per arrow key, 1 px with `Shift`. Other keys on the canvas: arrows select, `Alt` with arrows moves within the zone, `[` and `]` change width, `Ctrl+D` duplicates, `Ctrl+C`, `Ctrl+X` and `Ctrl+V` copy fields between templates, `Ctrl+A` selects all, `Delete` removes and `Escape` returns to card settings. The shortcuts dialog lists them under Card designer.
 
 | Helper             | What it does                                                                                     |
 | ------------------ | ------------------------------------------------------------------------------------------------ |
@@ -45,7 +45,7 @@ Resize handles also take the keyboard: arrow keys, `Home` and `End` for width; a
 | Add several        | One field per line of labels, all of one preset                                                  |
 | Blocks             | Add field, Blocks: Stat block, Title and subtitle, and Icon, name and cost                       |
 | Badges             | Marks for formulas, show when rules, hidden, locked and cut off fields                           |
-| Show grid and Zoom | Column guides on every zone, and 50 to 200 percent                                               |
+| Show grid and Zoom | Cells of 12 columns and 16 px rows on every zone, and 50 to 200 percent                          |
 | Fit height         | Shown when fields run past the card; grows the card to fit them                                  |
 | Sample values      | Fill in fills plausible values, or Clear values; a template can preview a saved card's values    |
 | Used by            | The footer counts saved cards that use the template                                              |

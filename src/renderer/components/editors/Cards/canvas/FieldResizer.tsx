@@ -10,7 +10,7 @@ const HEIGHT_STEP = 8;
 
 interface Session {
   pointerId: number;
-  axis: 'width' | 'height';
+  axis: 'width' | 'height' | 'both';
   startX: number;
   startY: number;
   width: number;
@@ -28,6 +28,15 @@ export function FieldResizer({ field, label }: { field: CardField; label: string
   const session = useRef<Session | null>(null);
   const preview = canvas.resizing?.id === field.id ? canvas.resizing : null;
   const span = preview?.span ?? field.span;
+  const height = preview ? preview.height : field.height;
+  const spanText = `${String(span)}/${String(CARD_COLUMNS)}`;
+  const heightText = height === null ? t('cards.heightAuto') : t('cards.heightPx', { height });
+  const badge =
+    preview?.axis === 'both'
+      ? `${spanText} · ${heightText}`
+      : preview?.axis === 'height'
+        ? heightText
+        : spanText;
 
   function begin(axis: Session['axis'], event: PointerEvent<HTMLDivElement>) {
     if (event.button !== 0) return;
@@ -47,18 +56,21 @@ export function FieldResizer({ field, label }: { field: CardField; label: string
     };
     const handle = event.currentTarget;
     if ('setPointerCapture' in handle) handle.setPointerCapture(event.pointerId);
-    canvas.setResizing({ id: field.id, span: field.span, height: field.height });
+    canvas.setResizing({ id: field.id, axis, span: field.span, height: field.height });
   }
 
   function measure(event: PointerEvent<HTMLDivElement>) {
     const own = session.current;
     if (own?.pointerId !== event.pointerId) return null;
-    if (own.axis === 'width') {
-      const next = spanFromPixels(own.width + event.clientX - own.startX, own.grid, canvas.gap);
-      return { id: field.id, span: next, height: field.height };
-    }
-    const next = snapHeight(own.height + event.clientY - own.startY, !event.altKey);
-    return { id: field.id, span: field.span, height: next };
+    const span =
+      own.axis === 'height'
+        ? field.span
+        : spanFromPixels(own.width + event.clientX - own.startX, own.grid, canvas.gap);
+    const height =
+      own.axis === 'width'
+        ? field.height
+        : snapHeight((own.height + event.clientY - own.startY) / canvas.zoom, !event.altKey);
+    return { id: field.id, axis: own.axis, span, height };
   }
 
   function move(event: PointerEvent<HTMLDivElement>) {
@@ -109,6 +121,11 @@ export function FieldResizer({ field, label }: { field: CardField; label: string
     canvas.change({ ...field, height: next === null ? null : snapHeight(next) }, `height:${field.id}`);
   }
 
+  function bothKey(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') widthKey(event);
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') heightKey(event);
+  }
+
   const handlers = {
     onPointerMove: move,
     onPointerUp: end,
@@ -150,11 +167,27 @@ export function FieldResizer({ field, label }: { field: CardField; label: string
         onKeyDown={heightKey}
         {...handlers}
       />
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label={t('cards.resizeBoth', { label })}
+        aria-valuemin={1}
+        aria-valuemax={CARD_COLUMNS}
+        aria-valuenow={span}
+        aria-valuetext={t('cards.sizeText', {
+          span,
+          height: height === null ? t('cards.heightAuto') : t('cards.heightPx', { height }),
+        })}
+        className={cx(styles['handle'], styles['handleCorner'])}
+        onPointerDown={(event) => {
+          begin('both', event);
+        }}
+        onKeyDown={bothKey}
+        {...handlers}
+      />
       {preview ? (
         <span className={styles['badge']} aria-hidden="true">
-          {preview.span === field.span && preview.height !== field.height
-            ? `${String(preview.height ?? 0)} px`
-            : `${String(span)}/${String(CARD_COLUMNS)}`}
+          {badge}
         </span>
       ) : null}
     </>
