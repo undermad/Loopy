@@ -6,7 +6,7 @@ import { CARD_SIZES } from '@renderer/lib/cards';
 import { useTranslation } from '@renderer/lib/i18n';
 import { Field, PropertySection, Select, Switch } from '@renderer/ui';
 import { NumberField } from '../../Properties/NumberField';
-import type { TemplateDraft } from '../CardDesigner';
+import type { TemplateDraft } from '../designer/draft';
 import { ColourRow } from './ColourRow';
 import styles from '../CardDesigner.module.scss';
 

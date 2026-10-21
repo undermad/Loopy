@@ -1,12 +1,12 @@
-import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { IdCard, LayoutTemplate, Plus } from 'lucide-react';
 import type { BoardLink } from '@shared/board';
 import { reportAssetDrag } from '@renderer/lib/assets';
-import { useCardTemplates, useSavedCards } from '@renderer/lib/cards';
+import { isDesignerDirty, setDesignerDirty, useCardTemplates, useSavedCards } from '@renderer/lib/cards';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
 import { cardTarget, openInEditor, useWorkspaceNames } from '@renderer/lib/workspaces';
-import { Button } from '@renderer/ui';
+import { Button, ConfirmDialog } from '@renderer/ui';
 import styles from './CardLibrary.module.scss';
 
 const DRAG_DISTANCE = 4;
@@ -42,12 +42,20 @@ function useLinkDrag() {
 
 export function CardLibrary(_props: EditorProps) {
   const { t } = useTranslation('editors');
+  const { t: tc } = useTranslation('common');
   const names = useWorkspaceNames();
+  const [pending, setPending] = useState<{ target: { kind: 'template' | 'card'; id: string } | null } | null>(
+    null,
+  );
   const templates = useCardTemplates() ?? [];
   const cards = useSavedCards() ?? [];
   const drag = useLinkDrag();
 
   function open(target: { kind: 'template' | 'card'; id: string } | null) {
+    if (isDesignerDirty()) {
+      setPending({ target });
+      return;
+    }
     openInEditor(cardTarget(target, names));
   }
 
@@ -127,6 +135,24 @@ export function CardLibrary(_props: EditorProps) {
           ))}
         </ul>
       )}
+      <ConfirmDialog
+        open={pending !== null}
+        onOpenChange={(open) => {
+          if (!open) setPending(null);
+        }}
+        title={t('cards.discardTitle')}
+        description={t('cards.discardDescription')}
+        confirmLabel={t('cards.discardConfirm')}
+        cancelLabel={tc('actions.cancel')}
+        closeLabel={tc('actions.close')}
+        destructive
+        onConfirm={() => {
+          const target = pending?.target ?? null;
+          setPending(null);
+          setDesignerDirty(false);
+          openInEditor(cardTarget(target, names));
+        }}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { cardFieldSchema, type CardField } from '@shared/cards';
 import {
   clampSpan,
+  dropField,
   fieldGridStyle,
   moveFieldTo,
   snapHeight,
@@ -88,5 +89,26 @@ describe('moving and editing fields', () => {
     const next = updateFields(fields, ['a', 'c'], (item) => ({ ...item, span: 6 }));
     expect(next.map((item) => item.span)).toEqual([6, 12, 6, 12]);
     expect(next[1]).toBe(fields[1]);
+  });
+});
+
+describe('dropping a dragged field', () => {
+  const fields = [field({ id: 'a' }), field({ id: 'b' }), field({ id: 'c', zone: 'footer' })];
+
+  it('reorders within a zone, moves across zones and appends to a zone', () => {
+    expect(dropField(fields, 'b', 'a').map((item) => item.id)).toEqual(['b', 'a', 'c']);
+    expect(dropField(fields, 'a', 'c').map((item) => `${item.id}:${item.zone}`)).toEqual([
+      'b:body',
+      'a:footer',
+      'c:footer',
+    ]);
+    expect(dropField(fields, 'c', 'zone:header').at(-1)).toMatchObject({ id: 'c', zone: 'header' });
+  });
+
+  it('ignores drops on nothing, on itself or on unknown fields', () => {
+    expect(dropField(fields, 'a', null)).toBe(fields);
+    expect(dropField(fields, 'a', 'a')).toBe(fields);
+    expect(dropField(fields, 'a', 'missing')).toBe(fields);
+    expect(dropField(fields, 'missing', 'a')).toBe(fields);
   });
 });

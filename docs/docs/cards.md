@@ -21,7 +21,38 @@ The Cards workspace pairs the Card library with the Card designer. It ships in t
 | Turn a card into one    | Save as template on a card without a template creates the template and attaches the card to it                               |
 | Place a card            | Drag it from the library or the Assets editor onto a board, a ticket, a note or a link field                                 |
 
-The designer shows the field list on the left, a live preview in the middle and settings on the right. A card that uses a template shows only the preview and Edit template, because its layout belongs to the template. Drag fields by their grip to reorder them. Changes stay in the designer until Save template or Save card.
+The designer shows the field list on the left, the canvas in the middle and settings on the right. A card that uses a template shows only the preview and Edit template, because its layout belongs to the template. Changes stay in the designer until Save template or Save card. Opening another template or card from the library while changes are unsaved asks before discarding them.
+
+## Designing on the canvas
+
+The canvas has two modes, switched in its bar or with `Ctrl+E`. Design arranges fields; Fill in types values into the card as it will look.
+
+| Action | How in Design                                                                                                     |
+| ------ | ----------------------------------------------------------------------------------------------------------------- |
+| Select | Click a field. `Shift` or `Ctrl` click adds to the selection, in the canvas and in the field list                 |
+| Move   | Drag a field to another place or zone. Empty zones show Drop fields here                                          |
+| Resize | Drag the right handle to snap to columns, or the bottom handle to set a minimum height. `Alt` skips the 4 px snap |
+| Edit   | The toolbar above a field: narrower, wider, move, show or hide the label, zone, lock, duplicate, delete           |
+| Rename | Double-click the label, or press `Enter`                                                                          |
+| Add    | The + at a field's corner adds after it; `/` opens Add field after the selection                                  |
+| Undo   | `Ctrl+Z`, `Ctrl+Shift+Z`, `Ctrl+Y`, the canvas bar or the Edit menu                                               |
+
+Resize handles also take the keyboard: arrow keys, `Home` and `End` for width; arrow keys and `Delete` for height. Other keys on the canvas: arrows select, `Alt` with arrows moves within the zone, `[` and `]` change width, `Ctrl+D` duplicates, `Ctrl+C`, `Ctrl+X` and `Ctrl+V` copy fields between templates, `Ctrl+A` selects all, `Delete` removes and `Escape` returns to card settings. The shortcuts dialog lists them under Card designer.
+
+| Helper             | What it does                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
+| Several fields     | Selecting more than one field shows shared settings: columns, zone, label, text size, hide, lock |
+| Add several        | One field per line of labels, all of one preset                                                  |
+| Blocks             | Add field, Blocks: Stat block, Title and subtitle, and Icon, name and cost                       |
+| Badges             | Marks for formulas, show when rules, hidden, locked and cut off fields                           |
+| Show grid and Zoom | Column guides on every zone, and 50 to 200 percent                                               |
+| Fit height         | Shown when fields run past the card; grows the card to fit them                                  |
+| Sample values      | Fill in fills plausible values, or Clear values; a template can preview a saved card's values    |
+| Used by            | The footer counts saved cards that use the template                                              |
+| Lock               | A locked field cannot be dragged, resized or deleted                                             |
+| Field id           | Advanced; renaming it updates formulas, show when rules and the accent field                     |
+
+Duplicated fields number their label, so Attack becomes Attack 2.
 
 ## Fields
 
@@ -113,7 +144,9 @@ A board card item stores `templateId`, `cardId` and `values`. A card link is `{ 
 
 ## Library
 
-`src/renderer/lib/cards` keeps templates and saved cards, reloads them when the project changes, and exposes `useCardTemplates`, `useSavedCards`, `useBoardCard`, `resolveCardLayout`, the create, update, duplicate and delete actions, the field kinds and the starter templates. The components live in `src/renderer/components/editors/Cards`: `CardLibrary`, `CardDesigner`, `BoardCardDesigner` for a card on a board, `CardPreview`, `CardView`, one view per field kind in `fields/` and the settings panels in `settings/`. The designer's area state is `target`: a template, a saved card, or `{ kind: 'item', id, boardId }` for a board card.
+`src/renderer/lib/cards` keeps templates and saved cards, reloads them when the project changes, and exposes `useCardTemplates`, `useSavedCards`, `useBoardCard`, `resolveCardLayout`, the create, update, duplicate and delete actions, the field kinds, presets and starter templates. Pure modules hold the designer's logic: `layout.ts` for grid maths and drops, `edit.ts` for duplicating, pasting, renaming ids, blocks and overflow, `history.ts` with `useHistory` for undo, `sample.ts` for sample values and `keys.ts` for the designer keys and the unsaved changes flag.
+
+The components live in `src/renderer/components/editors/Cards`: `CardLibrary`, `CardDesigner`, `BoardCardDesigner` for a card on a board, `CardPreview`, `CardView`, one view per field kind in `fields/`, the settings panels in `settings/`, the designer parts in `designer/` and the canvas in `canvas/`. `CardView` takes an optional `design` with its own zone and field components; that is how the canvas adds dragging, handles and toolbars without changing how cards draw on boards. The designer's area state is `target`: a template, a saved card, or `{ kind: 'item', id, boardId }` for a board card.
 
 ## Adding a field kind
 

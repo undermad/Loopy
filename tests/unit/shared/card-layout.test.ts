@@ -20,4 +20,9 @@ describe('card field layout', () => {
     expect(() => cardFieldSchema.parse({ id: 'a', kind: 'text', height: 4 })).toThrow();
     expect(() => cardFieldSchema.parse({ id: 'a', kind: 'text', height: 5000 })).toThrow();
   });
+
+  it('locks a field on the canvas', () => {
+    expect(cardFieldSchema.parse({ id: 'a', kind: 'text' }).locked).toBe(false);
+    expect(cardFieldSchema.parse({ id: 'a', kind: 'text', locked: true }).locked).toBe(true);
+  });
 });

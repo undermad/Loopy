@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { cardFieldSchema, cardLayoutSchema, type CardField, type CardLayout } from '@shared/cards';
-import type { TemplateDraft } from '@renderer/components/editors/Cards/CardDesigner';
+import type { TemplateDraft } from '@renderer/components/editors/Cards/designer/draft';
 import { CardPreview } from '@renderer/components/editors/Cards/CardPreview';
 import { CardView } from '@renderer/components/editors/Cards/CardView';
 import { CardSettings, FieldSettings } from '@renderer/components/editors/Cards/settings';

@@ -64,6 +64,7 @@ const base = {
   style: cardFieldStyleSchema.default({}),
   help: z.string().max(200).default(''),
   hidden: z.boolean().default(false),
+  locked: z.boolean().default(false),
   visibleWhen: visibilityRuleSchema.nullable().default(null),
   zone: z.enum(CARD_ZONES).default('body'),
   height: z.number().min(CARD_MIN_FIELD_HEIGHT).max(CARD_MAX_FIELD_HEIGHT).nullable().default(null),

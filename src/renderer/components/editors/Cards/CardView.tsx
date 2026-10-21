@@ -1,7 +1,32 @@
-import type { CSSProperties } from 'react';
+import type { ComponentType, CSSProperties, ReactNode } from 'react';
 import { Info } from 'lucide-react';
 import type { CardValue } from '@shared/board';
 import { CARD_ZONES, type CardField, type CardLayout, type CardTextSize } from '@shared/cards';
+
+type CardZone = (typeof CARD_ZONES)[number];
+
+export interface CardDesignZoneProps {
+  zone: CardZone;
+  ids: string[];
+  className: string;
+  style: CSSProperties;
+  children: ReactNode;
+}
+
+export interface CardDesignFieldProps {
+  field: CardField;
+  visible: boolean;
+  label: string;
+  className: string;
+  labelClassName: string;
+  helpMark: ReactNode;
+  body: ReactNode;
+}
+
+export interface CardViewDesign {
+  Zone: ComponentType<CardDesignZoneProps>;
+  Field: ComponentType<CardDesignFieldProps>;
+}
 import {
   computeFormulas,
   fieldGridStyle,
@@ -24,6 +49,7 @@ export interface CardViewProps {
   selectedFieldId?: string | null;
   onSelectField?: (fieldId: string) => void;
   showHidden?: boolean;
+  design?: CardViewDesign | undefined;
   className?: string | undefined;
 }
 
@@ -65,6 +91,7 @@ export function CardView({
   selectedFieldId,
   onSelectField,
   showHidden = false,
+  design,
   className,
 }: CardViewProps) {
   const { t } = useTranslation('editors');
@@ -74,6 +101,35 @@ export function CardView({
     .filter(({ visible }) => showHidden || visible);
   const renderField = ({ field, visible }: { field: CardField; visible: boolean }) => {
     const label = field.label || t(`cards.presets.${presetOf(field)}`);
+    const helpMark = field.help ? (
+      <span className={styles['help']} role="img" aria-label={field.help} title={field.help}>
+        <Info aria-hidden="true" />
+      </span>
+    ) : null;
+    const body = (
+      <FieldBody
+        field={field}
+        value={fieldValue(field, values)}
+        result={formulas[field.id]}
+        editable={editable && !design}
+        label={label}
+        onChange={(value) => onChange?.(field.id, value)}
+      />
+    );
+    if (design) {
+      return (
+        <design.Field
+          key={field.id}
+          field={field}
+          visible={visible}
+          label={label}
+          className={cx(styles['field'], !visible && styles['fieldHidden'])}
+          labelClassName={styles['label'] ?? ''}
+          helpMark={helpMark}
+          body={body}
+        />
+      );
+    }
     return (
       <div
         key={field.id}
@@ -97,28 +153,30 @@ export function CardView({
         {field.showLabel && field.kind !== 'separator' ? (
           <span className={styles['label']}>
             {label}
-            {field.help ? (
-              <span className={styles['help']} role="img" aria-label={field.help} title={field.help}>
-                <Info aria-hidden="true" />
-              </span>
-            ) : null}
+            {helpMark}
           </span>
         ) : null}
-        <FieldBody
-          field={field}
-          value={fieldValue(field, values)}
-          result={formulas[field.id]}
-          editable={editable}
-          label={label}
-          onChange={(value) => onChange?.(field.id, value)}
-        />
+        {body}
       </div>
     );
   };
   return (
-    <div className={cx(styles['card'], className)}>
+    <div className={cx(styles['card'], className)} data-card-view="">
       {CARD_ZONES.map((zone) => {
         const inZone = shown.filter(({ field }) => field.zone === zone);
+        if (design) {
+          return (
+            <design.Zone
+              key={zone}
+              zone={zone}
+              ids={inZone.map(({ field }) => field.id)}
+              className={cx(styles['zone'], styles[zone])}
+              style={{ gap: layout.gap }}
+            >
+              {inZone.map(renderField)}
+            </design.Zone>
+          );
+        }
         if (inZone.length === 0 && zone !== 'body') return null;
         return (
           <div
