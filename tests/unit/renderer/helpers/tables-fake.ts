@@ -8,6 +8,7 @@ import {
   type DataTable,
   type DataTableSummary,
   type RowChanges,
+  type TableImportResult,
   type TableRow,
   type TableSnapshot,
 } from '@shared/tables';
@@ -21,6 +22,8 @@ type TablesFakeApi = Pick<
   | 'duplicateTable'
   | 'deleteTable'
   | 'patchTableRows'
+  | 'exportTable'
+  | 'importTable'
 >;
 
 const STAMP = '2026-10-21T09:00:00.000Z';
@@ -155,6 +158,8 @@ export function createTablesFake() {
     patchTableRows: vi.fn((tableId: string, ops: unknown) =>
       Promise.resolve().then(() => patch(tableId, ops)),
     ),
+    exportTable: vi.fn(() => Promise.resolve({ status: 'exported' as const })),
+    importTable: vi.fn((): Promise<TableImportResult> => Promise.resolve({ status: 'cancelled' })),
   };
   return { data, api, create };
 }

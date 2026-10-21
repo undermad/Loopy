@@ -23,7 +23,10 @@
     "cancel": "Cancel",
     "close": "Close",
     "drag": "Drag onto a board, ticket or note to link it",
-    "firstColumn": "Name"
+    "firstColumn": "Name",
+    "import": "Import",
+    "importHint": "Import a CSV, TSV, JSON or Loopy table file",
+    "importInvalid": "Could not read {{name}} as a table"
   },
   "editor": {
     "noTable": "No table open",
@@ -47,7 +50,19 @@
     "deleteRows": "Delete rows",
     "keyHint": "Unique id used by exports and row references",
     "pick": "Pick…",
+    "export": "Export",
+    "exported": "{{name}} exported",
+    "exportFailed": "Could not export {{name}}",
     "none": "None"
+  },
+  "formats": {
+    "csv": "CSV",
+    "tsv": "TSV",
+    "json": "JSON array",
+    "jsonKeyed": "JSON keyed by {{key}}",
+    "markdown": "Markdown table",
+    "jsonSchema": "JSON Schema",
+    "loopy": "Loopy table file"
   },
   "kinds": {
     "text": "Text",

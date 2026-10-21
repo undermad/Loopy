@@ -1,13 +1,13 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { Copy, MoreHorizontal, Plus, Sheet, Trash2 } from 'lucide-react';
+import { Copy, MoreHorizontal, Plus, Sheet, Trash2, Upload } from 'lucide-react';
 import type { BoardLink } from '@shared/board';
 import type { DataTableSummary } from '@shared/tables';
 import { reportAssetDrag } from '@renderer/lib/assets';
 import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
-import { createTable, deleteTable, duplicateTable, useTables } from '@renderer/lib/tables';
+import { createTable, deleteTable, duplicateTable, importTable, useTables } from '@renderer/lib/tables';
 import { openInEditor, tableTarget, useWorkspaceNames } from '@renderer/lib/workspaces';
-import { Button, ConfirmDialog, DropdownMenu, IconButton, Input } from '@renderer/ui';
+import { Button, ConfirmDialog, DropdownMenu, IconButton, Input, useToast } from '@renderer/ui';
 import styles from './TableLibrary.module.scss';
 
 const DRAG_DISTANCE = 4;
@@ -52,6 +52,7 @@ function uniqueName(base: string, taken: readonly string[]): string {
 export function TableLibrary({ state, setState }: EditorProps) {
   const { t } = useTranslation('tables');
   const names = useWorkspaceNames();
+  const toast = useToast();
   const tables = useTables() ?? [];
   const drag = useLinkDrag();
   const [deleting, setDeleting] = useState<DataTableSummary | null>(null);
@@ -75,6 +76,13 @@ export function TableLibrary({ state, setState }: EditorProps) {
     open(table.id);
   }
 
+  async function runImport() {
+    const result = await importTable(null);
+    if (result.status === 'imported') open(result.snapshot.table.id);
+    else if (result.status === 'invalid')
+      toast.show({ title: t('library.importInvalid', { name: result.name }), variant: 'danger' });
+  }
+
   async function duplicate(table: DataTableSummary) {
     const name = uniqueName(
       t('library.copyName', { name: table.name }),
@@ -88,6 +96,15 @@ export function TableLibrary({ state, setState }: EditorProps) {
       <div className={styles['actions']}>
         <Button size="sm" icon={<Plus aria-hidden="true" />} onClick={() => void create()}>
           {t('library.newTable')}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          icon={<Upload aria-hidden="true" />}
+          title={t('library.importHint')}
+          onClick={() => void runImport()}
+        >
+          {t('library.import')}
         </Button>
       </div>
       <Input

@@ -53,6 +53,7 @@ import {
   dataTableSchema,
   dataTableSummaryListSchema,
   rowChangesSchema,
+  tableImportResultSchema,
   tableSnapshotSchema,
 } from '@shared/tables';
 
@@ -173,6 +174,8 @@ const api: LoopyApi = {
   duplicateTable: (id, name) => invoke(IpcChannel.tablesDuplicate, tableSnapshotSchema, id, name),
   deleteTable: (id) => invoke(IpcChannel.tablesDelete, dataTableSummaryListSchema, id),
   patchTableRows: (tableId, ops) => invoke(IpcChannel.tablesPatchRows, rowChangesSchema, tableId, ops),
+  exportTable: (id, format) => invoke(IpcChannel.tablesExport, exportResultSchema, id, format),
+  importTable: (folderId) => invoke(IpcChannel.tablesImport, tableImportResultSchema, folderId),
   listCards: () => invoke(IpcChannel.cardsList, savedCardListSchema),
   createCard: (input) => invoke(IpcChannel.cardsCreate, savedCardSchema, input),
   updateCard: (id, patch) => invoke(IpcChannel.cardsUpdate, savedCardSchema, id, patch),

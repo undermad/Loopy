@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
-import type { LoopyApi } from '@shared/ipc';
+import type { ExportResult, LoopyApi } from '@shared/ipc';
 import type {
   DataTable,
   DataTableInput,
@@ -10,6 +10,8 @@ import type {
   RowChanges,
   RowOp,
   TableLookup,
+  TableExportFormat,
+  TableImportResult,
   TableRow,
   TableSnapshot,
 } from '@shared/tables';
@@ -25,6 +27,8 @@ export type TablesApi = Pick<
   | 'duplicateTable'
   | 'deleteTable'
   | 'patchTableRows'
+  | 'exportTable'
+  | 'importTable'
 >;
 
 type Action = { type: 'rows'; ops: RowOp[] } | { type: 'table'; patch: DataTablePatch };
@@ -166,6 +170,20 @@ export async function duplicateTable(id: string, name: string): Promise<TableSna
   putSnapshot(snapshot);
   putSummary(snapshot.table, snapshot.rows.length);
   return snapshot;
+}
+
+export function exportTable(id: string, format: TableExportFormat): Promise<ExportResult> {
+  return requireApi().exportTable(id, format);
+}
+
+export async function importTable(folderId: string | null): Promise<TableImportResult> {
+  const result = await requireApi().importTable(folderId);
+  if (result.status === 'imported') {
+    loadToken += 1;
+    putSnapshot(result.snapshot);
+    putSummary(result.snapshot.table, result.snapshot.rows.length);
+  }
+  return result;
 }
 
 export async function deleteTable(id: string): Promise<DataTableSummary[]> {

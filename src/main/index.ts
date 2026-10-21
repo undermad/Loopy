@@ -171,7 +171,11 @@ async function start(): Promise<void> {
   registerPalettesHandlers(syncingIpc(ipcMain, 'palettes', notify), { project: () => projects.current() });
   registerCardTemplatesHandlers(syncingIpc(ipcMain, 'cards', notify), { project: () => projects.current() });
   registerItemStylesHandlers(syncingIpc(ipcMain, 'styles', notify), { project: () => projects.current() });
-  registerTablesHandlers(syncingIpc(ipcMain, 'tables', notify), { project: () => projects.current() });
+  registerTablesHandlers(syncingIpc(ipcMain, 'tables', notify), {
+    project: () => projects.current(),
+    dialogs: dialog,
+    appVersion,
+  });
   registerAssetsHandlers(syncingIpc(ipcMain, 'assets', notify), {
     project: () => projects.current(),
     dialogs: dialog,

@@ -1,7 +1,7 @@
 import { useState, type ComponentType } from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LayoutNode } from '@shared/layout';
 import { buildWorkspace, builtInLayoutPresets } from '@shared/layout-presets';
 import { TableEditor } from '@renderer/components/editors/Tables/TableEditor';
@@ -154,6 +154,32 @@ describe('table library', () => {
     });
     expect(api.tablesData.tables[1]?.columns.map((column) => column.id)).toEqual(['name']);
     expect(screen.getByLabelText('open table').textContent).toBe(api.tablesData.tables[1]?.id);
+  });
+
+  it('imports a table file into the library and opens it', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Stateful editor={TableLibrary} />
+        <ActiveTable />
+      </>,
+    );
+    vi.mocked(api.importTable).mockImplementationOnce(async () => {
+      const snapshot = await api.createTable({ name: 'Bats', rows: [{ key: 'bat' }] });
+      return { status: 'imported', snapshot };
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Import' }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('open table').textContent).toBe(api.tablesData.tables[0]?.id);
+    });
+    expect(api.importTable).toHaveBeenLastCalledWith(null);
+    expect(within(screen.getByRole('list', { name: 'Data tables' })).getByText('Bats')).toBeTruthy();
+
+    vi.mocked(api.importTable).mockResolvedValueOnce({ status: 'invalid', name: 'broken.json' });
+    await user.click(screen.getByRole('button', { name: 'Import' }));
+    expect(await screen.findByText('Could not read broken.json as a table')).toBeTruthy();
   });
 
   it('duplicates and deletes a table from its menu', async () => {
@@ -363,6 +389,19 @@ describe('table editor', () => {
 
     expect(await screen.findByText('1 problem')).toBeTruthy();
     expect(cell(0, 1).getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('exports the table in a chosen format', async () => {
+    const { table } = await weapons();
+    const user = userEvent.setup();
+    render(<Stateful editor={TableEditor} initial={{ tableId: table.id }} />);
+    await screen.findByRole('grid');
+
+    await user.click(screen.getByRole('button', { name: 'Export' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'JSON keyed by id' }));
+
+    expect(api.exportTable).toHaveBeenLastCalledWith(table.id, 'jsonKeyed');
+    expect(await screen.findByText('Weapons exported')).toBeTruthy();
   });
 
   it('renders only the rows in view for a long table', async () => {

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Plus, Redo2, Rows3, Sheet, Undo2 } from 'lucide-react';
+import { Download, Plus, Redo2, Rows3, Sheet, Undo2 } from 'lucide-react';
 import {
   TABLE_COLUMN_KINDS,
+  TABLE_EXPORT_FORMATS,
   columnIdFrom,
   computeTable,
   tableColumnSchema,
@@ -16,6 +17,7 @@ import type { EditorProps } from '@renderer/lib/editors';
 import { useTranslation } from '@renderer/lib/i18n';
 import {
   editRows,
+  exportTable,
   filterRows,
   nextRowKey,
   redoTable,
@@ -209,6 +211,35 @@ export function TableEditor({ state, setState }: EditorProps) {
                 }}
               >
                 {t(`kinds.${kind}`)}
+              </DropdownMenu.Item>
+            ))}
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <Button size="sm" variant="secondary" icon={<Download aria-hidden="true" />}>
+              {t('editor.export')}
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content align="start">
+            {TABLE_EXPORT_FORMATS.map((format) => (
+              <DropdownMenu.Item
+                key={format}
+                onSelect={() => {
+                  void exportTable(table.id, format)
+                    .then((result) => {
+                      if (result.status === 'exported')
+                        toast.show({ title: t('editor.exported', { name: table.name }), variant: 'success' });
+                    })
+                    .catch(() => {
+                      toast.show({
+                        title: t('editor.exportFailed', { name: table.name }),
+                        variant: 'danger',
+                      });
+                    });
+                }}
+              >
+                {t(`formats.${format}`, { key: table.keyName })}
               </DropdownMenu.Item>
             ))}
           </DropdownMenu.Content>

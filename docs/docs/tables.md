@@ -79,6 +79,21 @@ The toolbar counts problems, and a cell with one gets a red edge and a tooltip.
 | Missing row    | A row reference points at a deleted row                  |
 | Formula error  | A formula names an unknown column or loops               |
 
+## Export and import
+
+Export in the editor's toolbar writes the table through a save dialog. Formula columns export their computed values and row references export the referenced keys.
+
+| Format           | Writes                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| CSV, TSV         | A header of column ids, then one line per row                                         |
+| JSON array       | One object per row with the key and typed values; empty cells are `null`              |
+| JSON keyed by id | One object keyed by the row key, which Unity, Godot and Unreal loaders can read       |
+| Markdown table   | Column labels and shown values, for design documents                                  |
+| JSON Schema      | The shape of a row, for validating exported JSON in an engine or a build              |
+| Loopy table file | `.loopy-table.json` with columns and raw cells, for moving a table to another project |
+
+Import in the library reads a CSV, TSV, JSON or Loopy table file into a new table named after the file. A column named `id` or `key` becomes the key, otherwise the first column does; blank keys become `row_1` and repeated keys get a suffix. Column kinds are guessed from the values: yes and no, numbers, hex colours, dates, a few repeated values as a choice, or text. JSON reads an array of objects or an object keyed by id; nested values become text. References and asset links in a Loopy table file still point into the project they came from.
+
 ## Links
 
 A table link is `{ kind: 'table', id }` in board link and embed items, ticket links and card link fields, and `[[table:Name]]` in notes. Renaming a table rewrites its note links. A board embed shows the first twenty rows live, with computed formulas.
@@ -95,6 +110,7 @@ Schemas, cell parsing, formulas over rows, validation and CSV parsing are pure c
 | `tables:read`                                                         | One table and its rows in order                                                               |
 | `tables:create`, `tables:update`, `tables:duplicate`, `tables:delete` | Table lifecycle; create takes rows as well                                                    |
 | `tables:patchRows`                                                    | Inserts, updates, moves and deletes rows in one transaction and returns only the changed rows |
+| `tables:export`, `tables:import`                                      | Save and open dialogs in main; the formats are pure functions in `src/shared/tables`          |
 
 An update sets the cells it names and removes the ones set to `null`. A failing operation rolls back the whole patch.
 

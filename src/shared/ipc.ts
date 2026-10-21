@@ -55,6 +55,8 @@ import type {
   DataTableSummary,
   RowChanges,
   RowOp,
+  TableExportFormat,
+  TableImportResult,
   TableSnapshot,
 } from './tables';
 import {
@@ -207,6 +209,8 @@ export const IpcChannel = {
   tablesDuplicate: 'tables:duplicate',
   tablesDelete: 'tables:delete',
   tablesPatchRows: 'tables:patchRows',
+  tablesExport: 'tables:export',
+  tablesImport: 'tables:import',
   assetsSnapshot: 'assets:snapshot',
   assetsCreateFolder: 'assets:createFolder',
   assetsUpdateFolder: 'assets:updateFolder',
@@ -428,6 +432,8 @@ export interface LoopyApi {
   duplicateTable: (id: string, name: string) => Promise<TableSnapshot>;
   deleteTable: (id: string) => Promise<DataTableSummary[]>;
   patchTableRows: (tableId: string, ops: RowOp[]) => Promise<RowChanges>;
+  exportTable: (id: string, format: TableExportFormat) => Promise<ExportResult>;
+  importTable: (folderId: string | null) => Promise<TableImportResult>;
   getAssets: () => Promise<AssetsSnapshot>;
   createAssetFolder: (input: FolderInput) => Promise<AssetsSnapshot>;
   updateAssetFolder: (id: string, patch: FolderPatch) => Promise<AssetsSnapshot>;

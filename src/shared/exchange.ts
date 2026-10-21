@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const exchangeKindSchema = z.enum(['theme', 'layout']);
+export const exchangeKindSchema = z.enum(['theme', 'layout', 'table']);
 
 export const exchangeEnvelopeSchema = z.object({
   loopy: z.object({
@@ -26,4 +26,5 @@ export function wrapExchange(
 export const EXCHANGE_FILE_EXTENSIONS: Record<ExchangeKind, string> = {
   theme: 'loopy-theme.json',
   layout: 'loopy-layout.json',
+  table: 'loopy-table.json',
 };

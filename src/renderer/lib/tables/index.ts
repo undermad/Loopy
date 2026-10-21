@@ -4,6 +4,8 @@ export {
   deleteTable,
   duplicateTable,
   editRows,
+  exportTable,
+  importTable,
   loadTables,
   redoTable,
   resetTablesStore,

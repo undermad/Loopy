@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -24,10 +24,17 @@ afterEach(async () => {
   await rm(directory, { recursive: true, force: true });
 });
 
+const dialogs = {
+  showOpenDialog: vi.fn(() => Promise.resolve({ canceled: true, filePaths: [] as string[] })),
+  showSaveDialog: vi.fn(() =>
+    Promise.resolve({ canceled: true } as { canceled: boolean; filePath?: string }),
+  ),
+};
+
 function setup(open = true) {
   const handlers = new Map<string, Handler>();
   const ipc = { handle: vi.fn((channel: string, handler: Handler) => handlers.set(channel, handler)) };
-  registerTablesHandlers(ipc, { project: () => (open ? project : null) });
+  registerTablesHandlers(ipc, { project: () => (open ? project : null), dialogs, appVersion: '0.1.0' });
   return <T>(channel: string, ...args: unknown[]) =>
     Promise.resolve().then(() => handlers.get(channel)?.({}, ...args)) as Promise<T>;
 }
@@ -195,6 +202,56 @@ describe('tables IPC handlers', () => {
     await call(IpcChannel.tablesUpdate, table.id, { name: 'Weapons' });
 
     expect(listNotes(project.db)[0]?.body).toBe('See [[table:Weapons]] for numbers.');
+  });
+
+  it('exports a table through the save dialog with referenced keys resolved', async () => {
+    const call = setup();
+    const owners = await call<TableSnapshot>(IpcChannel.tablesCreate, {
+      name: 'Owners',
+      rows: [{ key: 'knight' }],
+    });
+    const { table } = await call<TableSnapshot>(IpcChannel.tablesCreate, {
+      name: 'Items',
+      columns: [{ id: 'owner', kind: 'reference', tableId: owners.table.id }],
+      rows: [{ key: 'sword', cells: { owner: owners.rows[0]?.id ?? '' } }],
+    });
+    await expect(call(IpcChannel.tablesExport, table.id, 'csv')).resolves.toEqual({ status: 'cancelled' });
+
+    const target = join(directory, 'items.csv');
+    dialogs.showSaveDialog.mockResolvedValueOnce({ canceled: false, filePath: target });
+    await expect(call(IpcChannel.tablesExport, table.id, 'csv')).resolves.toEqual({ status: 'exported' });
+
+    expect(dialogs.showSaveDialog).toHaveBeenLastCalledWith(
+      expect.objectContaining({ defaultPath: 'Items.csv', filters: [{ name: 'CSV', extensions: ['csv'] }] }),
+    );
+    await expect(readFile(target, 'utf8')).resolves.toBe('id,owner\r\nsword,knight');
+    await expect(call(IpcChannel.tablesExport, table.id, 'xlsx')).rejects.toThrow();
+  });
+
+  it('imports a file picked in the open dialog into a table folder', async () => {
+    const call = setup();
+    const enemies = folder('tables', 'Enemies');
+    await expect(call(IpcChannel.tablesImport, null)).resolves.toEqual({ status: 'cancelled' });
+
+    const source = join(directory, 'Bats.csv');
+    await writeFile(source, 'id,hp\nbat,3\nbig_bat,9\n', 'utf8');
+    dialogs.showOpenDialog.mockResolvedValueOnce({ canceled: false, filePaths: [source] });
+    const result = await call<{ status: string; snapshot: TableSnapshot }>(IpcChannel.tablesImport, enemies);
+
+    expect(result.status).toBe('imported');
+    expect(result.snapshot.table).toMatchObject({ name: 'Bats', folderId: enemies });
+    expect(result.snapshot.rows.map((row) => [row.key, row.cells])).toEqual([
+      ['bat', { hp: 3 }],
+      ['big_bat', { hp: 9 }],
+    ]);
+
+    const broken = join(directory, 'broken.json');
+    await writeFile(broken, '{ nope', 'utf8');
+    dialogs.showOpenDialog.mockResolvedValueOnce({ canceled: false, filePaths: [broken] });
+    await expect(call(IpcChannel.tablesImport, null)).resolves.toEqual({
+      status: 'invalid',
+      name: 'broken.json',
+    });
   });
 
   it('fails without an open project', async () => {
