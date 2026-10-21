@@ -49,6 +49,12 @@ import {
   type Unsubscribe,
 } from '@shared/ipc';
 import { layoutNodeSchema } from '@shared/layout';
+import {
+  dataTableSchema,
+  dataTableSummaryListSchema,
+  rowChangesSchema,
+  tableSnapshotSchema,
+} from '@shared/tables';
 
 function subscribe<T>(channel: string, schema: z.ZodType<T>, listener: (value: T) => void): Unsubscribe {
   const handler = (_event: IpcRendererEvent, payload: unknown) => {
@@ -160,6 +166,13 @@ const api: LoopyApi = {
   createItemStyle: (input) => invoke(IpcChannel.itemStylesCreate, itemStylePresetSchema, input),
   updateItemStyle: (id, patch) => invoke(IpcChannel.itemStylesUpdate, itemStylePresetSchema, id, patch),
   deleteItemStyle: (id) => invoke(IpcChannel.itemStylesDelete, itemStylePresetListSchema, id),
+  listTables: () => invoke(IpcChannel.tablesList, dataTableSummaryListSchema),
+  readTable: (id) => invoke(IpcChannel.tablesRead, tableSnapshotSchema, id),
+  createTable: (input) => invoke(IpcChannel.tablesCreate, tableSnapshotSchema, input),
+  updateTable: (id, patch) => invoke(IpcChannel.tablesUpdate, dataTableSchema, id, patch),
+  duplicateTable: (id, name) => invoke(IpcChannel.tablesDuplicate, tableSnapshotSchema, id, name),
+  deleteTable: (id) => invoke(IpcChannel.tablesDelete, dataTableSummaryListSchema, id),
+  patchTableRows: (tableId, ops) => invoke(IpcChannel.tablesPatchRows, rowChangesSchema, tableId, ops),
   listCards: () => invoke(IpcChannel.cardsList, savedCardListSchema),
   createCard: (input) => invoke(IpcChannel.cardsCreate, savedCardSchema, input),
   updateCard: (id, patch) => invoke(IpcChannel.cardsUpdate, savedCardSchema, id, patch),

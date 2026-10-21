@@ -48,6 +48,15 @@ import {
   type SavedCardInput,
   type SavedCardPatch,
 } from './cards';
+import type {
+  DataTable,
+  DataTableInput,
+  DataTablePatch,
+  DataTableSummary,
+  RowChanges,
+  RowOp,
+  TableSnapshot,
+} from './tables';
 import {
   itemStylePresetListSchema,
   itemStylePresetSchema,
@@ -191,6 +200,13 @@ export const IpcChannel = {
   itemStylesCreate: 'itemStyles:create',
   itemStylesUpdate: 'itemStyles:update',
   itemStylesDelete: 'itemStyles:delete',
+  tablesList: 'tables:list',
+  tablesRead: 'tables:read',
+  tablesCreate: 'tables:create',
+  tablesUpdate: 'tables:update',
+  tablesDuplicate: 'tables:duplicate',
+  tablesDelete: 'tables:delete',
+  tablesPatchRows: 'tables:patchRows',
   assetsSnapshot: 'assets:snapshot',
   assetsCreateFolder: 'assets:createFolder',
   assetsUpdateFolder: 'assets:updateFolder',
@@ -288,7 +304,16 @@ export type ShellStatePatch = z.infer<typeof shellStatePatchSchema>;
 export type EditCommand = z.infer<typeof editCommandSchema>;
 export type Unsubscribe = () => void;
 
-export const DATA_DOMAINS = ['tickets', 'boards', 'palettes', 'cards', 'styles', 'assets', 'notes'] as const;
+export const DATA_DOMAINS = [
+  'tickets',
+  'boards',
+  'palettes',
+  'cards',
+  'styles',
+  'assets',
+  'notes',
+  'tables',
+] as const;
 export type DataDomain = (typeof DATA_DOMAINS)[number];
 export const dataChangeSchema = z.object({ domain: z.enum(DATA_DOMAINS) });
 export type DataChange = z.infer<typeof dataChangeSchema>;
@@ -396,6 +421,13 @@ export interface LoopyApi {
   createItemStyle: (input: ItemStylePresetInput) => Promise<ItemStylePreset>;
   updateItemStyle: (id: string, patch: ItemStylePresetPatch) => Promise<ItemStylePreset>;
   deleteItemStyle: (id: string) => Promise<ItemStylePreset[]>;
+  listTables: () => Promise<DataTableSummary[]>;
+  readTable: (id: string) => Promise<TableSnapshot>;
+  createTable: (input: DataTableInput) => Promise<TableSnapshot>;
+  updateTable: (id: string, patch: DataTablePatch) => Promise<DataTable>;
+  duplicateTable: (id: string, name: string) => Promise<TableSnapshot>;
+  deleteTable: (id: string) => Promise<DataTableSummary[]>;
+  patchTableRows: (tableId: string, ops: RowOp[]) => Promise<RowChanges>;
   getAssets: () => Promise<AssetsSnapshot>;
   createAssetFolder: (input: FolderInput) => Promise<AssetsSnapshot>;
   updateAssetFolder: (id: string, patch: FolderPatch) => Promise<AssetsSnapshot>;

@@ -138,7 +138,7 @@ export function deleteFolder(db: DatabaseSync, id: string): AssetsSnapshot {
       stamp,
       id,
     );
-    for (const table of ['boards', 'palettes', 'notes', 'cards']) {
+    for (const table of ['boards', 'palettes', 'notes', 'cards', 'data_tables']) {
       db.prepare(`UPDATE ${table} SET folder_id = ? WHERE folder_id = ?`).run(row.parentId, id);
     }
     db.prepare('UPDATE asset_folders SET parent_id = ?, updated_at = ? WHERE parent_id = ?').run(

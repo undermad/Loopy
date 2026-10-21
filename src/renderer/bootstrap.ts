@@ -11,6 +11,7 @@ import { bootNotes, flushNotes, loadNotes } from '@renderer/lib/notes';
 import { bootPalettes, loadPalettes } from '@renderer/lib/palettes';
 import { bootProject, currentProject } from '@renderer/lib/project';
 import { bootSettings, useSettings } from '@renderer/lib/settings';
+import { bootTables, loadTables } from '@renderer/lib/tables';
 import { bootTheme } from '@renderer/lib/theme';
 import { bootTickets, loadTickets } from '@renderer/lib/tickets';
 import { bootWindows, bootWorkspaces } from '@renderer/lib/workspaces';
@@ -33,6 +34,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
   await bootItemStyles(api, currentProject() !== null);
   await bootAssets(api, currentProject() !== null);
   await bootNotes(api, currentProject() !== null);
+  await bootTables(api, currentProject() !== null);
   await bootWorkspaces(api, () => {
     const names = {
       default: i18next.t('shell:layout.presets.default'),
@@ -54,6 +56,7 @@ export async function bootstrap(api: LoopyApi): Promise<void> {
     styles: loadItemStyles,
     assets: loadAssets,
     notes: loadNotes,
+    tables: loadTables,
   };
   window.addEventListener('beforeunload', () => {
     void flushNotes();

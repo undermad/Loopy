@@ -25,6 +25,7 @@ import { resetWorkspacesStore } from '@renderer/lib/workspaces';
 import { resetAssetsStore } from '@renderer/lib/assets';
 import { resetCardTemplatesStore } from '@renderer/lib/cards';
 import { resetItemStylesStore } from '@renderer/lib/itemStyles';
+import { resetTablesStore } from '@renderer/lib/tables';
 import { resetBrushStore, resetTileCache } from '@renderer/lib/drawing';
 import { resetNotesStore } from '@renderer/lib/notes';
 import { resetPalettesStore } from '@renderer/lib/palettes';
@@ -36,6 +37,7 @@ import { createCardsFake } from './cards-fake';
 import { createItemStylesFake } from './item-styles-fake';
 import { createNotesFake } from './notes-fake';
 import { createPalettesFake } from './palettes-fake';
+import { createTablesFake } from './tables-fake';
 import { createTicketsFake } from './tickets-fake';
 
 export interface FakeApi extends LoopyApi {
@@ -49,6 +51,7 @@ export interface FakeApi extends LoopyApi {
   recoverable: RecoverableProject[];
   shell: ShellState;
   layouts: LayoutPreset[];
+  tablesData: ReturnType<typeof createTablesFake>['data'];
   tickets: ReturnType<typeof createTicketsFake>['data'];
   palettesData: ReturnType<typeof createPalettesFake>['data'];
   cardsData: ReturnType<typeof createCardsFake>['data'];
@@ -103,6 +106,7 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
   const palettesFake = createPalettesFake();
   const cardsFake = createCardsFake();
   const stylesFake = createItemStylesFake();
+  const tablesFake = createTablesFake();
   const assetsFake = createAssetsFake();
   const notesFake = createNotesFake();
   const api: FakeApi = {
@@ -121,11 +125,13 @@ export function createFakeApi(overrides: Partial<AppSettings> = {}, scheme: Colo
     cardsData: cardsFake.data,
     assetsData: assetsFake.data,
     notesData: notesFake.data,
+    tablesData: tablesFake.data,
     ...ticketsFake.api,
     ...boardsFake.api,
     ...palettesFake.api,
     ...cardsFake.api,
     ...stylesFake.api,
+    ...tablesFake.api,
     ...assetsFake.api,
     ...notesFake.api,
     getAppVersion: vi.fn(() => Promise.resolve({ app: '0.1.0', electron: '44.8.0' })),
@@ -286,6 +292,7 @@ export async function bootTestApp(
   resetPalettesStore();
   resetCardTemplatesStore();
   resetItemStylesStore();
+  resetTablesStore();
   resetAssetsStore();
   resetNotesStore();
   const api = createFakeApi(overrides, scheme);

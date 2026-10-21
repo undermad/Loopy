@@ -46,7 +46,13 @@ describe('saved cards migration', () => {
         VALUES ('t1', 'Hero', '{}', '${STAMP}', '${STAMP}');
     `);
 
-    migrateDatabase(db, projectMigrations);
+    migrateDatabase(
+      db,
+      projectMigrations.slice(
+        0,
+        projectMigrations.findIndex((sql) => sql.includes('CREATE TABLE data_tables')),
+      ),
+    );
 
     const rows = {
       parent: db.prepare("SELECT parent_id AS parentId FROM asset_folders WHERE id = 'child'").get(),
