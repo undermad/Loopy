@@ -5,7 +5,7 @@ import type { BoardNode } from '@shared/board';
 import { cardFieldSchema, cardLayoutSchema, type CardField } from '@shared/cards';
 import { CardView } from '@renderer/components/editors/Cards/CardView';
 import { CardSettings, FieldSettings } from '@renderer/components/editors/Cards/settings';
-import type { TemplateDraft } from '@renderer/components/editors/Cards/CardDesigner';
+import type { TemplateDraft } from '@renderer/components/editors/Cards/designer/draft';
 import { NodeProperties } from '@renderer/components/editors/Properties/NodeProperties';
 import { importFiles } from '@renderer/lib/assets';
 import { commitChanges, createBoard, createItem, loadBoard, useBoardSnapshot } from '@renderer/lib/board';

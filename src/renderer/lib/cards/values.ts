@@ -63,9 +63,14 @@ function numberRange(field: FieldOf<'number'>, raw: unknown): CardValue {
   };
 }
 
+function stepped(value: number, step: number | null): number {
+  return step === null ? value : Math.round(Math.round(value / step) * step * 1e9) / 1e9;
+}
+
 function number(field: FieldOf<'number'>, raw: unknown): CardValue {
   if (field.range) return numberRange(field, raw);
-  const value = toNumber(raw);
+  const parsed = toNumber(raw);
+  const value = parsed === null ? null : stepped(parsed, field.step);
   if (value === null) return null;
   if (field.display === 'symbols') return clampTo(Math.round(value), 0, symbolCount(field));
   if (field.display === 'bar') return clampTo(value, field.min ?? 0, field.max ?? 100);
@@ -104,14 +109,16 @@ function checklist(raw: unknown): ChecklistItem[] | null {
 type ValueRules = { [K in CardFieldKind]: (field: FieldOf<K>, raw: unknown) => CardValue };
 
 const VALUE_RULES: ValueRules = {
-  text: (field, raw) => (field.fixed ? null : text(raw)),
+  text: (field, raw) => (field.fixed ? null : (text(raw)?.slice(0, field.maxLength ?? undefined) ?? null)),
   date: (_field, raw) => (typeof raw === 'string' && ISO_DATE.test(raw) ? raw : null),
   number,
   attributes: (field, raw) => {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
     const entries = field.rows.flatMap((row) => {
       const value = (raw as Record<string, unknown>)[row.id];
-      return typeof value === 'number' && Number.isFinite(value) ? [[row.id, value] as const] : [];
+      return typeof value === 'number' && Number.isFinite(value)
+        ? [[row.id, clampTo(value, field.min, field.max)] as const]
+        : [];
     });
     return entries.length > 0 ? Object.fromEntries(entries) : null;
   },

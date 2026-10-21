@@ -148,7 +148,8 @@
       "boardItems": "Board items",
       "boardArrange": "Board alignment",
       "boardPointer": "Board mouse",
-      "fields": "Fields and toolbars"
+      "fields": "Fields and toolbars",
+      "cardDesigner": "Card designer"
     },
     "items": {
       "newProject": "New project",
@@ -209,7 +210,16 @@
       "save": "Save project",
       "saveAs": "Save project as",
       "copyStyle": "Copy item style",
-      "pasteStyle": "Paste item style"
+      "pasteStyle": "Paste item style",
+      "cardMode": "Switch between design and fill in",
+      "cardSelect": "Select the next or previous field",
+      "cardMove": "Move the field within its zone",
+      "cardWidth": "Make the field narrower or wider",
+      "cardDuplicate": "Duplicate the selected fields",
+      "cardClipboard": "Copy, cut and paste fields",
+      "cardAdd": "Add a field after the selection",
+      "cardRename": "Rename the selected field",
+      "cardMultiSelect": "Add a field to the selection"
     }
   },
   "window": {

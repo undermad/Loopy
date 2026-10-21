@@ -27,10 +27,12 @@ interface TextInputProps {
   placeholder: string;
   multiline: boolean;
   label: string;
+  maxLength?: number | null;
   onCommit: (next: string) => void;
 }
 
-export function TextInput({ value, placeholder, multiline, label, onCommit }: TextInputProps) {
+export function TextInput({ value, placeholder, multiline, label, maxLength, onCommit }: TextInputProps) {
+  const limit = maxLength === null || maxLength === undefined ? {} : { maxLength };
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? value;
   const commit = () => {
@@ -44,6 +46,7 @@ export function TextInput({ value, placeholder, multiline, label, onCommit }: Te
         value={shown}
         placeholder={placeholder}
         aria-label={label}
+        {...limit}
         onChange={(event) => {
           setDraft(event.target.value);
         }}
@@ -58,6 +61,7 @@ export function TextInput({ value, placeholder, multiline, label, onCommit }: Te
       value={shown}
       placeholder={placeholder}
       aria-label={label}
+      {...limit}
       onChange={(event) => {
         setDraft(event.target.value);
       }}

@@ -39,7 +39,15 @@ export function newField(
 export function changeFieldKind(field: CardField, kind: CardFieldKind): CardField {
   if (field.kind === kind) return field;
   const { kind: _old, ...shared } = field;
-  return cardFieldSchema.parse({ ...presetFor(kind).defaults, ...shared, kind });
+  const candidate: Record<string, unknown> = { ...presetFor(kind).defaults, ...shared, kind };
+  for (;;) {
+    const parsed = cardFieldSchema.safeParse(candidate);
+    if (parsed.success) return parsed.data;
+    const keys = new Set(parsed.error.issues.map((issue) => issue.path[0]));
+    const clashing = [...keys].filter((key): key is string => typeof key === 'string' && key in shared);
+    if (clashing.length === 0) throw parsed.error;
+    for (const key of clashing) Reflect.deleteProperty(candidate, key);
+  }
 }
 
 export function moveField(fields: CardField[], from: number, to: number): CardField[] {

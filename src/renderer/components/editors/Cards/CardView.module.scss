@@ -477,3 +477,36 @@
   display: flex;
   align-items: center;
 }
+
+.diceBuilder {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  .number {
+    width: 4.5em;
+  }
+}
+
+.diceRoll {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.attributeTotal {
+  font-weight: 600;
+  border-top: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
+}
+
+.radios {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

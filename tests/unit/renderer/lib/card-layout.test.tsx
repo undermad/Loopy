@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { cardFieldSchema, type CardField } from '@shared/cards';
 import {
   clampSpan,
+  dropField,
   fieldGridStyle,
   moveFieldTo,
+  placeField,
   snapHeight,
   spanFromPixels,
   updateFields,
@@ -88,5 +90,45 @@ describe('moving and editing fields', () => {
     const next = updateFields(fields, ['a', 'c'], (item) => ({ ...item, span: 6 }));
     expect(next.map((item) => item.span)).toEqual([6, 12, 6, 12]);
     expect(next[1]).toBe(fields[1]);
+  });
+});
+
+describe('dropping a dragged field', () => {
+  const fields = [field({ id: 'a' }), field({ id: 'b' }), field({ id: 'c', zone: 'footer' })];
+
+  it('reorders within a zone, moves across zones and appends to a zone', () => {
+    expect(dropField(fields, 'b', 'a').map((item) => item.id)).toEqual(['b', 'a', 'c']);
+    expect(dropField(fields, 'a', 'c').map((item) => `${item.id}:${item.zone}`)).toEqual([
+      'b:body',
+      'a:footer',
+      'c:footer',
+    ]);
+    expect(dropField(fields, 'c', 'zone:header').at(-1)).toMatchObject({ id: 'c', zone: 'header' });
+  });
+
+  it('ignores drops on nothing, on itself or on unknown fields', () => {
+    expect(dropField(fields, 'a', null)).toBe(fields);
+    expect(dropField(fields, 'a', 'a')).toBe(fields);
+    expect(dropField(fields, 'a', 'missing')).toBe(fields);
+    expect(dropField(fields, 'missing', 'a')).toBe(fields);
+  });
+});
+
+describe('placing a new field from the palette', () => {
+  const fields = [field({ id: 'a' }), field({ id: 'b', zone: 'footer' })];
+  const added = field({ id: 'n' });
+
+  it('puts it before the field it lands on, in that zone', () => {
+    expect(placeField(fields, added, 'b').map((item) => `${item.id}:${item.zone}`)).toEqual([
+      'a:body',
+      'n:footer',
+      'b:footer',
+    ]);
+  });
+
+  it('appends it to a zone, or to the body when it lands nowhere', () => {
+    expect(placeField(fields, added, 'zone:header').at(-1)).toMatchObject({ id: 'n', zone: 'header' });
+    expect(placeField(fields, added, null).at(-1)).toMatchObject({ id: 'n', zone: 'body' });
+    expect(placeField(fields, added, 'missing').at(-1)).toMatchObject({ id: 'n', zone: 'body' });
   });
 });

@@ -1,1 +1,1 @@
-export { parseDice } from '@shared/formulas';
+export { diceNotation, diceParts, parseDice, rollDice } from '@shared/formulas';

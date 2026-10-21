@@ -79,10 +79,12 @@ export function FieldSettings({
   field,
   fields = [],
   onChange,
+  onRenameId,
 }: {
   field: CardField;
   fields?: readonly CardField[];
   onChange: (next: CardField) => void;
+  onRenameId?: (id: string) => void;
 }) {
   const { t } = useTranslation('editors');
   return (
@@ -179,6 +181,15 @@ export function FieldSettings({
       </PropertySection>
       {FIELD_KINDS[field.kind].textStyle ? <TextStyleSettings field={field} onChange={onChange} /> : null}
       <PropertySection title={t('cards.sections.advanced')} defaultOpen={false}>
+        {onRenameId ? (
+          <DraftInput
+            label={t('cards.fieldId')}
+            hint={t('cards.fieldIdHint')}
+            value={field.id}
+            maxLength={64}
+            onCommit={onRenameId}
+          />
+        ) : null}
         <DraftInput
           label={t('cards.help')}
           hint={t('cards.helpHint')}
@@ -195,6 +206,14 @@ export function FieldSettings({
           checked={field.hidden}
           onCheckedChange={(hidden) => {
             onChange({ ...field, hidden });
+          }}
+        />
+        <Switch
+          size="sm"
+          label={t('cards.lockField')}
+          checked={field.locked}
+          onCheckedChange={(locked) => {
+            onChange({ ...field, locked });
           }}
         />
       </PropertySection>

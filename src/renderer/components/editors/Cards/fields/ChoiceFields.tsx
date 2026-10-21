@@ -25,8 +25,55 @@ function strings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }
 
-function SingleChoice({ field, value, label, textStyle, onChange }: FieldViewProps<FieldOf<'choice'>>) {
+function ChoiceChips({ field, value, label, textStyle, onChange }: FieldViewProps<FieldOf<'choice'>>) {
   const text = typeof value === 'string' ? value : '';
+  if (field.display === 'radio') {
+    return (
+      <span className={styles['radios']} role="radiogroup" aria-label={label}>
+        {field.options.map((option) => (
+          <label key={option.value} className={styles['check']} style={textStyle}>
+            <input
+              className={INTERACTIVE}
+              type="radio"
+              name={field.id}
+              checked={text === option.value}
+              onChange={() => {
+                onChange(option.value);
+              }}
+            />
+            <span>{option.value}</span>
+          </label>
+        ))}
+      </span>
+    );
+  }
+  return (
+    <span className={styles['tags']} role="group" aria-label={label}>
+      {field.options.map((option) => {
+        const on = text === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            className={cx(INTERACTIVE, styles['chip'], on && styles['chipOn'])}
+            style={textStyle}
+            aria-pressed={on}
+            onClick={() => {
+              onChange(on ? null : option.value);
+            }}
+          >
+            {option.value}
+          </button>
+        );
+      })}
+    </span>
+  );
+}
+
+function SingleChoice(props: FieldViewProps<FieldOf<'choice'>>) {
+  const { field, value, label, textStyle, onChange } = props;
+  const text = typeof value === 'string' ? value : '';
+  if (field.display !== 'dropdown' && !field.allowNew) return <ChoiceChips {...props} />;
   if (field.allowNew) {
     const list = `${field.id}-choices`;
     return (
@@ -167,6 +214,7 @@ export function ChoiceField(props: FieldViewProps<FieldOf<'choice'>>) {
 }
 
 export function CheckboxField({
+  field,
   value,
   editable,
   label,
@@ -186,7 +234,7 @@ export function CheckboxField({
           onChange(event.target.checked);
         }}
       />
-      <span>{value === true ? t('cards.yes') : t('cards.no')}</span>
+      <span>{value === true ? field.onLabel || t('cards.yes') : field.offLabel || t('cards.no')}</span>
     </label>
   );
 }
@@ -201,6 +249,7 @@ function asChecklist(value: unknown): ChecklistItem[] {
 }
 
 export function ChecklistField({
+  field,
   value,
   editable,
   label,
@@ -216,7 +265,7 @@ export function ChecklistField({
   };
   return (
     <div className={styles['checklist']} style={textStyle}>
-      {items.length > 0 ? (
+      {field.showProgress && items.length > 0 ? (
         <span className={styles['progress']}>{`${String(done)}/${String(items.length)}`}</span>
       ) : null}
       <ul className={styles['steps']} aria-label={label}>

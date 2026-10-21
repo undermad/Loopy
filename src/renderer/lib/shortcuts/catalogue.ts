@@ -109,6 +109,20 @@ export const SHORTCUT_CATEGORIES: readonly ShortcutCategory[] = [
     ],
   },
   {
+    id: 'cardDesigner',
+    entries: [
+      entry('cardMode', '$mod+E'),
+      entry('cardSelect', 'Arrow keys'),
+      entry('cardMove', 'Alt+Arrow keys'),
+      entry('cardWidth', '[ / ]'),
+      entry('cardDuplicate', '$mod+D'),
+      entry('cardClipboard', '$mod+C / $mod+X / $mod+V'),
+      entry('cardAdd', '/'),
+      entry('cardRename', 'Enter'),
+      entry('cardMultiSelect', 'Shift+Click'),
+    ],
+  },
+  {
     id: 'fields',
     entries: [
       entry('scrub', 'Drag'),

@@ -32,6 +32,10 @@ export const CARD_MAX_ROWS = 20;
 export const RATING_SYMBOLS = ['star', 'heart', 'circle', 'pip'] as const;
 export const NUMBER_DISPLAYS = ['number', 'bar', 'symbols'] as const;
 export const TEXT_LINES = ['single', 'multi'] as const;
+export const DICE_MODES = ['builder', 'free'] as const;
+export const DATE_FORMATS = ['short', 'medium', 'long'] as const;
+export const CHOICE_DISPLAYS = ['dropdown', 'chips', 'radio'] as const;
+export const DEFAULT_DICE_SIDES = [4, 6, 8, 10, 12, 20];
 export const CARD_ZONES = ['header', 'body', 'footer'] as const;
 export const VISIBILITY_OPS = ['filled', 'empty', 'equals', 'notEquals', 'above', 'below'] as const;
 
@@ -64,6 +68,7 @@ const base = {
   style: cardFieldStyleSchema.default({}),
   help: z.string().max(200).default(''),
   hidden: z.boolean().default(false),
+  locked: z.boolean().default(false),
   visibleWhen: visibilityRuleSchema.nullable().default(null),
   zone: z.enum(CARD_ZONES).default('body'),
   height: z.number().min(CARD_MIN_FIELD_HEIGHT).max(CARD_MAX_FIELD_HEIGHT).nullable().default(null),
@@ -93,6 +98,7 @@ export const textFieldSchema = z.object({
   lines: z.enum(TEXT_LINES).default('single'),
   fixed: z.boolean().default(false),
   text: z.string().max(2000).default(''),
+  maxLength: z.number().int().min(1).max(5000).nullable().default(null),
   placeholder,
   defaultValue: textDefault,
 });
@@ -100,6 +106,7 @@ export const textFieldSchema = z.object({
 export const dateFieldSchema = z.object({
   ...base,
   kind: z.literal('date'),
+  format: z.enum(DATE_FORMATS).default('medium'),
   defaultValue: fallback(z.iso.date()),
 });
 
@@ -109,6 +116,7 @@ export const numberFieldSchema = z.object({
   display: z.enum(NUMBER_DISPLAYS).default('number'),
   symbol: z.enum(RATING_SYMBOLS).default('star'),
   range: z.boolean().default(false),
+  step: z.number().positive().nullable().default(null),
   min: bound,
   max: bound,
   prefix: affix,
@@ -125,6 +133,9 @@ export const attributesFieldSchema = z.object({
   ...base,
   kind: z.literal('attributes'),
   rows: z.array(attributeRowSchema).max(CARD_MAX_ROWS).default([]),
+  min: bound,
+  max: bound,
+  showTotal: z.boolean().default(false),
 });
 
 export const formulaFieldSchema = z.object({
@@ -139,6 +150,10 @@ export const formulaFieldSchema = z.object({
 export const diceFieldSchema = z.object({
   ...base,
   kind: z.literal('dice'),
+  mode: z.enum(DICE_MODES).default('builder'),
+  sides: z.array(z.number().int().min(2).max(1000)).max(10).default(DEFAULT_DICE_SIDES),
+  showOdds: z.boolean().default(true),
+  roll: z.boolean().default(false),
   placeholder,
   defaultValue: fallback(z.string().max(40)),
 });
@@ -148,6 +163,7 @@ export const choiceFieldSchema = z.object({
   kind: z.literal('choice'),
   multiple: z.boolean().default(false),
   allowNew: z.boolean().default(false),
+  display: z.enum(CHOICE_DISPLAYS).default('dropdown'),
   placeholder,
   options,
   defaultValue: fallback(z.union([z.string().max(80), z.array(z.string().max(80)).max(50)])),
@@ -156,12 +172,15 @@ export const choiceFieldSchema = z.object({
 export const checkboxFieldSchema = z.object({
   ...base,
   kind: z.literal('checkbox'),
+  onLabel: z.string().max(40).default(''),
+  offLabel: z.string().max(40).default(''),
   defaultValue: fallback(z.boolean()),
 });
 
 export const checklistFieldSchema = z.object({
   ...base,
   kind: z.literal('checklist'),
+  showProgress: z.boolean().default(true),
   defaultValue: fallback(z.array(checklistItemSchema).max(50)),
 });
 

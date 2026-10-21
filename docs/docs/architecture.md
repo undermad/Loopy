@@ -42,27 +42,27 @@ Every renderer concern is a library under `src/renderer/lib/<name>` with one pub
 
 The boundary is a convention checked in review, not a lint rule. A deep import such as `@renderer/lib/theme/apply`, or any import of `components` from inside a library, is a review finding. `knip` fails CI on an export nothing uses, which keeps each index small. The rules and a checklist for adding a library are in `.claude/skills/internal-libraries/SKILL.md`, the reasoning in [ADR 0016](./decisions/0016-internal-libraries.md).
 
-| Library      | Owns                                                                                         | Status  |
-| ------------ | -------------------------------------------------------------------------------------------- | ------- |
-| `theme`      | Active theme, applying colour tokens, following the system mode                              | shipped |
-| `i18n`       | i18next setup, language switching, `Intl` formatting                                         | shipped |
-| `settings`   | Settings store synced with main                                                              | shipped |
-| `layout`     | Area tree model, split, join, resize, swap, maximise                                         | shipped |
-| `workspaces` | Workspace list, active workspace, layout presets                                             | shipped |
-| `editors`    | Editor registry: component, icon, title key, default state                                   | shipped |
-| `shortcuts`  | Key map and the `useShortcuts` hook                                                          | shipped |
-| `project`    | Current project, project list, recent projects                                               | shipped |
-| `tickets`    | Tickets snapshot, selection, ticket, state and label actions                                 | shipped |
-| `board`      | Board snapshots, selection, undo, clipboard, docking, layers, alignment, item maths          | shipped |
-| `drawing`    | Drawing tiles, the brush engine, brush state and presets, drawing layers                     | shipped |
-| `cards`      | Card templates, saved cards, field kinds, value rules, formulas, dice and starter templates  | shipped |
-| `itemStyles` | Named style presets for board items                                                          | shipped |
-| `tables`     | Data table list, rows on demand, row edits with undo, grid range, sort, filter and clipboard | shipped |
-| `colour`     | Colour maths: conversions, contrast, harmonies, palette clusters, image extraction           | shipped |
-| `palettes`   | Palette and cluster lists and live resolution of colour references                           | shipped |
-| `assets`     | Asset folders, files, import, drop settings, drags onto other areas                          | shipped |
-| `notes`      | Notes store, link index, backlinks, search queries, graph data, templates                    | shipped |
-| `commands`   | Routes Edit menu commands to the area that had focus                                         | shipped |
+| Library      | Owns                                                                                                                                        | Status  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `theme`      | Active theme, applying colour tokens, following the system mode                                                                             | shipped |
+| `i18n`       | i18next setup, language switching, `Intl` formatting                                                                                        | shipped |
+| `settings`   | Settings store synced with main                                                                                                             | shipped |
+| `layout`     | Area tree model, split, join, resize, swap, maximise                                                                                        | shipped |
+| `workspaces` | Workspace list, active workspace, layout presets                                                                                            | shipped |
+| `editors`    | Editor registry: component, icon, title key, default state                                                                                  | shipped |
+| `shortcuts`  | Key map and the `useShortcuts` hook                                                                                                         | shipped |
+| `project`    | Current project, project list, recent projects                                                                                              | shipped |
+| `tickets`    | Tickets snapshot, selection, ticket, state and label actions                                                                                | shipped |
+| `board`      | Board snapshots, selection, undo, clipboard, docking, layers, alignment, item maths                                                         | shipped |
+| `drawing`    | Drawing tiles, the brush engine, brush state and presets, drawing layers                                                                    | shipped |
+| `cards`      | Card templates, saved cards, field kinds and presets, value rules, formulas, dice, starter templates, canvas layout, undo and sample values | shipped |
+| `itemStyles` | Named style presets for board items                                                                                                         | shipped |
+| `tables`     | Data table list, rows on demand, row edits with undo, grid range, sort, filter and clipboard                                                | shipped |
+| `colour`     | Colour maths: conversions, contrast, harmonies, palette clusters, image extraction                                                          | shipped |
+| `palettes`   | Palette and cluster lists and live resolution of colour references                                                                          | shipped |
+| `assets`     | Asset folders, files, import, drop settings, drags onto other areas                                                                         | shipped |
+| `notes`      | Notes store, link index, backlinks, search queries, graph data, templates                                                                   | shipped |
+| `commands`   | Routes Edit menu commands to the area that had focus                                                                                        | shipped |
 
 ## IPC rules
 
