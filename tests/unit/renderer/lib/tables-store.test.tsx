@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { closeProject } from '@renderer/lib/project';
 import {
   createTable,
@@ -135,6 +135,26 @@ describe('tables store', () => {
       /Duplicate key/,
     );
     expect(result.current?.rows).toHaveLength(2);
+  });
+
+  it('reads a table once for several viewers and forgets it when it is deleted elsewhere', async () => {
+    const { table } = await items();
+    await act(async () => {
+      await loadTables();
+    });
+    vi.mocked(api.readTable).mockClear();
+    const first = renderHook(() => useTableSnapshot(table.id));
+    const second = renderHook(() => useTableSnapshot(table.id));
+    await waitFor(() => {
+      expect(first.result.current?.rows).toHaveLength(2);
+    });
+    expect(second.result.current?.rows).toHaveLength(2);
+
+    await api.deleteTable(table.id);
+    await act(() => loadTables());
+
+    expect(first.result.current).toBeNull();
+    expect(tableLookup().rowsOf(table.id)).toEqual([]);
   });
 
   it('reloads open snapshots when another window changes tables', async () => {

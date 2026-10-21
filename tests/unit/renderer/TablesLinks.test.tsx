@@ -106,6 +106,25 @@ describe('table links', () => {
     ).toEqual(['4', '8']);
     expect(screen.getByText('2 rows')).toBeTruthy();
   });
+
+  it('previews referenced keys and renders nothing for a missing table', async () => {
+    const owners = await act(() => createTable({ name: 'Owners', rows: [{ key: 'knight' }] }));
+    const { table } = await act(() =>
+      createTable({
+        name: 'Items',
+        columns: [{ id: 'owner', kind: 'reference', tableId: owners.table.id }],
+        rows: [{ key: 'sword', cells: { owner: owners.rows[0]?.id ?? '' } }],
+      }),
+    );
+    const { container } = render(<TablePreview tableId="gone" />);
+    await waitFor(() => {
+      expect(container.innerHTML).toBe('');
+    });
+    render(<TablePreview tableId={table.id} />);
+    await waitFor(() => {
+      expect(screen.getByRole('cell').textContent).toBe('knight');
+    });
+  });
 });
 
 describe('tables in the Assets editor', () => {

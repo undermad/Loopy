@@ -136,6 +136,36 @@ describe('exportTable', () => {
     });
   });
 
+  it('describes every kind of column', () => {
+    const all = table('all', 'All', [
+      { id: 'note', kind: 'text', description: 'Shown text' },
+      { id: 'tier', kind: 'choice', options: ['a', 'b'] },
+      { id: 'when', kind: 'date', required: true },
+      { id: 'tint', kind: 'colour' },
+      { id: 'icon', kind: 'image' },
+      { id: 'see', kind: 'link' },
+      { id: 'refs', kind: 'link', multiple: true },
+      { id: 'party', kind: 'reference', tableId: 'owners', multiple: true },
+      { id: 'roll', kind: 'dice' },
+      { id: 'score', kind: 'number', max: 10 },
+    ]);
+    const schema = JSON.parse(exportTable({ table: all, rows: [] }, 'jsonSchema').text) as {
+      items: { properties: Record<string, unknown> };
+    };
+    expect(schema.items.properties).toMatchObject({
+      note: { type: ['string', 'null'], description: 'Shown text' },
+      tier: { type: ['string', 'null'], enum: ['a', 'b', null] },
+      when: { type: 'string', format: 'date' },
+      tint: { pattern: '^#[0-9a-fA-F]{6}$' },
+      icon: { type: ['string', 'null'] },
+      see: { anyOf: [{ type: 'object' }, { type: 'null' }] },
+      refs: { type: 'array', items: { type: 'object' } },
+      party: { type: 'array', items: { type: 'string' } },
+      roll: { type: ['string', 'null'] },
+      score: { type: ['number', 'null'], maximum: 10 },
+    });
+  });
+
   it('round-trips through the Loopy exchange file', () => {
     const file = exportTable(snapshot, 'loopy', { app: '0.1.0' });
     expect(file.extension).toBe('loopy-table.json');
